@@ -30,10 +30,10 @@ const {
   watchedGetSetObject: redisWatchedGetSetObject,
   publishMessage,
 } = require("./redisWrapper");
-const { Logger } = require("../logger");
-const { isNull } = require("../helper");
-const { LazyCache } = require("../lazyCaches");
-const { isOnCF, cfApp } = require("../env");
+const { Logger } = require("./logger");
+const { isNull } = require("./helper");
+const { LazyCache } = require("./lazyCache");
+const { isOnCF, cfApp } = require("./env");
 
 const configRaw = require("./featureTogglesConfig.json");
 

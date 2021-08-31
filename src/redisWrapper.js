@@ -6,7 +6,7 @@ const { promisify } = require("util");
 const { Logger } = require("./logger");
 const { isOnCF, cfServiceCredentials } = require("./env");
 
-const COMPONENT_NAME = "/Util/RedisWrapper";
+const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
 const logger = Logger(COMPONENT_NAME);
 
