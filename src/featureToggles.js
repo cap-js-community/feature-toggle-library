@@ -21,8 +21,12 @@
  *
  */
 
+// TODO: initialize is more important and config should be passed in there...
+// need to get rid of configRaw, and featureValidKeys somehow and load config during init
+
 "use strict";
 
+const path = require("path");
 const VError = require("verror");
 const {
   registerMessageHandler,
@@ -35,18 +39,18 @@ const { isNull } = require("./helper");
 const { LazyCache } = require("./lazyCache");
 const { isOnCF, cfApp } = require("./env");
 
-const configRaw = require("./featureTogglesConfig.json");
-
-const FEATURES_CHANNEL = process.env.AFC_FEATURES_CHANNEL || "features";
-const FEATURES_KEY = process.env.AFC_FEATURES_KEY || "features";
-
+const FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
+const FEATURES_KEY = process.env.BTP_FEATURES_KEY || "features";
 const REFRESH_MESSAGE = "refresh";
+const CONFIG_FILEPATH = path.join(process.cwd(), "featureTogglesConfig.json");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
-const COMPONENT_NAME = "/Util/FeatureToggles";
+const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
 const logger = Logger(COMPONENT_NAME);
+
+const configRaw = require(CONFIG_FILEPATH);
 
 const _processConfigRaw = (configRaw) => {
   const cfAppData = cfApp();
@@ -97,6 +101,9 @@ const isValidFeatureKey = (key) => typeof key === "string" && featureValidKeys.i
 const isValidFeatureValueType = (value) => value === null || FEATURE_VALID_TYPES.includes(typeof value);
 
 const _validateInputEntry = (key, value) => {
+  if (!isInitialized) {
+    return { errorMessage: 'not initialized' };
+  }
   if (!isValidFeatureKey(key)) {
     return { key, errorMessage: 'key "{0}" is not valid', errorMessageValues: [key] };
   }
@@ -106,8 +113,8 @@ const _validateInputEntry = (key, value) => {
     if (!isValidFeatureValueType(value)) {
       return {
         key,
-        errorMessage: 'value "{0}" has invalid type {1}, must be string, number, or boolean',
-        errorMessageValues: [value, valueType],
+        errorMessage: 'value "{0}" has invalid type {1}, must be in {2}',
+        errorMessageValues: [value, valueType, FEATURE_VALID_TYPES],
       };
     }
 
@@ -187,11 +194,13 @@ const _messageHandler = async (input) => {
 /**
  * Call this during service loading to initialize the feature toggles.
  */
-const initializeFeatureToggles = async () => {
+const initializeFeatureToggles = async ({configFilename, configPath, configRaw} = {}) => {
   if (isInitialized) {
     return;
   }
   isInitialized = true;
+
+  configRaw =
 
   const featureValuesFallback = Object.fromEntries(
     Object.entries(config).map(([key, value]) => [key, value.fallbackValue])
@@ -426,7 +435,7 @@ const refreshFeatureValues = async () => {
  * @param handler signature (oldValue, newValue) => void
  */
 const registerFeatureValueChangeHandler = (key, handler) => {
-  if (!isValidFeatureKey(key)) {
+  if (!isInitialized || !isValidFeatureKey(key)) {
     return null;
   }
   if (!_hasChangeHandlers(key)) {
@@ -443,7 +452,7 @@ const registerFeatureValueChangeHandler = (key, handler) => {
  * @param handler
  */
 const removeFeatureValueChangeHandler = (key, handler) => {
-  if (!isValidFeatureKey(key)) {
+  if (!isInitialized || !isValidFeatureKey(key)) {
     return null;
   }
   if (!_hasChangeHandlers(key)) {
@@ -462,7 +471,7 @@ const removeFeatureValueChangeHandler = (key, handler) => {
  * @param key
  */
 const removeAllFeatureValueChangeHandlers = (key) => {
-  if (!isValidFeatureKey(key)) {
+  if (!isInitialized || !isValidFeatureKey(key)) {
     return null;
   }
   if (!_hasChangeHandlers(key)) {
