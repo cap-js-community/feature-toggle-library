@@ -36,7 +36,7 @@ const {
 } = require("./redisWrapper");
 const { Logger } = require("./logger");
 const { isNull } = require("./helper");
-const { LazyCache } = require("./lazyCache");
+const { LazyCache } = require("./lazyCaches");
 const { isOnCF, cfApp } = require("./env");
 
 const FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
@@ -90,13 +90,13 @@ const _getFeatureValuesChangeHandlers = () => featureValuesChangeHandlers;
 const _setFeatureValuesChangeHandlers = (input) => (featureValuesChangeHandlers = input);
 const _hasChangeHandlers = (key) => Object.prototype.hasOwnProperty.call(featureValuesChangeHandlers, key);
 
-const setConfig()
+// TODO const setConfig()
 const isValidFeatureKey = (key) => typeof key === "string" && featureValidKeys.includes(key);
 const isValidFeatureValueType = (value) => value === null || FEATURE_VALID_TYPES.includes(typeof value);
 
 const _validateInputEntry = (key, value) => {
   if (!isInitialized) {
-    return { errorMessage: 'not initialized' };
+    return { errorMessage: "not initialized" };
   }
   if (!isValidFeatureKey(key)) {
     return { key, errorMessage: 'key "{0}" is not valid', errorMessageValues: [key] };
@@ -188,13 +188,13 @@ const _messageHandler = async (input) => {
 /**
  * Call this during service loading to initialize the feature toggles.
  */
-const initializeFeatureToggles = async ({configFilename, configPath, configRaw} = {}) => {
+const initializeFeatureToggles = async ({ configFilename, configPath, configRaw } = {}) => {
   if (isInitialized) {
     return;
   }
   isInitialized = true;
 
-  configRaw =
+  // TODO configRaw =
 
   const featureValuesFallback = Object.fromEntries(
     Object.entries(config).map(([key, value]) => [key, value.fallbackValue])
