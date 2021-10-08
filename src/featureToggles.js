@@ -42,15 +42,13 @@ const { isOnCF, cfApp } = require("./env");
 const FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
 const FEATURES_KEY = process.env.BTP_FEATURES_KEY || "features";
 const REFRESH_MESSAGE = "refresh";
-const CONFIG_FILEPATH = path.join(process.cwd(), "featureTogglesConfig.json");
+const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), "featureTogglesConfig.json");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
 const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
 const logger = Logger(COMPONENT_NAME);
-
-const configRaw = require(CONFIG_FILEPATH);
 
 const _processConfigRaw = (configRaw) => {
   const cfAppData = cfApp();
@@ -73,7 +71,7 @@ const _processConfigRaw = (configRaw) => {
   );
 };
 let isInitialized = false;
-let config = _processConfigRaw(configRaw);
+let config = {};
 let configCache = new LazyCache();
 let featureValues = {};
 let featureValuesChangeHandlers = {};
@@ -86,17 +84,13 @@ const _reset = () => {
   featureValuesChangeHandlers = {};
 };
 const _isInitialized = () => isInitialized;
-const _getConfig = () => config;
-const _setConfig = (input) => {
-  config = input;
-  featureValidKeys = Object.keys(config);
-};
 const _getFeatureValues = () => featureValues;
 const _setFeatureValues = (input) => (featureValues = input);
 const _getFeatureValuesChangeHandlers = () => featureValuesChangeHandlers;
 const _setFeatureValuesChangeHandlers = (input) => (featureValuesChangeHandlers = input);
 const _hasChangeHandlers = (key) => Object.prototype.hasOwnProperty.call(featureValuesChangeHandlers, key);
 
+const setConfig()
 const isValidFeatureKey = (key) => typeof key === "string" && featureValidKeys.includes(key);
 const isValidFeatureValueType = (value) => value === null || FEATURE_VALID_TYPES.includes(typeof value);
 
@@ -500,8 +494,6 @@ module.exports = {
     REFRESH_MESSAGE,
     _reset,
     _isInitialized,
-    _getConfig,
-    _setConfig,
     _getFeatureValues,
     _setFeatureValues,
     _getFeatureValuesChangeHandlers,

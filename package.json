@@ -10,7 +10,7 @@
     "lint": "npm run eslint && npm run prettier",
     "eslint": "eslint . --fix",
     "prettier": "prettier \"**/*.{js,json,md,yml,yaml}\" --write --loglevel error",
-    "test": "echo stub",
+    "test": "jest",
     "prepareRelease": "npm prune --production",
     "upgrade-lock": "npx shx rm -rf package-lock.json node_modules && npm i --package-lock=true"
   },
@@ -28,7 +28,9 @@
   "devDependencies": {
     "eslint": "^7.25.0",
     "eslint-config-prettier": "^8.3.0",
-    "prettier": "^2.2.1"
+    "eslint-plugin-jest": "^24.5.2",
+    "jest": "^27.2.5",
+    "prettier": "^2.4.1"
   },
   "dependencies": {
     "@sap/logging": "^6.0.3",
