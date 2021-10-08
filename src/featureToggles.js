@@ -215,7 +215,7 @@ const initializeFeatureToggles = async ({ configFilename, configPath, configRaw 
     featureValues = await redisWatchedGetSetObject(FEATURES_KEY, (oldValue) => {
       const [validatedOldValues, validationErrors] = validateInput(oldValue);
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-        logger.warn(
+        logger.warning(
           new VError(
             {
               name: VERROR_CLUSTER_NAME,
@@ -229,7 +229,7 @@ const initializeFeatureToggles = async ({ configFilename, configPath, configRaw 
     });
     registerMessageHandler(FEATURES_CHANNEL, _messageHandler);
   } catch (err) {
-    logger.warn(
+    logger.warning(
       isOnCF
         ? new VError(
             {
@@ -286,7 +286,7 @@ const _changeRemoteFeatureValuesCallbackFromInput = (validatedInput) => (oldValu
       if (validatedFallbackValue !== null) {
         validatedInput[key] = validatedFallbackValue;
       } else {
-        logger.warn(
+        logger.warning(
           new VError(
             {
               name: VERROR_CLUSTER_NAME,
@@ -316,7 +316,7 @@ const _changeRemoteFeatureValues = async (input) => {
     await redisWatchedGetSetObject(FEATURES_KEY, newValueCallback);
     await publishMessage(FEATURES_CHANNEL, REFRESH_MESSAGE);
   } catch (err) {
-    logger.warn(
+    logger.warning(
       isOnCF
         ? new VError(
             {

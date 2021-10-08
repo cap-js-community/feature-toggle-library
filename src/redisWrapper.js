@@ -39,7 +39,7 @@ const _logErrorOnEvent = (err, ...messages) =>
           ? new VError({ name: VERROR_CLUSTER_NAME, cause: err }, ...messages)
           : new VError({ name: VERROR_CLUSTER_NAME, cause: err })
       )
-    : logger.warn("error caught during event: %s", err.message);
+    : logger.warning("error caught during event: %s", err.message);
 
 const _onMessage = async (incomingChannel, message) => {
   if (!_hasMessageHandlers(incomingChannel)) {
