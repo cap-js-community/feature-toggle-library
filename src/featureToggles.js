@@ -24,6 +24,8 @@
 // TODO: initialize is more important and config should be passed in there...
 // need to get rid of configRaw, and featureValidKeys somehow and load config during init
 
+// TODO redis messageHandlers and featureValuesChangeHandlers could probably be abstracted into reuse code
+
 "use strict";
 
 const path = require("path");
