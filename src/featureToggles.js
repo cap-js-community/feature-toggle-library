@@ -50,38 +50,45 @@ const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
 const logger = Logger(COMPONENT_NAME);
 
-const _processConfigRaw = (configRaw) => {
-  const cfAppData = cfApp();
-  return Object.fromEntries(
-    Object.entries(configRaw).filter(([, value]) => {
-      if (!value.enabled) {
-        return false;
-      }
-      if (value.appUrl) {
-        const appUrlRegex = new RegExp(value.appUrl);
-        if (
-          Array.isArray(cfAppData.uris) &&
-          !cfAppData.uris.reduce((current, next) => current && appUrlRegex.test(next), true)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    })
-  );
-};
 let isInitialized = false;
-let config = {};
-let configCache = new LazyCache();
 let featureValues = {};
 let featureValuesChangeHandlers = {};
-let featureValidKeys = Object.keys(config);
+let config = {};
+let configKeys = [];
+let configCache = new LazyCache();
+
+const _setConfigFromBase = (configBase) => {
+  if (configBase) {
+    const cfAppData = cfApp();
+    config = Object.fromEntries(
+      Object.entries(configBase).filter(([, value]) => {
+        if (!value.enabled) {
+          return false;
+        }
+        if (value.appUrl) {
+          const appUrlRegex = new RegExp(value.appUrl);
+          if (
+            Array.isArray(cfAppData.uris) &&
+            !cfAppData.uris.reduce((current, next) => current && appUrlRegex.test(next), true)
+          ) {
+            return false;
+          }
+        }
+        return true;
+      })
+    );
+    configKeys = Object.keys(config);
+  }
+  return config;
+};
 
 const _reset = () => {
   isInitialized = false;
-  config = _processConfigRaw(configRaw);
   featureValues = {};
   featureValuesChangeHandlers = {};
+  config = {};
+  configKeys = [];
+  configCache = new LazyCache();
 };
 const _isInitialized = () => isInitialized;
 const _getFeatureValues = () => featureValues;
@@ -90,8 +97,7 @@ const _getFeatureValuesChangeHandlers = () => featureValuesChangeHandlers;
 const _setFeatureValuesChangeHandlers = (input) => (featureValuesChangeHandlers = input);
 const _hasChangeHandlers = (key) => Object.prototype.hasOwnProperty.call(featureValuesChangeHandlers, key);
 
-// TODO const setConfig()
-const isValidFeatureKey = (key) => typeof key === "string" && featureValidKeys.includes(key);
+const isValidFeatureKey = (key) => typeof key === "string" && configKeys.includes(key);
 const isValidFeatureValueType = (value) => value === null || FEATURE_VALID_TYPES.includes(typeof value);
 
 const _validateInputEntry = (key, value) => {
@@ -186,15 +192,34 @@ const _messageHandler = async (input) => {
 };
 
 /**
- * Call this during service loading to initialize the feature toggles.
+ * Call this to initialize the feature toggles. For example during service loading.
  */
-const initializeFeatureToggles = async ({ configFilename, configPath, configRaw } = {}) => {
+const initializeFeatureToggles = async ({ config: configInput, configFilepath = DEFAULT_CONFIG_FILEPATH } = {}) => {
   if (isInitialized) {
     return;
   }
-  isInitialized = true;
 
-  // TODO configRaw =
+  let cause;
+  try {
+    const configBase = configFilepath ? require(configFilepath) : configInput;
+    config = _setConfigFromBase(configBase);
+    isInitialized = true;
+  } catch (err) {
+    cause = err;
+  }
+  if (!isInitialized) {
+    logger.error(
+      new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          info: { configInput, configFilepath },
+          ...(cause && { cause }),
+        },
+        "initialization aborted, could not resolve configuration"
+      )
+    );
+    return;
+  }
 
   const featureValuesFallback = Object.fromEntries(
     Object.entries(config).map(([key, value]) => [key, value.fallbackValue])
@@ -236,9 +261,9 @@ const initializeFeatureToggles = async ({ configFilename, configPath, configRaw 
               name: VERROR_CLUSTER_NAME,
               cause: err,
             },
-            "error during feature toggles initialization, using fallback values"
+            "error during initialization, using fallback values"
           )
-        : "error during feature toggles initialization, using fallback values"
+        : "error during initialization, using fallback values"
     );
     featureValues = validatedFallback;
   }

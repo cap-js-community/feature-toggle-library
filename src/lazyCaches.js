@@ -59,8 +59,7 @@ class LazyCache {
   }
 }
 
-// TODO should replace helper/ExpiringCache
-// NOTE callback APIs need to return a pair [expirationTime, value]
+// NOTE: callback APIs need to return a pair [expirationTime, value]
 class ExpiringLazyCache extends LazyCache {
   constructor({ separator = DEFAULT_SEPARATOR, expiringGap = DEFAULT_EXPIRING_GAP } = {}) {
     super({ separator });
