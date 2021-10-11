@@ -21,9 +21,6 @@
  *
  */
 
-// TODO: initialize is more important and config should be passed in there...
-// need to get rid of configRaw, and featureValidKeys somehow and load config during init
-
 // TODO redis messageHandlers and featureValuesChangeHandlers could probably be abstracted into reuse code
 
 "use strict";
@@ -194,7 +191,12 @@ const _messageHandler = async (input) => {
 };
 
 /**
- * Call this to initialize the feature toggles. For example during service loading.
+ * Call this with
+ * - your configuration object or
+ * - local filepath to a json file with your configuration object (recommended)
+ * to initialize the feature toggles. For example during service loading.
+ *
+ * For syntax and details regarding the configuration object refer to README.md.
  */
 const initializeFeatureToggles = async ({ config: configInput, configFilepath = DEFAULT_CONFIG_FILEPATH } = {}) => {
   if (isInitialized) {
@@ -203,7 +205,7 @@ const initializeFeatureToggles = async ({ config: configInput, configFilepath = 
 
   let cause;
   try {
-    const configBase = configFilepath ? require(configFilepath) : configInput;
+    const configBase = configInput ? configInput : require(configFilepath);
     config = _setConfigFromBase(configBase);
     isInitialized = true;
   } catch (err) {
@@ -214,7 +216,7 @@ const initializeFeatureToggles = async ({ config: configInput, configFilepath = 
       new VError(
         {
           name: VERROR_CLUSTER_NAME,
-          info: { configInput, configFilepath },
+          info: { configInput: JSON.stringify(configInput), configFilepath },
           ...(cause && { cause }),
         },
         "initialization aborted, could not resolve configuration"
@@ -269,6 +271,9 @@ const initializeFeatureToggles = async ({ config: configInput, configFilepath = 
     );
     featureValues = validatedFallback;
   }
+
+  const featureCount = configKeys.length;
+  logger.info("finished intialization with %i feature toggle%s", featureCount, featureCount === 1 ? "" : "s");
 };
 
 /**
