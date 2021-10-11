@@ -21,6 +21,10 @@
  *
  */
 
+// TODO should registerFeatureValueChangeHandler log an error if it's called before initialization?
+
+// TODO logger integration looks odd on server
+
 // TODO redis messageHandlers and featureValuesChangeHandlers could probably be abstracted into reuse code
 
 "use strict";
