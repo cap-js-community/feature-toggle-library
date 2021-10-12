@@ -21,11 +21,9 @@
  *
  */
 
-// TODO should registerFeatureValueChangeHandler log an error if it's called before initialization?
-
-// TODO logger integration looks odd on server
-
 // TODO redis messageHandlers and featureValuesChangeHandlers could probably be abstracted into reuse code
+
+// TODO migrate tests
 
 "use strict";
 
@@ -465,7 +463,18 @@ const refreshFeatureValues = async () => {
  * @param handler signature (oldValue, newValue) => void
  */
 const registerFeatureValueChangeHandler = (key, handler) => {
-  if (!isInitialized || !isValidFeatureKey(key)) {
+  if (!isInitialized) {
+    logger.error(
+      new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+        },
+        "called registerFeatureValueChangeHandler before intialize"
+      )
+    );
+    return null;
+  }
+  if (!isValidFeatureKey(key)) {
     return null;
   }
   if (!_hasChangeHandlers(key)) {
