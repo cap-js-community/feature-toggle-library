@@ -21,8 +21,6 @@
  *
  */
 
-// TODO redis messageHandlers and featureValuesChangeHandlers could probably be abstracted into reuse code
-
 // TODO migrate tests
 
 "use strict";
