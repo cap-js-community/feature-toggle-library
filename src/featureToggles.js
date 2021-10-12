@@ -36,8 +36,9 @@ const {
   publishMessage,
 } = require("./redisWrapper");
 const { Logger } = require("./logger");
-const { isNull } = require("./helper");
 const { LazyCache } = require("./lazyCaches");
+const { HandlerCollection } = require("./handlerCollection");
+const { isNull } = require("./helper");
 const { isOnCF, cfApp } = require("./env");
 
 const FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";

@@ -2,10 +2,15 @@
 
 const featureToggles = require("./featureToggles");
 const redisWrapper = require("./redisWrapper");
-const lazyCaches = require("./lazyCaches");
+const { promiseAllDone } = require("./promiseAllDone");
+const { LazyCache, ExpiringLazyCache } = require("./lazyCaches");
+const { HandlerCollection } = require("./handlerCollection");
 
 module.exports = {
   ...featureToggles,
   redisWrapper,
-  lazyCaches,
+  promiseAllDone,
+  LazyCache,
+  ExpiringLazyCache,
+  HandlerCollection,
 };

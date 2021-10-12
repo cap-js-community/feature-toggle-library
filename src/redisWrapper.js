@@ -4,6 +4,7 @@ const redis = require("redis");
 const VError = require("verror");
 const { promisify } = require("util");
 const { Logger } = require("./logger");
+const { HandlerCollection } = require("./handlerCollection");
 const { isOnCF, cfServiceCredentials } = require("./env");
 
 const COMPONENT_NAME = "/RedisWrapper";
