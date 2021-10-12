@@ -1,3 +1,6 @@
+/**
+ * TODO overview jsdoc
+ */
 "use strict";
 
 const redis = require("redis");

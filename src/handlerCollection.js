@@ -2,6 +2,8 @@
 
 const { promiseAllDone } = require("./promiseAllDone");
 
+// TODO jsdocs
+
 class HandlerCollection {
   constructor() {
     this.__handlers = Object.create(null);

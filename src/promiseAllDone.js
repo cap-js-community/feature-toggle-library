@@ -1,5 +1,8 @@
 "use strict";
 
+/**
+ * TODO jsdoc
+ */
 async function promiseAllDone(iterable) {
   const results = await Promise.allSettled(iterable);
   const rejects = results.filter((entry) => {

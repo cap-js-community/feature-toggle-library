@@ -3,6 +3,8 @@
 const DEFAULT_SEPARATOR = "##";
 const DEFAULT_EXPIRING_GAP = 100;
 
+// TODO jsdocs
+
 class LazyCache {
   constructor({ separator = DEFAULT_SEPARATOR } = {}) {
     this.__data = Object.create(null);
