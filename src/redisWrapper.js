@@ -341,8 +341,6 @@ module.exports = {
     _setRedisIsOnCF,
     _getClient,
     _getSubscriberClient,
-    _getMessageHandlers,
-    _hasMessageHandlers,
     _onMessage,
     _createClientBase,
     _createClient,

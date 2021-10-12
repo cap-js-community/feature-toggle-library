@@ -39,6 +39,7 @@ const { Logger } = require("./logger");
 const { LazyCache } = require("./lazyCaches");
 const { HandlerCollection } = require("./handlerCollection");
 const { isNull } = require("./helper");
+const { promiseAllDone } = require("./promiseAllDone");
 const { isOnCF, cfApp } = require("./env");
 
 const FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
@@ -54,10 +55,10 @@ const logger = Logger(COMPONENT_NAME);
 
 let isInitialized = false;
 let featureValues = {};
-let featureValuesChangeHandlers = {};
 let config = {};
 let configKeys = [];
 let configCache = new LazyCache();
+let featureValuesChangeHandlers = new HandlerCollection();
 
 const _setConfigFromBase = (configBase) => {
   if (configBase) {
@@ -87,17 +88,14 @@ const _setConfigFromBase = (configBase) => {
 const _reset = () => {
   isInitialized = false;
   featureValues = {};
-  featureValuesChangeHandlers = {};
   config = {};
   configKeys = [];
   configCache = new LazyCache();
+  featureValuesChangeHandlers = new HandlerCollection();
 };
 const _isInitialized = () => isInitialized;
 const _getFeatureValues = () => featureValues;
 const _setFeatureValues = (input) => (featureValues = input);
-const _getFeatureValuesChangeHandlers = () => featureValuesChangeHandlers;
-const _setFeatureValuesChangeHandlers = (input) => (featureValuesChangeHandlers = input);
-const _hasChangeHandlers = (key) => Object.prototype.hasOwnProperty.call(featureValuesChangeHandlers, key);
 
 const isValidFeatureKey = (key) => typeof key === "string" && configKeys.includes(key);
 const isValidFeatureValueType = (value) => value === null || FEATURE_VALID_TYPES.includes(typeof value);
@@ -409,33 +407,27 @@ const changeFeatureValue = async (key, newValue) => _changeRemoteFeatureValues({
 const changeFeatureValues = async (input) => _changeRemoteFeatureValues(input);
 
 const _triggerChangeHandlers = async (newFeatureValues) =>
-  Promise.allDone(
+  promiseAllDone(
     Object.entries(featureValues).map(async ([key, value]) => {
       const newValue = newFeatureValues[key];
-      if (!_hasChangeHandlers(key) || newValue === value) {
+      if (newValue === value) {
         return;
       }
-      return Promise.allDone(
-        featureValuesChangeHandlers[key].map(async (handler) => {
-          try {
-            await handler(value, newValue);
-          } catch (err) {
-            logger.error(
-              new VError(
-                {
-                  name: VERROR_CLUSTER_NAME,
-                  cause: err,
-                  info: {
-                    handler: handler.name,
-                    key,
-                  },
-                },
-                "error during feature value change handler"
-              )
-            );
-          }
-        })
-      );
+      return featureValuesChangeHandlers.triggerHandlers(key, [value, newValue], (err, key, handler) => {
+        logger.error(
+          new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              cause: err,
+              info: {
+                handler: handler.name,
+                key,
+              },
+            },
+            "error during feature value change handler"
+          )
+        );
+      });
     })
   );
 
@@ -478,11 +470,7 @@ const registerFeatureValueChangeHandler = (key, handler) => {
   if (!isValidFeatureKey(key)) {
     return null;
   }
-  if (!_hasChangeHandlers(key)) {
-    featureValuesChangeHandlers[key] = [handler];
-  } else {
-    featureValuesChangeHandlers[key].push(handler);
-  }
+  featureValuesChangeHandlers.registerHandler(key, handler);
 };
 
 /**
@@ -495,14 +483,8 @@ const removeFeatureValueChangeHandler = (key, handler) => {
   if (!isInitialized || !isValidFeatureKey(key)) {
     return null;
   }
-  if (!_hasChangeHandlers(key)) {
-    return;
-  }
-  const index = featureValuesChangeHandlers[key].findIndex((messageHandler) => messageHandler === handler);
-  featureValuesChangeHandlers[key].splice(index, 1);
-  if (featureValuesChangeHandlers[key].length === 0) {
-    Reflect.deleteProperty(featureValuesChangeHandlers, key);
-  }
+
+  featureValuesChangeHandlers.removeHandler(key, handler);
 };
 
 /**
@@ -514,10 +496,7 @@ const removeAllFeatureValueChangeHandlers = (key) => {
   if (!isInitialized || !isValidFeatureKey(key)) {
     return null;
   }
-  if (!_hasChangeHandlers(key)) {
-    return;
-  }
-  Reflect.deleteProperty(featureValuesChangeHandlers, key);
+  featureValuesChangeHandlers.removeAllHandlers(key);
 };
 
 module.exports = {
@@ -542,8 +521,6 @@ module.exports = {
     _isInitialized,
     _getFeatureValues,
     _setFeatureValues,
-    _getFeatureValuesChangeHandlers,
-    _setFeatureValuesChangeHandlers,
     _messageHandler,
     _changeRemoteFeatureValues,
     _changeRemoteFeatureValuesCallbackFromInput,
