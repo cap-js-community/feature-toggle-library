@@ -25,17 +25,18 @@
     "node": ">=10.10.0",
     "npm": ">=6.0.0"
   },
-  "devDependencies": {
-    "eslint": "^7.25.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-jest": "^24.5.2",
-    "jest": "^27.2.5",
-    "prettier": "^2.4.1"
-  },
   "dependencies": {
     "@sap/logging": "^6.0.3",
     "@sap/xsenv": "^3.1.1",
+    "js-yaml": "^4.1.0",
     "redis": "^3.1.2",
     "verror": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-jest": "^25.0.5",
+    "jest": "^27.2.5",
+    "prettier": "^2.4.1"
   }
 }

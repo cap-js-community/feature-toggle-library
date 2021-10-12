@@ -23,10 +23,14 @@
 
 // TODO migrate tests
 
+// TODO set channel/key on initialize as well?
+
 "use strict";
 
 const path = require("path");
+const { readFile } = require("fs").promises;
 const VError = require("verror");
+const yaml = require("js-yaml");
 const {
   registerMessageHandler,
   getObject: redisGetObject,
@@ -43,7 +47,7 @@ const { isOnCF, cfApp } = require("./env");
 const FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
 const FEATURES_KEY = process.env.BTP_FEATURES_KEY || "features";
 const REFRESH_MESSAGE = "refresh";
-const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), "featureTogglesConfig.json");
+const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
 const COMPONENT_NAME = "/FeatureToggles";
@@ -192,7 +196,7 @@ const _messageHandler = async (input) => {
 /**
  * Call this with
  * - your configuration object or
- * - local filepath to a json file with your configuration object (recommended)
+ * - local filepath to a yaml file with your configuration object (recommended)
  * to initialize the feature toggles. For example during service loading.
  *
  * For syntax and details regarding the configuration object refer to README.md.
@@ -204,7 +208,7 @@ const initializeFeatureToggles = async ({ config: configInput, configFilepath = 
 
   let cause;
   try {
-    const configBase = configInput ? configInput : require(configFilepath);
+    const configBase = configInput ? configInput : yaml.load(await readFile(configFilepath));
     config = _setConfigFromBase(configBase);
     isInitialized = true;
   } catch (err) {
