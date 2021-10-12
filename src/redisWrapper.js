@@ -19,19 +19,17 @@ const MODE = Object.freeze({
 let redisIsOnCF = isOnCF;
 let client = null;
 let subscriberClient = null;
-let messageHandlers = {};
+let messageHandlers = new HandlerCollection();
 
 const _reset = () => {
   redisIsOnCF = isOnCF;
   client = null;
   subscriberClient = null;
-  messageHandlers = {};
+  messageHandlers = new HandlerCollection();
 };
 const _setRedisIsOnCF = (value) => (redisIsOnCF = value);
 const _getClient = () => client;
 const _getSubscriberClient = () => subscriberClient;
-const _getMessageHandlers = () => messageHandlers;
-const _hasMessageHandlers = (channel) => Object.prototype.hasOwnProperty.call(messageHandlers, channel);
 
 const _logErrorOnEvent = (err, ...messages) =>
   redisIsOnCF
@@ -43,22 +41,15 @@ const _logErrorOnEvent = (err, ...messages) =>
     : logger.warning("error caught during event: %s", err.message);
 
 const _onMessage = async (incomingChannel, message) => {
-  if (!_hasMessageHandlers(incomingChannel)) {
+  if (!messageHandlers.hasHandlers(incomingChannel)) {
     return;
   }
-  const handlers = messageHandlers[incomingChannel];
-  await Promise.all(
-    handlers.map(async (handler) => {
-      try {
-        await handler(message);
-      } catch (err) {
-        _logErrorOnEvent(err, "error during message handler %O", {
-          handler: handler.name,
-          channel: incomingChannel,
-        });
-      }
-    })
-  );
+  return messageHandlers.triggerHandlers(incomingChannel, [message], (err, channel, handler) => {
+    _logErrorOnEvent(err, "error during message handler %O", {
+      handler: handler.name,
+      channel,
+    });
+  });
 };
 
 /**
@@ -298,11 +289,9 @@ const registerMessageHandler = (channel, handler) => {
       throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create subscriber");
     }
   }
-  if (!_hasMessageHandlers(channel)) {
-    messageHandlers[channel] = [handler];
+  const count = messageHandlers.registerHandler(channel, handler);
+  if (count === 1) {
     subscriberClient.subscribe(channel);
-  } else {
-    messageHandlers[channel].push(handler);
   }
 };
 
@@ -313,13 +302,11 @@ const registerMessageHandler = (channel, handler) => {
  * @param handler to remove
  */
 const removeMessageHandler = (channel, handler) => {
-  if (!subscriberClient || !_hasMessageHandlers(channel)) {
+  if (!subscriberClient || !messageHandlers.hasHandlers(channel)) {
     return;
   }
-  const index = messageHandlers[channel].findIndex((messageHandler) => messageHandler === handler);
-  messageHandlers[channel].splice(index, 1);
-  if (messageHandlers[channel].length === 0) {
-    Reflect.deleteProperty(messageHandlers, channel);
+  const count = messageHandlers.removeHandler(channel, handler);
+  if (count === 0) {
     subscriberClient.unsubscribe(channel);
   }
 };
@@ -330,10 +317,10 @@ const removeMessageHandler = (channel, handler) => {
  * @param channel whose messages should not be processed
  */
 const removeAllMessageHandlers = (channel) => {
-  if (!subscriberClient || !_hasMessageHandlers(channel)) {
+  if (!subscriberClient || !messageHandlers.hasHandlers(channel)) {
     return;
   }
-  Reflect.deleteProperty(messageHandlers, channel);
+  messageHandlers.removeAllHandlers(channel);
   subscriberClient.unsubscribe(channel);
 };
 

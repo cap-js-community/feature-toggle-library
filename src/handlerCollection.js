@@ -9,46 +9,50 @@ class HandlerCollection {
   _handlers() {
     return this.__handlers;
   }
-  hasHandlers(id) {
-    return Object.prototype.hasOwnProperty.call(this.__handlers, id);
+  hasHandlers(key) {
+    return Object.prototype.hasOwnProperty.call(this.__handlers, key);
   }
-  registerHandler(id, handler) {
-    if (!this.hasHandlers(id)) {
-      this.__handlers[id] = [handler];
+  registerHandler(key, handler) {
+    if (!this.hasHandlers(key)) {
+      this.__handlers[key] = [handler];
     } else {
-      this.__handlers[id].push(handler);
+      this.__handlers[key].push(handler);
     }
-    return this.__handlers[id].length;
+    return this.__handlers[key].length;
   }
-  removeHandler(id, handerInput) {
-    if (!this.hasHandlers(id)) {
+  removeHandler(key, handerInput) {
+    if (!this.hasHandlers(key)) {
       return 0;
     }
-    const index = this.__handlers[id].findIndex((handler) => handler === handerInput);
-    this.__handlers[id].splice(index, 1);
-    if (this.__handlers[id].length === 0) {
-      Reflect.deleteProperty(this.__handlers, id);
+    const index = this.__handlers[key].findIndex((handler) => handler === handerInput);
+    this.__handlers[key].splice(index, 1);
+    if (this.__handlers[key].length === 0) {
+      Reflect.deleteProperty(this.__handlers, key);
       return 0;
     } else {
-      return this.__handlers[id].length;
+      return this.__handlers[key].length;
     }
   }
-  removeAllHandlers(id) {
-    if (this.hasHandlers(id)) {
-      Reflect.deleteProperty(this.__handlers, id);
+  removeAllHandlers(key) {
+    if (this.hasHandlers(key)) {
+      Reflect.deleteProperty(this.__handlers, key);
     }
     return 0;
   }
-  async triggerHandlers(id, args, cbError) {
-    if (!this.hasHandlers(id)) {
+
+  /**
+   *
+   */
+  async triggerHandlers(key, args, cbError) {
+    if (!this.hasHandlers(key)) {
       return;
     }
     await promiseAllDone(
-      this.__handlers[id].map(async (handler) => {
+      this.__handlers[key].map(async (handler) => {
         try {
           await handler(...args);
         } catch (err) {
-          cbError(err, id, handler.name);
+          cbError(err, key, handler);
         }
       })
     );
