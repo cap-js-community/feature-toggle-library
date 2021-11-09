@@ -34,8 +34,6 @@ jest.mock("../src/env", () => ({
   cfServiceCredentials: jest.fn(),
 }));
 
-jest.mock("../src/handlerCollection", () => require("./__mocks__/handlerCollectionSpy"));
-
 describe("redis wrapper test", () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -260,7 +258,6 @@ describe("redis wrapper test", () => {
 
   // TODO should trust HandlerCollection coding when the tests for that are done
   it("registerMessageHandler", async () => {
-    redisWrapper._.__messageHandlers.removeAllHandlers(channel);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     const subscriber = redisWrapper._._getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
@@ -268,7 +265,7 @@ describe("redis wrapper test", () => {
     expect(subscriber.on).toHaveBeenCalledTimes(2);
     expect(subscriber.on).toHaveBeenNthCalledWith(1, "error", expect.any(Function));
     expect(subscriber.on).toHaveBeenNthCalledWith(2, "message", redisWrapper._._onMessage);
-    expect(redisWrapper._.__messageHandlers._handlers()).toEqual({
+    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
       [channel]: [mockMessageHandler],
     });
     expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
@@ -278,7 +275,7 @@ describe("redis wrapper test", () => {
     await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
 
-    expect(redisWrapper._.__messageHandlers._handlers()).toEqual({
+    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
       [channel]: [mockMessageHandler, mockMessageHandlerTwo],
     });
 
@@ -291,23 +288,23 @@ describe("redis wrapper test", () => {
 
   // TODO should trust HandlerCollection coding when the tests for that are done
   it("removeMessageHandler", async () => {
-    redisWrapper._.__messageHandlers.removeAllHandlers(channel);
+    redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     await redisWrapper.registerMessageHandler(channelTwo, mockMessageHandlerTwo);
     const subscriber = redisWrapper._._getSubscriberClient();
 
     await redisWrapper.removeMessageHandler(channel, mockMessageHandler);
-    expect(redisWrapper._.__messageHandlers.hasHandlers(channel)).toBe(true);
-    expect(redisWrapper._.__messageHandlers._handlers()).toEqual({
+    expect(redisWrapper._._getMessageHandlers().hasHandlers(channel)).toBe(true);
+    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
       [channel]: [mockMessageHandlerTwo],
       [channelTwo]: [mockMessageHandlerTwo],
     });
     expect(subscriber.unsubscribe).not.toHaveBeenCalled();
 
     await redisWrapper.removeMessageHandler(channel, mockMessageHandlerTwo);
-    expect(redisWrapper._.__messageHandlers.hasHandlers(channel)).toBe(false);
-    expect(redisWrapper._.__messageHandlers._handlers()).toEqual({
+    expect(redisWrapper._._getMessageHandlers().hasHandlers(channel)).toBe(false);
+    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
       [channelTwo]: [mockMessageHandlerTwo],
     });
     expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
@@ -316,14 +313,14 @@ describe("redis wrapper test", () => {
 
   // TODO should trust HandlerCollection coding when the tests for that are done
   it("removeAllMessageHandlers", async () => {
-    redisWrapper._.__messageHandlers.removeAllHandlers(channel);
+    redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     await redisWrapper.registerMessageHandler(channelTwo, mockMessageHandlerTwo);
     const subscriber = redisWrapper._._getSubscriberClient();
 
     await redisWrapper.removeAllMessageHandlers(channel);
-    expect(redisWrapper._.__messageHandlers._handlers()).toEqual({
+    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
       [channelTwo]: [mockMessageHandlerTwo],
     });
     expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
