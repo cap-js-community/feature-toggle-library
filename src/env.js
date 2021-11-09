@@ -16,9 +16,18 @@ const cfServiceCrentials = xsenv.cfServiceCredentials;
 const cfApp = () => {
   if (!cfAppCache) {
     try {
-      cfAppCache = Object.prototype.hasOwnProperty.call(process.env, CF_APP_ENV) ? JSON.parse(process.env[CF_APP_ENV]) : {};
+      cfAppCache = Object.prototype.hasOwnProperty.call(process.env, CF_APP_ENV)
+        ? JSON.parse(process.env[CF_APP_ENV])
+        : {};
     } catch (err) {
-      throw new VError(err, "environment variable %s is not valid JSON", CF_APP_ENV);
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+        },
+        "environment variable %s is not valid JSON",
+        CF_APP_ENV
+      );
     }
   }
   return cfAppCache;
@@ -28,5 +37,5 @@ module.exports = {
   isLocal,
   isOnCF,
   cfServiceCrentials,
-  cfApp
+  cfApp,
 };

@@ -4,7 +4,6 @@ const { promisify } = require("util");
 const { DEFAULT_EXPIRING_GAP, LazyCache, ExpiringLazyCache } = require("../src/lazyCaches");
 
 const sleep = promisify(setTimeout);
-let lazyCache = null;
 
 describe("lazyCaches", () => {
   describe("LazyCache", () => {

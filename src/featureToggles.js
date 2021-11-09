@@ -299,8 +299,9 @@ class FeatureToggles {
       return;
     }
 
+    let configBase;
     try {
-      const configBase = configBaseInput ? configBaseInput : await readConfigFromFilepath(configFilepath);
+      configBase = configBaseInput ? configBaseInput : await readConfigFromFilepath(configFilepath);
       this.__config = FeatureToggles._processConfigBase(configBase);
       this.__configKeys = Object.keys(this.__config);
     } catch (err) {
@@ -308,8 +309,12 @@ class FeatureToggles {
         new VError(
           {
             name: VERROR_CLUSTER_NAME,
-            info: { config: JSON.stringify(configBase) },
-            err,
+            cause: err,
+            info: {
+              configFilepath,
+              ...(configBaseInput && { configBaseInput: JSON.stringify(configBaseInput) }),
+              ...(configBase && { configBase: JSON.stringify(configBase) }),
+            },
           },
           "initializtion aborted, could not resolve configuration"
         )

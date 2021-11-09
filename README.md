@@ -40,9 +40,9 @@ The semantics of the properties are:
 
 - enabled: if this is false, the corresponding feature toggle gets ignored
 - appUrl: optional regex for activating _only_ for matching appUrls
-    - for CANARY landscape `"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
-    - for EU10 landscape `"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
-    - for DEV space `"dev-afc-backend\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
+  - for CANARY landscape `"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
+  - for EU10 landscape `"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
+  - for DEV space `"dev-afc-backend\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
 - info: a terse informational text for the developers using the toggle
 - fallbackValue: this value gets set initially when the featue toggle is introduced, and it is also used as a fallback
   when communication with redis is blocked during startup

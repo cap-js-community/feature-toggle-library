@@ -1,5 +1,7 @@
 "use strict";
 
+const VError = require("verror");
+
 /**
  * TODO jsdoc
  */
@@ -11,7 +13,7 @@ async function promiseAllDone(iterable) {
   if (rejects.length === 1) {
     return Promise.reject(rejects[0].reason);
   } else if (rejects.length > 1) {
-    return Promise.reject(new vError.MultiError(rejects.map((reject) => reject.reason)));
+    return Promise.reject(new VError.MultiError(rejects.map((reject) => reject.reason)));
   }
   return results.map((entry) => {
     return entry.value;
