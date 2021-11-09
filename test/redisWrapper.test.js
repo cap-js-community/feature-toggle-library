@@ -141,7 +141,7 @@ describe("redis wrapper test", () => {
     mockClient.get.mockImplementationOnce((key, callback) => callback(null, oldValue));
     mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, ["OK"]));
     const newValue = "newValue";
-    const newValueCallback = jest.fn((oldValue) => newValue);
+    const newValueCallback = jest.fn(() => newValue);
     const result = await redisWrapper.watchedGetSet("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
@@ -162,7 +162,7 @@ describe("redis wrapper test", () => {
     mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue)));
     mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, ["OK"]));
     const newValue = { newValue: "newValue" };
-    const newValueCallback = jest.fn((oldValue) => newValue);
+    const newValueCallback = jest.fn(() => newValue);
     const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
@@ -183,7 +183,7 @@ describe("redis wrapper test", () => {
     mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue)));
     mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, [1]));
     const newValue = null;
-    const newValueCallback = jest.fn((oldValue) => newValue);
+    const newValueCallback = jest.fn(() => newValue);
     const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
