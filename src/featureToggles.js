@@ -23,7 +23,6 @@
 "use strict";
 
 // TODO migrate tests
-// TODO throw for public functions if the class instance is not initalized
 
 const path = require("path");
 const { readFile } = require("fs").promises;
@@ -207,16 +206,21 @@ class FeatureToggles {
     );
   }
 
+  _ensureInitialized() {
+    if (this.__isInitialized) {
+      return;
+    }
+    throw new VError(
+      { name: VERROR_CLUSTER_NAME },
+      "feature toggles API called, but class instance is not initialized"
+    );
+  }
+
   /**
    * Refresh local feature values from redis.
    */
   async refreshFeatureValues() {
-    if (!this.__isInitialized) {
-      throw new VError(
-        { name: VERROR_CLUSTER_NAME },
-        "refreshFeatureValues called, but class instance is not initialized"
-      );
-    }
+    this._ensureInitialized();
     try {
       const newFeatureValues = await redisGetObject(this.__featuresKey);
       if (!newFeatureValues) {
@@ -384,6 +388,7 @@ class FeatureToggles {
    * @returns {string|number|boolean|null}
    */
   getFeatureValue(key) {
+    this._ensureInitialized();
     return Object.prototype.hasOwnProperty.call(this.__featureValues, key) ? this.__featureValues[key] : null;
   }
 
@@ -393,6 +398,7 @@ class FeatureToggles {
    * @returns {*}
    */
   getFeatureValues() {
+    this._ensureInitialized();
     return { ...this.__featureValues };
   }
 
@@ -495,6 +501,7 @@ class FeatureToggles {
    * @returns {Promise<Array<ValidationError> | void>}
    */
   async changeFeatureValue(key, newValue) {
+    this._ensureInitialized();
     return this._changeRemoteFeatureValues({ [key]: newValue });
   }
 
@@ -515,6 +522,7 @@ class FeatureToggles {
    * @returns {Promise<Array<ValidationError> | void>}
    */
   async changeFeatureValues(input) {
+    this._ensureInitialized();
     return this._changeRemoteFeatureValues(input);
   }
 
@@ -533,17 +541,7 @@ class FeatureToggles {
    * @param handler signature (oldValue, newValue) => void
    */
   registerFeatureValueChangeHandler(key, handler) {
-    if (!this.__isInitialized) {
-      logger.error(
-        new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-          },
-          "called registerFeatureValueChangeHandler before intialize"
-        )
-      );
-      return null;
-    }
+    this._ensureInitialized();
     if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
       return null;
     }
@@ -557,7 +555,8 @@ class FeatureToggles {
    * @param handler
    */
   removeFeatureValueChangeHandler(key, handler) {
-    if (!this.__isInitialized || !FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
+    this._ensureInitialized();
+    if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
       return null;
     }
 
@@ -570,7 +569,8 @@ class FeatureToggles {
    * @param key
    */
   removeAllFeatureValueChangeHandlers(key) {
-    if (!this.__isInitialized || !FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
+    this._ensureInitialized();
+    if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
       return null;
     }
     this.__featureValuesChangeHandlers.removeAllHandlers(key);
