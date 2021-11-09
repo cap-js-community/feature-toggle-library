@@ -9,7 +9,7 @@ module.exports = {
     return Object.fromEntries(
       Object.getOwnPropertyNames(HandlerCollection.prototype)
         .filter((member) => member !== "constructor")
-        .map((member) => [member, jest.fn((...args) => instance[member].bind(instance)(...args))])
+        .map((member) => [member, jest.fn((...args) => HandlerCollection.prototype[member].apply(instance, args))])
     );
   }),
 };
