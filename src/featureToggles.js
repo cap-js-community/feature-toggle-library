@@ -23,6 +23,7 @@
 "use strict";
 
 // TODO migrate tests
+// TODO throw for public functions if the class instance is not initalized
 
 const path = require("path");
 const { readFile } = require("fs").promises;
@@ -210,6 +211,12 @@ class FeatureToggles {
    * Refresh local feature values from redis.
    */
   async refreshFeatureValues() {
+    if (!this.__isInitialized) {
+      throw new VError(
+        { name: VERROR_CLUSTER_NAME },
+        "refreshFeatureValues called, but class instance is not initialized"
+      );
+    }
     try {
       const newFeatureValues = await redisGetObject(this.__featuresKey);
       if (!newFeatureValues) {
@@ -336,7 +343,7 @@ class FeatureToggles {
         }
         return { ...validatedFallback, ...validatedOldValues };
       });
-      registerMessageHandler(this.__featuresChannel, this._messageHandler);
+      registerMessageHandler(this.__featuresChannel, this._messageHandler.bind(this));
     } catch (err) {
       logger.warning(
         isOnCF
