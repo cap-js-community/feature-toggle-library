@@ -340,6 +340,7 @@ module.exports = {
   removeAllMessageHandlers,
 
   _: {
+    __messageHandlers: messageHandlers,
     _reset,
     _setRedisIsOnCF,
     _getClient,

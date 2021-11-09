@@ -3,6 +3,7 @@
 const { promiseAllDone } = require("./promiseAllDone");
 
 // TODO jsdocs
+// TODO test
 
 class HandlerCollection {
   constructor() {
@@ -42,9 +43,6 @@ class HandlerCollection {
     return 0;
   }
 
-  /**
-   *
-   */
   async triggerHandlers(key, args, cbError) {
     if (!this.hasHandlers(key)) {
       return;
