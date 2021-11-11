@@ -22,7 +22,7 @@
  */
 "use strict";
 
-const promisify = require("util");
+const { promisify } = require("util");
 const path = require("path");
 const { readFile } = require("fs");
 const VError = require("verror");
