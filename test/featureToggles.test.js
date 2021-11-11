@@ -1,6 +1,7 @@
 "use strict";
 
-const { FeatureToggles, _ } = require("../src/featureToggles");
+const featureTogglesModule = require("../src/featureToggles");
+const { FeatureToggles } = featureTogglesModule;
 
 const redisWrapper = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => ({
@@ -64,7 +65,7 @@ const refreshMessage = "refresh-message";
 describe("feature toggles test", () => {
   beforeEach(() => {
     featureToggles = new FeatureToggles({ featuresKey, featuresChannel, refreshMessage });
-    errorLoggerSpy = jest.spyOn(_._getLogger(), "error");
+    errorLoggerSpy = jest.spyOn(featureTogglesModule._._getLogger(), "error");
   });
 
   afterEach(() => {
