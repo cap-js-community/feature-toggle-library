@@ -22,8 +22,6 @@
  */
 "use strict";
 
-// TODO migrate tests
-
 const path = require("path");
 const { readFile } = require("fs").promises;
 const VError = require("verror");
