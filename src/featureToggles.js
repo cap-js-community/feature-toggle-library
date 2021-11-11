@@ -22,8 +22,9 @@
  */
 "use strict";
 
+const promisify = require("util");
 const path = require("path");
-const { readFile } = require("fs").promises;
+const { readFile } = require("fs");
 const VError = require("verror");
 const yaml = require("js-yaml");
 const {
@@ -48,11 +49,12 @@ const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
+const readFileAsync = promisify(readFile);
 const logger = Logger(COMPONENT_NAME);
 
 const readConfigFromFilepath = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
   if (/\.ya?ml$/i.test(configFilepath)) {
-    return yaml.load(await readFile(configFilepath));
+    return yaml.load(await readFileAsync(configFilepath));
   }
   if (/\.json$/i.test(configFilepath)) {
     return require(configFilepath);
