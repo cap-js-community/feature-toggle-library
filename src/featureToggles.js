@@ -588,4 +588,8 @@ class FeatureToggles {
 module.exports = {
   FeatureToggles,
   readConfigFromFilepath,
+
+  _: {
+    _getLogger: () => logger,
+  },
 };
