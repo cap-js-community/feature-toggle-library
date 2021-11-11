@@ -51,6 +51,9 @@ const mockConfig = {
     validation: "^(?:best|worst)$",
   },
 };
+const mockFeatureValues = Object.fromEntries(
+  Object.entries(mockConfig).map(([key, { fallbackValue }]) => [key, fallbackValue])
+);
 
 let featureToggles = null;
 const featuresKey = "feature-key";
@@ -112,9 +115,6 @@ describe("feature toggles test", () => {
   it("validateInput", async () => {
     await featureToggles.initializeFeatureValues({ config: mockConfig });
 
-    const allValidKeys = Object.fromEntries(
-      Object.entries(featureToggles.__config).map(([key, { fallbackValue }]) => [key, fallbackValue])
-    );
     const inputOutputPairs = [
       [undefined, null],
       [null, null],
@@ -122,7 +122,7 @@ describe("feature toggles test", () => {
       [() => {}, null],
       [[], null],
       [{}, null],
-      [allValidKeys, allValidKeys],
+      [mockFeatureValues, mockFeatureValues],
     ];
     const inputOutputValidationTuples = [
       [
@@ -240,38 +240,41 @@ describe("feature toggles test", () => {
   });
 
   it("changeFeatureValue", async () => {
-    redisWrapper.publishMessage.mockImplementationOnce((channel, message) => featureToggles._._messageHandler(message));
+    await featureToggles.initializeFeatureValues({ config: mockConfig });
+    redisWrapper.watchedGetSetObject.mockClear();
+
+    redisWrapper.publishMessage.mockImplementationOnce((channel, message) => featureToggles.__messageHandler(message));
     const validationErrors = await featureToggles.changeFeatureValue(FEATURE_C, "newa");
     expect(validationErrors).toBeUndefined();
     expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledWith(featureToggles._.FEATURES_KEY, expect.any(Function));
+    expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledWith(featuresKey, expect.any(Function));
     expect(redisWrapper.publishMessage).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.publishMessage).toHaveBeenCalledWith(
-      featureToggles._.FEATURES_CHANNEL,
-      featureToggles._.REFRESH_MESSAGE
-    );
+    expect(redisWrapper.publishMessage).toHaveBeenCalledWith(featuresChannel, refreshMessage);
     expect(redisWrapper.getObject).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.getObject).toHaveBeenCalledWith(featureToggles._.FEATURES_KEY);
+    expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
   });
 
   it("changeFeatureValues", async () => {
-    redisWrapper.publishMessage.mockImplementationOnce((channel, message) => featureToggles._._messageHandler(message));
+    await featureToggles.initializeFeatureValues({ config: mockConfig });
+    redisWrapper.watchedGetSetObject.mockClear();
+
+    redisWrapper.publishMessage.mockImplementationOnce((channel, message) => featureToggles.__messageHandler(message));
     const input = { [FEATURE_A]: null, [FEATURE_C]: "b" };
     const validationErrors = await featureToggles.changeFeatureValues(input);
     expect(validationErrors).toBeUndefined();
     expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledWith(featureToggles._.FEATURES_KEY, expect.any(Function));
+    expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledWith(featuresKey, expect.any(Function));
     expect(redisWrapper.publishMessage).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.publishMessage).toHaveBeenCalledWith(
-      featureToggles._.FEATURES_CHANNEL,
-      featureToggles._.REFRESH_MESSAGE
-    );
+    expect(redisWrapper.publishMessage).toHaveBeenCalledWith(featuresChannel, refreshMessage);
     expect(redisWrapper.getObject).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.getObject).toHaveBeenCalledWith(featureToggles._.FEATURES_KEY);
+    expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
   });
 
   it("changeFeatureValues failing", async () => {
-    redisWrapper.publishMessage.mockImplementationOnce((channel, message) => featureToggles._._messageHandler(message));
+    await featureToggles.initializeFeatureValues({ config: mockConfig });
+    redisWrapper.watchedGetSetObject.mockClear();
+
+    redisWrapper.publishMessage.mockImplementationOnce((channel, message) => featureToggles.__messageHandler(message));
     const validInput = { [FEATURE_A]: null, [FEATURE_B]: "b" };
     const validationErrorsInvalidKey = await featureToggles.changeFeatureValues({ ...validInput, invalid: 1 });
     expect(validationErrorsInvalidKey).toMatchInlineSnapshot(`
@@ -300,10 +303,13 @@ describe("feature toggles test", () => {
   });
 
   it("refreshFeatureValues", async () => {
+    redisWrapper.watchedGetSetObject.mockImplementationOnce(() => mockFeatureValues);
+    await featureToggles.initializeFeatureValues({ config: mockConfig });
     redisWrapper.getObject.mockImplementationOnce(() => "getObjectReturn");
+
     await featureToggles.refreshFeatureValues();
     expect(redisWrapper.getObject).toHaveBeenCalledTimes(1);
-    expect(redisWrapper.getObject).toHaveBeenCalledWith(featureToggles._.FEATURES_KEY);
-    expect(featureToggles._._getFeatureValues()).toBe("getObjectReturn");
+    expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
+    expect(featureToggles.__featureValues).toBe("getObjectReturn");
   });
 });
