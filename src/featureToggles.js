@@ -280,6 +280,7 @@ class FeatureToggles {
 
     this.__configCache = new LazyCache();
     this.__featureValuesChangeHandlers = new HandlerCollection();
+    this.__messageHandler = this._messageHandler.bind(this); // needed for testing
 
     this.__config = null;
     this.__configKeys = null;
@@ -352,7 +353,7 @@ class FeatureToggles {
         }
         return { ...validatedFallback, ...validatedOldValues };
       });
-      registerMessageHandler(this.__featuresChannel, this._messageHandler.bind(this));
+      registerMessageHandler(this.__featuresChannel, this.__messageHandler);
     } catch (err) {
       logger.warning(
         isOnCF
