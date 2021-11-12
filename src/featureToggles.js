@@ -22,6 +22,8 @@
  */
 "use strict";
 
+// TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages
+
 const { promisify } = require("util");
 const path = require("path");
 const { readFile } = require("fs");
