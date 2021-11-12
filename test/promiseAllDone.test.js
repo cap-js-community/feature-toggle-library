@@ -6,6 +6,7 @@ const { promiseAllDone } = require("../src/promiseAllDone");
 describe("promiseAllDone", () => {
   it("second reject is caught", async () => {
     let secondErrorStillRunning = true;
+    let didThrow = false;
     try {
       // NOTE with Promise.all this will fail
       await promiseAllDone([
@@ -20,7 +21,9 @@ describe("promiseAllDone", () => {
         })(),
       ]);
     } catch (err) {
-      expect(secondErrorStillRunning).toBe(false);
+      didThrow = true;
     }
+    expect(didThrow).toBe(true);
+    expect(secondErrorStillRunning).toBe(false);
   });
 });

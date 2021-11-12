@@ -16,8 +16,6 @@ describe("HandlerCollection", () => {
     jest.clearAllMocks();
   });
 
-  it("hasHandlers", () => {});
-
   it("hasHandlers/registerHandler/removeHandler", () => {
     expect(handlerCollection.hasHandlers(key)).toBe(false);
 
@@ -98,5 +96,6 @@ describe("HandlerCollection", () => {
 
   it("triggerHandlers", async () => {
     // TODO
+    expect(true).toBe(true);
   });
 });
