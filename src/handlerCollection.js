@@ -3,7 +3,6 @@
 const { promiseAllDone } = require("./promiseAllDone");
 
 // TODO jsdocs
-// TODO test
 
 class HandlerCollection {
   constructor() {
