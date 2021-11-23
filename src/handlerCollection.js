@@ -27,13 +27,14 @@ class HandlerCollection {
       return 0;
     }
     const index = this.__handlers[key].findIndex((handler) => handler === handerInput);
-    this.__handlers[key].splice(index, 1);
+    if (index !== -1) {
+      this.__handlers[key].splice(index, 1);
+    }
     if (this.__handlers[key].length === 0) {
       Reflect.deleteProperty(this.__handlers, key);
       return 0;
-    } else {
-      return this.__handlers[key].length;
     }
+    return this.__handlers[key].length;
   }
   removeAllHandlers(key) {
     if (this.hasHandlers(key)) {
