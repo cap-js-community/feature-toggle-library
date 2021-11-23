@@ -3,7 +3,11 @@
 const VError = require("verror");
 
 /**
- * TODO jsdoc
+ * The regular Promise.all() cannot do proper error-handling. It will reject as soon as the first of the passed in
+ * promises rejects. Any subsequent rejects are unhandled expections.
+ *
+ * With promiseAllDone you can mitigate that behavior. It will wait for all passed promises to complete and collect any
+ * number of occuring errors in a single VError.MultiError.
  */
 async function promiseAllDone(iterable) {
   const results = await Promise.allSettled(iterable);
