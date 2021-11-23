@@ -256,7 +256,6 @@ describe("redis wrapper test", () => {
     expect(result).toBe("publishreturn");
   });
 
-  // TODO should trust HandlerCollection coding when the tests for that are done
   it("registerMessageHandler", async () => {
     await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     const subscriber = redisWrapper._._getSubscriberClient();
@@ -265,19 +264,12 @@ describe("redis wrapper test", () => {
     expect(subscriber.on).toHaveBeenCalledTimes(2);
     expect(subscriber.on).toHaveBeenNthCalledWith(1, "error", expect.any(Function));
     expect(subscriber.on).toHaveBeenNthCalledWith(2, "message", redisWrapper._._onMessage);
-    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
-      [channel]: [mockMessageHandler],
-    });
     expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
     expect(subscriber.subscribe).toHaveBeenCalledWith(channel);
     expect(mockClient.publish).not.toHaveBeenCalled();
 
     await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
-
-    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
-      [channel]: [mockMessageHandler, mockMessageHandlerTwo],
-    });
 
     await redisWrapper._._onMessage(channel, message);
     expect(mockMessageHandler).toHaveBeenCalledTimes(1);
@@ -286,7 +278,6 @@ describe("redis wrapper test", () => {
     expect(mockMessageHandlerTwo).toHaveBeenCalledWith(message);
   });
 
-  // TODO should trust HandlerCollection coding when the tests for that are done
   it("removeMessageHandler", async () => {
     redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
@@ -295,23 +286,13 @@ describe("redis wrapper test", () => {
     const subscriber = redisWrapper._._getSubscriberClient();
 
     await redisWrapper.removeMessageHandler(channel, mockMessageHandler);
-    expect(redisWrapper._._getMessageHandlers().hasHandlers(channel)).toBe(true);
-    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
-      [channel]: [mockMessageHandlerTwo],
-      [channelTwo]: [mockMessageHandlerTwo],
-    });
     expect(subscriber.unsubscribe).not.toHaveBeenCalled();
 
     await redisWrapper.removeMessageHandler(channel, mockMessageHandlerTwo);
-    expect(redisWrapper._._getMessageHandlers().hasHandlers(channel)).toBe(false);
-    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
-      [channelTwo]: [mockMessageHandlerTwo],
-    });
     expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscriber.unsubscribe).toHaveBeenCalledWith(channel);
   });
 
-  // TODO should trust HandlerCollection coding when the tests for that are done
   it("removeAllMessageHandlers", async () => {
     redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
     await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
@@ -320,9 +301,6 @@ describe("redis wrapper test", () => {
     const subscriber = redisWrapper._._getSubscriberClient();
 
     await redisWrapper.removeAllMessageHandlers(channel);
-    expect(redisWrapper._._getMessageHandlers()._handlers()).toEqual({
-      [channelTwo]: [mockMessageHandlerTwo],
-    });
     expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscriber.unsubscribe).toHaveBeenCalledWith(channel);
   });
