@@ -144,4 +144,44 @@ describe("HandlerCollection", () => {
     expect(otherErrorHandler).toHaveBeenCalledTimes(1);
     expect(otherErrorHandler).toHaveBeenNthCalledWith(1, otherError, otherKey, otherTestHandler);
   });
+
+  it("duplicate registerHandler/removeHandler/triggerHandlers", async () => {
+    const args = ["arg1"];
+    const errorHandler = jest.fn();
+    const error = new Error("error");
+
+    count = handlerCollection.registerHandler(key, testHandler);
+    count = handlerCollection.registerHandler(key, otherTestHandler);
+    count = handlerCollection.registerHandler(key, testHandler);
+    expect(count).toBe(3);
+
+    await handlerCollection.triggerHandlers(key, args, errorHandler);
+    expect(testHandler).toHaveBeenCalledTimes(2);
+    expect(testHandler).toHaveBeenNthCalledWith(1, ...args);
+    expect(testHandler).toHaveBeenNthCalledWith(2, ...args);
+    expect(otherTestHandler).toHaveBeenCalledTimes(1);
+    expect(otherTestHandler).toHaveBeenNthCalledWith(1, ...args);
+    expect(errorHandler).toHaveBeenCalledTimes(0);
+
+    testHandler.mockClear();
+    otherTestHandler.mockClear();
+    testHandler.mockImplementationOnce(() => {
+      throw error;
+    });
+    testHandler.mockImplementationOnce(() => {
+      throw error;
+    });
+    await handlerCollection.triggerHandlers(key, args, errorHandler);
+    expect(testHandler).toHaveBeenCalledTimes(2);
+    expect(testHandler).toHaveBeenNthCalledWith(1, ...args);
+    expect(testHandler).toHaveBeenNthCalledWith(2, ...args);
+    expect(otherTestHandler).toHaveBeenCalledTimes(1);
+    expect(otherTestHandler).toHaveBeenNthCalledWith(1, ...args);
+    expect(errorHandler).toHaveBeenCalledTimes(2);
+    expect(errorHandler).toHaveBeenNthCalledWith(1, error, key, testHandler);
+    expect(errorHandler).toHaveBeenNthCalledWith(2, error, key, testHandler);
+
+    count = handlerCollection.removeHandler(key, testHandler);
+    expect(count).toBe(1);
+  });
 });
