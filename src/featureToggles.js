@@ -24,6 +24,11 @@
 
 // TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages
 
+// TODO we had an interesting case regarding appUrl filters:
+//  while running code in excluded appUrls, should getFeatureToggles return
+//  (a) null <= current implementation reflecting that the toggle does not exist
+//  (b) the fallback value <= could be more intuitive, but also misleading/harder to catch
+
 const { promisify } = require("util");
 const path = require("path");
 const { readFile } = require("fs");
@@ -167,19 +172,24 @@ class FeatureToggles {
     if (isNull(input) || typeof input !== "object") {
       return [null, validationErrors];
     }
-    const resultEntries = [];
-    for (const [key, value] of Object.entries(input)) {
+
+    let isEmpty = true;
+    const result = Object.entries(input).reduce((acc, [key, value]) => {
       const validationError = this._validateInputEntry(key, value);
       if (validationError) {
         validationErrors.push(validationError);
       } else {
-        resultEntries.push([key, value]);
+        isEmpty = false;
+        acc[key] = value;
       }
-    }
-    if (resultEntries.length === 0) {
+      return acc;
+    }, {});
+
+    if (isEmpty) {
       return [null, validationErrors];
     }
-    return [Object.fromEntries(resultEntries), validationErrors];
+
+    return [result, validationErrors];
   }
 
   async _triggerChangeHandlers(newFeatureValues) {
