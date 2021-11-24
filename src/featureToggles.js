@@ -22,6 +22,8 @@
  */
 "use strict";
 
+// TODO register external validation
+
 // TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages
 
 // TODO we had an interesting case regarding appUrl filters:
