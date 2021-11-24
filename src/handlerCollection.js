@@ -79,14 +79,22 @@ class HandlerCollection {
   }
 
   /**
+   * @callback errorCallback function to handle cases where handlers throw an error
+   * @param {Error} err
+   * @param {string} key
+   * @param {function} handler
+   */
+  /**
    * Use triggerHandlers trigger all handlers with given args with a callback for error handling.
    *
    * @param {string} key identifier for the handler list
    * @param {Array} args args to pass to all handlers
-   * @param {function} errorHandler(err, key, handler) function to handle cases where handlers throw an error
+   * @param {errorCallback} errorHandler function to handle cases where handlers throw an error
    * @returns {Array} array of individual handler results, or errorHandler results for those cases where handlers failed
    */
-  // TODO should we register handlers and errorhandlers in tandem?
+  // NOTE: For all current usecases, errorHandler could also be passed as part of registerHandler. We keep it here,
+  //   since triggerHandlers could have more relevant runtime information than registerHandler, but this might change
+  //   with future use cases.
   async triggerHandlers(key, args, errorHandler) {
     if (!this.hasHandlers(key)) {
       return;
