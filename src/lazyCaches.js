@@ -1,7 +1,6 @@
 "use strict";
 
 const DEFAULT_SEPARATOR = "##";
-const DEFAULT_EXPIRING_GAP = 100;
 
 // TODO jsdocs
 
@@ -61,59 +60,7 @@ class LazyCache {
   }
 }
 
-// NOTE: callback APIs need to return a pair [expirationTime, value]
-class ExpiringLazyCache extends LazyCache {
-  constructor({ separator = DEFAULT_SEPARATOR, expiringGap = DEFAULT_EXPIRING_GAP } = {}) {
-    super({ separator });
-    this.__expiringGap = expiringGap;
-  }
-  _expiringGap() {
-    return this.__expiringGap;
-  }
-  _isValid(expirationTime, currentTime) {
-    return expirationTime && (currentTime ?? Date.now()) <= expirationTime + this.__expiringGap;
-  }
-  has(keyOrKeys, currentTime) {
-    if (!super.has(keyOrKeys)) {
-      return false;
-    }
-    const [expirationTime] = super.get(keyOrKeys) ?? [];
-    return this._isValid(expirationTime, currentTime);
-  }
-  get(keyOrKeys, currentTime) {
-    const [expirationTime, value] = super.get(keyOrKeys) ?? [];
-    return this._isValid(expirationTime, currentTime) ? value : null;
-  }
-  set(keyOrKeys, expirationTime, value) {
-    return super.set(keyOrKeys, [expirationTime, value]);
-  }
-  setCb(keyOrKeys, callback, ...args) {
-    const [expirationTime, value] = callback(...args);
-    return this.set(keyOrKeys, expirationTime, value);
-  }
-  async setCbAsync(keyOrKeys, callback, ...args) {
-    const [expirationTime, value] = await callback(...args);
-    return this.set(keyOrKeys, expirationTime, value);
-  }
-  getSetCb(keyOrKeys, currentTime, callback, ...args) {
-    const key = this._key(keyOrKeys);
-    if (!this.has(key, currentTime)) {
-      this.setCb(key, callback, ...args);
-    }
-    return this.get(key, currentTime);
-  }
-  async getSetCbAsync(keyOrKeys, currentTime, callback, ...args) {
-    const key = this._key(keyOrKeys);
-    if (!this.has(key, currentTime)) {
-      await this.setCbAsync(key, callback, ...args);
-    }
-    return this.get(key, currentTime);
-  }
-}
-
 module.exports = {
-  DEFAULT_EXPIRING_GAP,
   DEFAULT_SEPARATOR,
   LazyCache,
-  ExpiringLazyCache,
 };

@@ -1,9 +1,6 @@
 "use strict";
 
-const { promisify } = require("util");
-const { DEFAULT_EXPIRING_GAP, LazyCache, ExpiringLazyCache } = require("../src/lazyCaches");
-
-const sleep = promisify(setTimeout);
+const { LazyCache } = require("../src/lazyCaches");
 
 describe("lazyCaches", () => {
   describe("LazyCache", () => {
@@ -108,83 +105,6 @@ describe("lazyCaches", () => {
 
       lazyCache.clear();
       expect(lazyCache.count()).toBe(0);
-    });
-  });
-
-  describe("ExpiringLazyCache", () => {
-    it("custom expiringGap", async () => {
-      const customExpiringGap = 50;
-      const expiringLazyCache = new ExpiringLazyCache({ expiringGap: customExpiringGap });
-      const [key, value] = ["a", "a"];
-      const now = Date.now();
-      expiringLazyCache.set(key, now + 20, value);
-      expect(expiringLazyCache.get(key)).toBe(value);
-      await sleep(20);
-      expect(expiringLazyCache.get(key)).toBe(value);
-      await sleep(customExpiringGap);
-      expect(expiringLazyCache.get(key)).toBe(null);
-    });
-
-    it("has/get/set/setCb/setCbAsync", async () => {
-      const expiringLazyCache = new ExpiringLazyCache();
-      const testTime = 1500;
-      const expiringTime = Date.now() + testTime;
-      expiringLazyCache.set("", expiringTime, "empty");
-      expiringLazyCache.set("a", expiringTime, "a");
-      expiringLazyCache.set("b", expiringTime, "b");
-      expiringLazyCache.set("c", expiringTime, "c");
-      expiringLazyCache.set(["a", "b"], expiringTime, "ab");
-      expiringLazyCache.set(["a", "b", "c"], expiringTime, "abc");
-      expiringLazyCache.setCb("a with cb", () => [expiringTime, "a with cb"]);
-      expiringLazyCache.setCb("b with cb", (b) => [expiringTime, b], "b with cb");
-      expiringLazyCache.setCb("c with cb", (b, c) => [expiringTime, b + c], "c", " with cb");
-      await expiringLazyCache.setCbAsync("a with cbA", async () => [expiringTime, "a with cbA"]);
-      await expiringLazyCache.setCbAsync("b with cbA", async (b) => [expiringTime, b], "b with cbA");
-      await expiringLazyCache.setCbAsync("c with cbA", async (b, c) => [expiringTime, b + c], "c", " with cbA");
-
-      expect(expiringLazyCache.set("d", expiringTime, "d")).toBe(expiringLazyCache);
-
-      expect(expiringLazyCache.has("a")).toBe(true);
-      expect(expiringLazyCache.has(["a"])).toBe(true);
-      expect(expiringLazyCache.has("z")).toBe(false);
-      expect(expiringLazyCache.has(["z"])).toBe(false);
-
-      expect(expiringLazyCache.get("")).toBe("empty");
-      expect(expiringLazyCache.get([])).toBe("empty");
-      expect(expiringLazyCache.get("a")).toBe("a");
-      expect(expiringLazyCache.get("b")).toBe("b");
-      expect(expiringLazyCache.get("c")).toBe("c");
-      expect(expiringLazyCache.get(["a", "b"])).toBe("ab");
-      expect(expiringLazyCache.get(["a", "b", "c"])).toBe("abc");
-
-      expect(expiringLazyCache.get("a with cb")).toBe("a with cb");
-      expect(expiringLazyCache.get("b with cb")).toBe("b with cb");
-      expect(expiringLazyCache.get("c with cb")).toBe("c with cb");
-      expect(expiringLazyCache.get("a with cbA")).toBe("a with cbA");
-      expect(expiringLazyCache.get("b with cbA")).toBe("b with cbA");
-      expect(expiringLazyCache.get("c with cbA")).toBe("c with cbA");
-
-      await sleep(testTime + DEFAULT_EXPIRING_GAP);
-
-      expect(expiringLazyCache.has("a")).toBe(false);
-      expect(expiringLazyCache.has(["a"])).toBe(false);
-      expect(expiringLazyCache.has("z")).toBe(false);
-      expect(expiringLazyCache.has(["z"])).toBe(false);
-
-      expect(expiringLazyCache.get("")).toBe(null);
-      expect(expiringLazyCache.get([])).toBe(null);
-      expect(expiringLazyCache.get("a")).toBe(null);
-      expect(expiringLazyCache.get("b")).toBe(null);
-      expect(expiringLazyCache.get("c")).toBe(null);
-      expect(expiringLazyCache.get(["a", "b"])).toBe(null);
-      expect(expiringLazyCache.get(["a", "b", "c"])).toBe(null);
-
-      expect(expiringLazyCache.get("a with cb")).toBe(null);
-      expect(expiringLazyCache.get("b with cb")).toBe(null);
-      expect(expiringLazyCache.get("c with cb")).toBe(null);
-      expect(expiringLazyCache.get("a with cbA")).toBe(null);
-      expect(expiringLazyCache.get("b with cbA")).toBe(null);
-      expect(expiringLazyCache.get("c with cbA")).toBe(null);
     });
   });
 });

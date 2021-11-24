@@ -4,7 +4,7 @@ const { FeatureToggles, readConfigFromFilepath } = require("./featureToggles");
 const singleton = require("./singleton");
 const redisWrapper = require("./redisWrapper");
 const { promiseAllDone } = require("./promiseAllDone");
-const { LazyCache, ExpiringLazyCache } = require("./lazyCaches");
+const { LazyCache } = require("./lazyCaches");
 const { HandlerCollection } = require("./handlerCollection");
 
 module.exports = {
@@ -14,6 +14,5 @@ module.exports = {
   redisWrapper,
   promiseAllDone,
   LazyCache,
-  ExpiringLazyCache,
   HandlerCollection,
 };
