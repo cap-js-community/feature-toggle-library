@@ -11,7 +11,7 @@ const isOnCF = !isLocal;
 
 let cfAppCache = null;
 
-const cfServiceCrentials = xsenv.cfServiceCredentials;
+const cfServiceCredentials = xsenv.cfServiceCredentials;
 
 const cfApp = () => {
   if (!cfAppCache) {
@@ -36,6 +36,6 @@ const cfApp = () => {
 module.exports = {
   isLocal,
   isOnCF,
-  cfServiceCrentials,
+  cfServiceCredentials,
   cfApp,
 };
