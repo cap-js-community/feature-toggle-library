@@ -43,16 +43,22 @@ const _logErrorOnEvent = (err, ...messages) =>
       )
     : logger.warning("error caught during event: %s", err.message);
 
-const _onMessage = async (incomingChannel, message) => {
-  if (!messageHandlers.hasHandlers(incomingChannel)) {
-    return;
-  }
-  return messageHandlers.triggerHandlers(incomingChannel, [message], (err, channel, handler) => {
-    _logErrorOnEvent(err, "error during message handler %O", {
-      handler: handler.name,
-      channel,
-    });
-  });
+const _onMessage = async (channel, message) => {
+  const handlers = messageHandlers.getHandlers(channel);
+  return handlers.length === 0
+    ? null
+    : await Promise.all(
+        handlers.map(async (handler) => {
+          try {
+            return await handler(message);
+          } catch (err) {
+            _logErrorOnEvent(err, "error during message handler %O", {
+              handler: handler.name || "anonymous",
+              channel,
+            });
+          }
+        })
+      );
 };
 
 /**
@@ -341,6 +347,7 @@ module.exports = {
 
   _: {
     _getMessageHandlers: () => messageHandlers,
+    _getLogger: () => logger,
     _reset,
     _setRedisIsOnCF,
     _getClient,

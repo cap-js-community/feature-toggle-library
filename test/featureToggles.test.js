@@ -61,7 +61,7 @@ let loggerSpy = {
   info: jest.spyOn(featureTogglesModule._._getLogger(), "info"),
   error: jest.spyOn(featureTogglesModule._._getLogger(), "error"),
 };
-// loggerSpy.info
+
 const featuresKey = "feature-key";
 const featuresChannel = "feature-channel";
 const refreshMessage = "refresh-message";
@@ -112,7 +112,7 @@ describe("feature toggles test", () => {
       [FEATURE_C]: "c",
     };
     const changeObject = { [FEATURE_A]: "new_a", [FEATURE_B]: null };
-    const result = featureToggles._changeRemoteFeatureValuesCallbackFromInput(changeObject)(oldFeatureValues);
+    const result = await featureToggles._changeRemoteFeatureValuesCallbackFromInput(changeObject)(oldFeatureValues);
     expect(result).toStrictEqual({
       [FEATURE_A]: "new_a",
       [FEATURE_B]: 1,
@@ -189,6 +189,7 @@ describe("feature toggles test", () => {
       expect(result).toStrictEqual(output);
       expect(validationErrors).toStrictEqual(expectedValidationErrors);
     }
+    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
   });
 
   it("isValidFeatureValueType", async () => {
@@ -292,19 +293,10 @@ describe("feature toggles test", () => {
     await featureToggles.initializeFeatureValues({ config: mockConfig });
     redisWrapper.watchedGetSetObject.mockClear();
 
-    const validInput = { [FEATURE_A]: null, [FEATURE_B]: "b" };
+    const validInput = { [FEATURE_A]: null, [FEATURE_B]: 1 };
     const validationErrorsInvalidKey = await featureToggles.changeFeatureValues({ ...validInput, invalid: 1 });
     expect(validationErrorsInvalidKey).toMatchInlineSnapshot(`
       Array [
-        Object {
-          "errorMessage": "value \\"{0}\\" has invalid type {1}, must be {2}",
-          "errorMessageValues": Array [
-            "b",
-            "string",
-            "number",
-          ],
-          "key": "test/feature_b",
-        },
         Object {
           "errorMessage": "key \\"{0}\\" is not valid",
           "errorMessageValues": Array [
@@ -330,5 +322,96 @@ describe("feature toggles test", () => {
     expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
     expect(featureToggles.__featureValues).toBe("getObjectReturn");
     expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+  });
+
+  it("external validation", async () => {
+    let validationErrors;
+    const newValue = "newValue";
+    await featureToggles.initializeFeatureValues({ config: mockConfig });
+
+    const validator = jest.fn();
+    featureToggles.registerFeatureValueValidation(FEATURE_C, validator);
+
+    // other toggle
+    validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 100 });
+    expect(validationErrors).toMatchInlineSnapshot(`undefined`);
+    expect(validator).toHaveBeenCalledTimes(0);
+
+    // right toggle
+    validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 101, [FEATURE_C]: newValue });
+    expect(validationErrors).toMatchInlineSnapshot(`undefined`);
+    expect(validator).toHaveBeenCalledTimes(1);
+    expect(validator).toHaveBeenCalledWith(newValue);
+
+    // right toggle but failing
+    validator.mockClear();
+    const mockErrorMessage = "wrong input";
+    validator.mockResolvedValueOnce([mockErrorMessage]);
+    validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 102, [FEATURE_C]: newValue });
+    expect(validationErrors).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "errorMessage": "wrong input",
+          "errorMessageValues": Array [],
+          "key": "test/feature_c",
+        },
+      ]
+    `);
+    expect(validator).toHaveBeenCalledTimes(1);
+    expect(validator).toHaveBeenCalledWith(newValue);
+
+    // right toggle but failing with messageValues
+    validator.mockClear();
+    const mockErrorMessageWithValues = "wrong input {0} {1}";
+    const mockErrorMessagValues = ["value1", 2];
+    validator.mockResolvedValueOnce([mockErrorMessageWithValues, mockErrorMessagValues]);
+    validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 102, [FEATURE_C]: newValue });
+    expect(validationErrors).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "errorMessage": "wrong input {0} {1}",
+          "errorMessageValues": Array [
+            "value1",
+            2,
+          ],
+          "key": "test/feature_c",
+        },
+      ]
+    `);
+    expect(validator).toHaveBeenCalledTimes(1);
+    expect(validator).toHaveBeenCalledWith(newValue);
+
+    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+  });
+
+  it("validateInput throws error", async () => {
+    const error = new Error("bad validator");
+    const validator = jest.fn().mockRejectedValue(error);
+
+    await featureToggles.initializeFeatureValues({ config: mockConfig });
+
+    featureToggles.registerFeatureValueValidation(FEATURE_B, validator);
+
+    const validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 100 });
+    expect(validationErrors).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "errorMessage": "registered validator \\"{0}\\" failed for value \\"{1}\\" with error {2}",
+          "errorMessageValues": Array [
+            "mockConstructor",
+            100,
+            "bad validator",
+          ],
+          "key": "test/feature_b",
+        },
+      ]
+    `);
+
+    expect(loggerSpy.error).toHaveBeenCalledTimes(1);
+    expect(loggerSpy.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jse_cause: error,
+      })
+    );
   });
 });

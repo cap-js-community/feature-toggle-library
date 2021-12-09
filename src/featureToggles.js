@@ -22,7 +22,7 @@
  */
 "use strict";
 
-// TODO register external validation
+// TODO locale for validation messages
 
 // TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages
 
@@ -46,7 +46,6 @@ const { Logger } = require("./logger");
 const { LazyCache } = require("./lazyCaches");
 const { HandlerCollection } = require("./handlerCollection");
 const { isNull } = require("./helper");
-const { promiseAllDone } = require("./promiseAllDone");
 const { isOnCF, cfApp } = require("./env");
 
 const DEFAULT_FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
@@ -120,7 +119,7 @@ class FeatureToggles {
   }
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  _validateInputEntry(key, value) {
+  async _validateInputEntry(key, value) {
     if (this.__config === null || this.__configKeys === null) {
       return { errorMessage: "not initialized" };
     }
@@ -128,35 +127,71 @@ class FeatureToggles {
       return { key, errorMessage: 'key "{0}" is not valid', errorMessageValues: [key] };
     }
     // NOTE: value === null is our way of encoding key resetting changes, so it is always allowed
-    if (value !== null) {
-      const valueType = typeof value;
-      if (!FeatureToggles._isValidFeatureValueType(value)) {
-        return {
-          key,
-          errorMessage: 'value "{0}" has invalid type {1}, must be in {2}',
-          errorMessageValues: [value, valueType, FEATURE_VALID_TYPES],
-        };
-      }
+    if (value === null) {
+      return;
+    }
 
-      const { type: targetType, validation } = this.__config[key];
-      if (targetType && valueType !== targetType) {
-        return {
-          key,
-          errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
-          errorMessageValues: [value, valueType, targetType],
-        };
-      }
+    const valueType = typeof value;
+    if (!FeatureToggles._isValidFeatureValueType(value)) {
+      return {
+        key,
+        errorMessage: 'value "{0}" has invalid type {1}, must be in {2}',
+        errorMessageValues: [value, valueType, FEATURE_VALID_TYPES],
+      };
+    }
 
-      const validationRegExp = this.__configCache.getSetCb(
-        [key, "validationRegExp"],
-        ({ validation }) => (validation ? new RegExp(validation) : null),
-        this.__config[key]
-      );
-      if (validationRegExp && !validationRegExp.test(value)) {
+    const { type: targetType, validation } = this.__config[key];
+    if (targetType && valueType !== targetType) {
+      return {
+        key,
+        errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
+        errorMessageValues: [value, valueType, targetType],
+      };
+    }
+
+    const validationRegExp = this.__configCache.getSetCb(
+      [key, "validationRegExp"],
+      ({ validation }) => (validation ? new RegExp(validation) : null),
+      this.__config[key]
+    );
+    if (validationRegExp && !validationRegExp.test(value)) {
+      return {
+        key,
+        errorMessage: 'value "{0}" does not match validation regular expression {1}',
+        errorMessageValues: [value, validation],
+      };
+    }
+
+    for (const validator of this.__featureValueValidators.getHandlers(key)) {
+      const validatorName = validator.name || "anonymous";
+      try {
+        const [errorMessage, errorMessageValues] = (await validator(value)) || [];
+        if (errorMessage) {
+          return {
+            key,
+            errorMessage,
+            errorMessageValues: errorMessageValues || [],
+          };
+        }
+      } catch (err) {
+        logger.error(
+          new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              cause: err,
+              info: {
+                validator: validatorName,
+                key,
+                value,
+              },
+            },
+            "error during registered validator"
+          )
+        );
         return {
           key,
-          errorMessage: 'value "{0}" does not match validation regular expression {1}',
-          errorMessageValues: [value, validation],
+          errorMessage: 'registered validator "{0}" failed for value "{1}" with error {2}',
+          errorMessageValues: [validatorName, value, err.message],
         };
       }
     }
@@ -169,23 +204,23 @@ class FeatureToggles {
    * @param input
    * @returns [{null|*}, Array<ValidationError>]
    */
-  validateInput(input) {
+  async validateInput(input) {
     const validationErrors = [];
     if (isNull(input) || typeof input !== "object") {
       return [null, validationErrors];
     }
 
     let isEmpty = true;
-    const result = Object.entries(input).reduce((acc, [key, value]) => {
-      const validationError = this._validateInputEntry(key, value);
+    const result = {};
+    for (const [key, value] of Object.entries(input)) {
+      const validationError = await this._validateInputEntry(key, value);
       if (validationError) {
         validationErrors.push(validationError);
       } else {
         isEmpty = false;
-        acc[key] = value;
+        result[key] = value;
       }
-      return acc;
-    }, {});
+    }
 
     if (isEmpty) {
       return [null, validationErrors];
@@ -195,29 +230,38 @@ class FeatureToggles {
   }
 
   async _triggerChangeHandlers(newFeatureValues) {
-    return promiseAllDone(
-      Object.entries(this.__featureValues).map(async ([key, value]) => {
-        const newValue = newFeatureValues[key];
-        if (newValue === value) {
-          return;
-        }
-        return this.__featureValuesChangeHandlers.triggerHandlers(key, [value, newValue], (err, key, handler) => {
-          logger.error(
-            new VError(
-              {
-                name: VERROR_CLUSTER_NAME,
-                cause: err,
-                info: {
-                  handler: handler.name,
-                  key,
-                },
-              },
-              "error during feature value change handler"
-            )
-          );
-        });
-      })
-    );
+    const featureValueEntries = Object.entries(this.__featureValues);
+    return featureValueEntries.length === 0
+      ? null
+      : await Promise.all(
+          featureValueEntries.map(async ([key, value]) => {
+            const newValue = newFeatureValues[key];
+            const handlers = this.__featureValueChangeHandlers.getHandlers(key);
+            return newValue === value || handlers.length === 0
+              ? null
+              : await Promise.all(
+                  handlers.map(async (handler) => {
+                    try {
+                      return await handler(key, value);
+                    } catch (err) {
+                      logger.error(
+                        new VError(
+                          {
+                            name: VERROR_CLUSTER_NAME,
+                            cause: err,
+                            info: {
+                              handler: handler.name || "anonymous",
+                              key,
+                            },
+                          },
+                          "error during feature value change handler"
+                        )
+                      );
+                    }
+                  })
+                );
+          })
+        );
   }
 
   _ensureInitialized() {
@@ -293,7 +337,8 @@ class FeatureToggles {
     this.__refreshMessage = refreshMessage;
 
     this.__configCache = new LazyCache();
-    this.__featureValuesChangeHandlers = new HandlerCollection();
+    this.__featureValueChangeHandlers = new HandlerCollection();
+    this.__featureValueValidators = new HandlerCollection();
     this.__messageHandler = this._messageHandler.bind(this); // needed for testing
 
     this.__config = null;
@@ -339,7 +384,7 @@ class FeatureToggles {
     const featureValuesFallback = Object.fromEntries(
       Object.entries(this.__config).map(([key, value]) => [key, value.fallbackValue])
     );
-    const [validatedFallback, validationErrors] = this.validateInput(featureValuesFallback);
+    const [validatedFallback, validationErrors] = await this.validateInput(featureValuesFallback);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       logger.error(
         new VError(
@@ -352,8 +397,8 @@ class FeatureToggles {
       );
     }
     try {
-      this.__featureValues = await redisWatchedGetSetObject(this.__featuresKey, (oldValue) => {
-        const [validatedOldValues, validationErrors] = this.validateInput(oldValue);
+      this.__featureValues = await redisWatchedGetSetObject(this.__featuresKey, async (oldValue) => {
+        const [validatedOldValues, validationErrors] = await this.validateInput(oldValue);
         if (Array.isArray(validationErrors) && validationErrors.length > 0) {
           logger.warning(
             new VError(
@@ -430,7 +475,7 @@ class FeatureToggles {
   // ========================================
 
   _changeRemoteFeatureValuesCallbackFromInput(validatedInput) {
-    return (oldValue) => {
+    return async (oldValue) => {
       if (oldValue === null) {
         return null;
       }
@@ -438,13 +483,13 @@ class FeatureToggles {
       // If the fallback value is invalid no change is triggered.
       for (const [key, value] of Object.entries(validatedInput)) {
         if (value === null) {
-          const [validatedFallbackValue, validationError] = this.__configCache.getSetCb(
+          const [validatedFallbackValue, validationError] = await this.__configCache.getSetCbAsync(
             [key, "validatedFallbackValue"],
-            ({ fallbackValue }) => {
+            async ({ fallbackValue }) => {
               if (isNull(fallbackValue)) {
                 return [null];
               }
-              const validationError = this._validateInputEntry(key, fallbackValue);
+              const validationError = await this._validateInputEntry(key, fallbackValue);
               return validationError ? [null, validationError] : [fallbackValue];
             },
             this.__config[key]
@@ -471,7 +516,7 @@ class FeatureToggles {
   }
 
   async _changeRemoteFeatureValues(input) {
-    const [validatedInput, validationErrors] = this.validateInput(input);
+    const [validatedInput, validationErrors] = await this.validateInput(input);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
     }
@@ -561,11 +606,7 @@ class FeatureToggles {
    * @param handler signature (oldValue, newValue) => void
    */
   registerFeatureValueChangeHandler(key, handler) {
-    this._ensureInitialized();
-    if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
-      return null;
-    }
-    this.__featureValuesChangeHandlers.registerHandler(key, handler);
+    this.__featureValueChangeHandlers.registerHandler(key, handler);
   }
 
   /**
@@ -575,12 +616,7 @@ class FeatureToggles {
    * @param handler
    */
   removeFeatureValueChangeHandler(key, handler) {
-    this._ensureInitialized();
-    if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
-      return null;
-    }
-
-    this.__featureValuesChangeHandlers.removeHandler(key, handler);
+    this.__featureValueChangeHandlers.removeHandler(key, handler);
   }
 
   /**
@@ -589,15 +625,70 @@ class FeatureToggles {
    * @param key
    */
   removeAllFeatureValueChangeHandlers(key) {
-    this._ensureInitialized();
-    if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
-      return null;
-    }
-    this.__featureValuesChangeHandlers.removeAllHandlers(key);
+    this.__featureValueChangeHandlers.removeAllHandlers(key);
   }
 
   // ========================================
   // END OF FEATURE_VALUE_CHANGE_HANDLER SECTION
+  // ========================================
+  // ========================================
+  // START OF FEATURE_VALUE_EXTERNAL_VALIDATION SECTION
+  // ========================================
+
+  /**
+   * @callback validator
+   *
+   * The validator gets the new value and can do any number of checks on it. Returning anything falsy, like undefined,
+   * means the new value passes validation, otherwise the validator must return an array with a user-readable
+   * errorMessage. The errorMessage can use parameters, i.e., "errorMessageValues", which are ignored for localization,
+   * but mixed in for the errorMessage presented to the user.
+   *
+   * @param {boolean | number | string} newValue
+   * @returns {undefined | Array<string>} in case of failure an array [errorMessage, errorMessageValues] otherwise undefined
+   */
+  /**
+   * Register a validator for given feature value key. If you register a validator _before_ initialization, it will
+   * be executed during initialization, otherwise it will only run for new values coming in after initialization.
+   * Errors happening during validation execution will be logged and communicated to user as generic problem.
+   *
+   * usage:
+   * registerFeatureValueValidation(key, (newValue) => {
+   *   if (isBad(newValue)) {
+   *     return ["got bad value"];
+   *   }
+   *   if (isWorse(newValue)) {
+   *     return ["got bad value with parameter {0}", [paramFromValue(value)]];
+   *   }
+   * });
+   *
+   * @param key
+   * @param validator
+   */
+  registerFeatureValueValidation(key, validator) {
+    this.__featureValueValidators.registerHandler(key, validator);
+  }
+
+  /**
+   * Stop given validation for a given feature value key.
+   *
+   * @param key
+   * @param validator
+   */
+  removeFeatureValueValidation(key, validator) {
+    this.__featureValueValidators.removeHandler(key, validator);
+  }
+
+  /**
+   * Stop all validation for a given feature value key.
+   *
+   * @param key
+   */
+  removeAllFeatureValueValidation(key) {
+    this.__featureValueValidators.removeAllHandlers(key);
+  }
+
+  // ========================================
+  // END OF FEATURE_VALUE_EXTERNAL_VALIDATION SECTION
   // ========================================
 }
 
