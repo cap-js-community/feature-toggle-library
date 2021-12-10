@@ -167,7 +167,7 @@ class FeatureToggles {
     for (const validator of this.__featureValueValidators.getHandlers(key)) {
       const validatorName = validator.name || "anonymous";
       try {
-        const [errorMessage, errorMessageValues] = (await validator(value)) || [];
+        const { errorMessage, errorMessageValues } = (await validator(value)) || {};
         if (errorMessage) {
           return {
             key,
@@ -200,11 +200,25 @@ class FeatureToggles {
   }
 
   /**
-   * Will return a pair [result, validationErrors], where validationErrors is a list of { key, errorMessage } objects
+   * @typedef ValidationError
+   * ValidationError must have a user-readable errorMessage. The message can use errorMessageValues, i.e., parameters
+   * which are ignored for localization, but mixed in when the errorMessage is presented to the user.
+   *
+   * Example:
+   *   { errorMessage: "got bad value" },
+   *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
+   *
+   * @type object
+   * @property {string} key feature toggle
+   * @property {string} errorMessage user-readable error message
+   * @property {Array<string>} [errorMessageValues] optional parameters for error message, which are irgnored for localization
+   */
+  /**
+   * Will return a pair [result, validationErrors], where validationErrors is a list of ValidationError objects
    * and result are all inputs that passed validated or null for illegal/empty input.
    *
    * @param input
-   * @returns [{null|*}, Array<ValidationError>]
+   * @returns {[null|*, Array<ValidationError>]}
    */
   async validateInput(input) {
     const validationErrors = [];
@@ -641,12 +655,10 @@ class FeatureToggles {
    * @callback validator
    *
    * The validator gets the new value and can do any number of checks on it. Returning anything falsy, like undefined,
-   * means the new value passes validation, otherwise the validator must return an array with a user-readable
-   * errorMessage. The errorMessage can use parameters, i.e., "errorMessageValues", which are ignored for localization,
-   * but mixed in for the errorMessage presented to the user.
+   * means the new value passes validation, otherwise the validator must return a {@link ValidationError}.
    *
    * @param {boolean | number | string} newValue
-   * @returns {undefined | Array<string>} in case of failure an array [errorMessage, errorMessageValues] otherwise undefined
+   * @returns {undefined | ValidationError} in case of failure a ValidationError otherwise undefined
    */
   /**
    * Register a validator for given feature value key. If you register a validator _before_ initialization, it will
@@ -656,10 +668,10 @@ class FeatureToggles {
    * usage:
    * registerFeatureValueValidation(key, (newValue) => {
    *   if (isBad(newValue)) {
-   *     return ["got bad value"];
+   *     return { errorMessage: "got bad value" };
    *   }
    *   if (isWorse(newValue)) {
-   *     return ["got bad value with parameter {0}", [paramFromValue(value)]];
+   *     return { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] };
    *   }
    * });
    *

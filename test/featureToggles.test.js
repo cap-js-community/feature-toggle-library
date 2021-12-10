@@ -346,7 +346,7 @@ describe("feature toggles test", () => {
     // right toggle but failing
     validator.mockClear();
     const mockErrorMessage = "wrong input";
-    validator.mockResolvedValueOnce([mockErrorMessage]);
+    validator.mockResolvedValueOnce({ errorMessage: mockErrorMessage });
     validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 102, [FEATURE_C]: newValue });
     expect(validationErrors).toMatchInlineSnapshot(`
       Array [
@@ -364,7 +364,10 @@ describe("feature toggles test", () => {
     validator.mockClear();
     const mockErrorMessageWithValues = "wrong input {0} {1}";
     const mockErrorMessagValues = ["value1", 2];
-    validator.mockResolvedValueOnce([mockErrorMessageWithValues, mockErrorMessagValues]);
+    validator.mockResolvedValueOnce({
+      errorMessage: mockErrorMessageWithValues,
+      errorMessageValues: mockErrorMessagValues,
+    });
     validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 102, [FEATURE_C]: newValue });
     expect(validationErrors).toMatchInlineSnapshot(`
       Array [
