@@ -1,6 +1,6 @@
 {
   "name": "@sap/btp-feature-toggles",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "btp feature toggles via redis service",
   "main": "src/index.js",
   "files": [
@@ -26,11 +26,11 @@
     "verror": "^1.10.1"
   },
   "devDependencies": {
-    "eslint": "^8.2.0",
+    "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-jest": "^25.2.4",
-    "jest": "^27.3.1",
-    "prettier": "^2.4.1"
+    "eslint-plugin-jest": "^25.3.0",
+    "jest": "^27.4.3",
+    "prettier": "^2.5.1"
   },
   "repository": {
     "type": "git",

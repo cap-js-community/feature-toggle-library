@@ -22,6 +22,8 @@
  */
 "use strict";
 
+// TODO migrate to redis v4 https://github.com/redis/node-redis/blob/master/docs/v3-to-v4.md
+
 // TODO locale for validation messages
 
 // TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages

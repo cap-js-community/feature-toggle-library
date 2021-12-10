@@ -13,10 +13,21 @@ const _uniqueNameFromCfApp = () => {
 };
 
 const instance = new FeatureToggles({ uniqueName: _uniqueNameFromCfApp() });
-const exportObject = Object.fromEntries(
-  Object.getOwnPropertyNames(FeatureToggles.prototype)
-    .filter((member) => member !== "constructor")
-    .map((member) => [member, instance[member].bind(instance)])
-);
-
-module.exports = exportObject;
+module.exports = {
+  validateInput: instance.validateInput.bind(instance),
+  refreshFeatureValues: instance.refreshFeatureValues.bind(instance),
+  initializeFeatureValues: instance.initializeFeatureValues.bind(instance),
+  getFeatureValue: instance.getFeatureValue.bind(instance),
+  getFeatureValues: instance.getFeatureValues.bind(instance),
+  changeFeatureValue: instance.changeFeatureValue.bind(instance),
+  changeFeatureValues: instance.changeFeatureValues.bind(instance),
+  registerFeatureValueChangeHandler: instance.registerFeatureValueChangeHandler.bind(instance),
+  removeFeatureValueChangeHandler: instance.removeFeatureValueChangeHandler.bind(instance),
+  removeAllFeatureValueChangeHandlers: instance.removeAllFeatureValueChangeHandlers.bind(instance),
+  registerFeatureValueValidation: instance.registerFeatureValueValidation.bind(instance),
+  removeFeatureValueValidation: instance.removeFeatureValueValidation.bind(instance),
+  removeAllFeatureValueValidation: instance.removeAllFeatureValueValidation.bind(instance),
+  _: {
+    _instance: () => instance,
+  },
+};
