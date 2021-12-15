@@ -352,7 +352,6 @@ describe("feature toggles test", () => {
       Array [
         Object {
           "errorMessage": "wrong input",
-          "errorMessageValues": Array [],
           "key": "test/feature_c",
         },
       ]
@@ -363,14 +362,49 @@ describe("feature toggles test", () => {
     // right toggle but failing with messageValues
     validator.mockClear();
     const mockErrorMessageWithValues = "wrong input {0} {1}";
-    const mockErrorMessagValues = ["value1", 2];
+    const mockErrorMessageValues = ["value1", 2];
     validator.mockResolvedValueOnce({
       errorMessage: mockErrorMessageWithValues,
-      errorMessageValues: mockErrorMessagValues,
+      errorMessageValues: mockErrorMessageValues,
     });
     validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 102, [FEATURE_C]: newValue });
     expect(validationErrors).toMatchInlineSnapshot(`
       Array [
+        Object {
+          "errorMessage": "wrong input {0} {1}",
+          "errorMessageValues": Array [
+            "value1",
+            2,
+          ],
+          "key": "test/feature_c",
+        },
+      ]
+    `);
+    expect(validator).toHaveBeenCalledTimes(1);
+    expect(validator).toHaveBeenCalledWith(newValue);
+
+    // right toggle but failing with multiple errors
+    validator.mockClear();
+    validator.mockResolvedValueOnce([
+      {
+        key: "wrong key",
+        useless: "useless property",
+        errorMessage: mockErrorMessage,
+      },
+      {
+        key: "wrong key",
+        useless: "useless property",
+        errorMessage: mockErrorMessageWithValues,
+        errorMessageValues: mockErrorMessageValues,
+      },
+    ]);
+    validationErrors = await featureToggles.changeFeatureValues({ [FEATURE_B]: 102, [FEATURE_C]: newValue });
+    expect(validationErrors).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "errorMessage": "wrong input",
+          "key": "test/feature_c",
+        },
         Object {
           "errorMessage": "wrong input {0} {1}",
           "errorMessageValues": Array [

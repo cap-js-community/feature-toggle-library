@@ -123,10 +123,10 @@ class FeatureToggles {
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
   async _validateInputEntry(key, value) {
     if (this.__config === null || this.__configKeys === null) {
-      return { errorMessage: "not initialized" };
+      return [{ errorMessage: "not initialized" }];
     }
     if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
-      return { key, errorMessage: 'key "{0}" is not valid', errorMessageValues: [key] };
+      return [{ errorMessage: 'key "{0}" is not valid', errorMessageValues: [key] }];
     }
     // NOTE: value === null is our way of encoding key resetting changes, so it is always allowed
     if (value === null) {
@@ -135,20 +135,22 @@ class FeatureToggles {
 
     const valueType = typeof value;
     if (!FeatureToggles._isValidFeatureValueType(value)) {
-      return {
-        key,
-        errorMessage: 'value "{0}" has invalid type {1}, must be in {2}',
-        errorMessageValues: [value, valueType, FEATURE_VALID_TYPES],
-      };
+      return [
+        {
+          errorMessage: 'value "{0}" has invalid type {1}, must be in {2}',
+          errorMessageValues: [value, valueType, FEATURE_VALID_TYPES],
+        },
+      ];
     }
 
     const { type: targetType, validation } = this.__config[key];
     if (targetType && valueType !== targetType) {
-      return {
-        key,
-        errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
-        errorMessageValues: [value, valueType, targetType],
-      };
+      return [
+        {
+          errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
+          errorMessageValues: [value, valueType, targetType],
+        },
+      ];
     }
 
     const validationRegExp = this.__configCache.getSetCb(
@@ -157,23 +159,28 @@ class FeatureToggles {
       this.__config[key]
     );
     if (validationRegExp && !validationRegExp.test(value)) {
-      return {
-        key,
-        errorMessage: 'value "{0}" does not match validation regular expression {1}',
-        errorMessageValues: [value, validation],
-      };
+      return [
+        {
+          errorMessage: 'value "{0}" does not match validation regular expression {1}',
+          errorMessageValues: [value, validation],
+        },
+      ];
     }
 
     for (const validator of this.__featureValueValidators.getHandlers(key)) {
       const validatorName = validator.name || "anonymous";
       try {
-        const { errorMessage, errorMessageValues } = (await validator(value)) || {};
-        if (errorMessage) {
-          return {
-            key,
-            errorMessage,
-            errorMessageValues: errorMessageValues || [],
-          };
+        const validationErrorOrErrors = (await validator(value)) || [];
+        const validationErrors = Array.isArray(validationErrorOrErrors)
+          ? validationErrorOrErrors
+          : [validationErrorOrErrors];
+        if (validationErrors.length > 0) {
+          return validationErrors
+            .filter(({ errorMessage }) => errorMessage)
+            .map(({ errorMessage, errorMessageValues }) => ({
+              errorMessage,
+              ...(errorMessageValues && { errorMessageValues }),
+            }));
         }
       } catch (err) {
         logger.error(
@@ -190,11 +197,12 @@ class FeatureToggles {
             "error during registered validator"
           )
         );
-        return {
-          key,
-          errorMessage: 'registered validator "{0}" failed for value "{1}" with error {2}',
-          errorMessageValues: [validatorName, value, err.message],
-        };
+        return [
+          {
+            errorMessage: 'registered validator "{0}" failed for value "{1}" with error {2}',
+            errorMessageValues: [validatorName, value, err.message],
+          },
+        ];
       }
     }
   }
@@ -221,7 +229,7 @@ class FeatureToggles {
    * @returns {[null|*, Array<ValidationError>]}
    */
   async validateInput(input) {
-    const validationErrors = [];
+    let validationErrors = [];
     if (isNull(input) || typeof input !== "object") {
       return [null, validationErrors];
     }
@@ -229,9 +237,13 @@ class FeatureToggles {
     let isEmpty = true;
     const result = {};
     for (const [key, value] of Object.entries(input)) {
-      const validationError = await this._validateInputEntry(key, value);
-      if (validationError) {
-        validationErrors.push(validationError);
+      const entryValidationErrors = await this._validateInputEntry(key, value);
+      if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
+        const entryValidationErrorsWithKey = entryValidationErrors.map((validationError) => ({
+          ...validationError,
+          key,
+        }));
+        validationErrors = validationErrors.concat(entryValidationErrorsWithKey);
       } else {
         isEmpty = false;
         result[key] = value;
@@ -499,14 +511,14 @@ class FeatureToggles {
       // If the fallback value is invalid no change is triggered.
       for (const [key, value] of Object.entries(validatedInput)) {
         if (value === null) {
-          const [validatedFallbackValue, validationError] = await this.__configCache.getSetCbAsync(
+          const [validatedFallbackValue, entryValidationErrors] = await this.__configCache.getSetCbAsync(
             [key, "validatedFallbackValue"],
             async ({ fallbackValue }) => {
               if (isNull(fallbackValue)) {
                 return [null];
               }
-              const validationError = await this._validateInputEntry(key, fallbackValue);
-              return validationError ? [null, validationError] : [fallbackValue];
+              const entryValidationErrors = await this._validateInputEntry(key, fallbackValue);
+              return entryValidationErrors ? [null, entryValidationErrors] : [fallbackValue];
             },
             this.__config[key]
           );
@@ -517,7 +529,11 @@ class FeatureToggles {
               new VError(
                 {
                   name: VERROR_CLUSTER_NAME,
-                  info: { key, fallbackValue: this.__config[key].fallbackValue, validationError },
+                  info: {
+                    key,
+                    fallbackValue: this.__config[key].fallbackValue,
+                    validationErrors: JSON.stringify(entryValidationErrors),
+                  },
                 },
                 "could not reset key because fallback is invalid"
               )
@@ -655,10 +671,12 @@ class FeatureToggles {
    * @callback validator
    *
    * The validator gets the new value and can do any number of checks on it. Returning anything falsy, like undefined,
-   * means the new value passes validation, otherwise the validator must return a {@link ValidationError}.
+   * means the new value passes validation, otherwise the validator must return either a single {@link ValidationError},
+   * or a list of ValidationErrors.
    *
    * @param {boolean | number | string} newValue
-   * @returns {undefined | ValidationError} in case of failure a ValidationError otherwise undefined
+   * @returns {undefined | ValidationError | Array<ValidationError>} in case of failure a ValidationError, or an array
+   *   of ValidationErrors, otherwise undefined
    */
   /**
    * Register a validator for given feature value key. If you register a validator _before_ initialization, it will
