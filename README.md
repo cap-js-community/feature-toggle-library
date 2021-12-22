@@ -38,7 +38,6 @@ This config describes all valid feature toggle keys:
 ```
 {
   "/server/util/logger/logLevel": {
-    "enabled": true,
     "appUrl": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
     "info": "change global log level to one of the allowed error, warn, info, verbose, debug",
     "fallbackValue": "info",
@@ -50,7 +49,7 @@ This config describes all valid feature toggle keys:
 
 The semantics of the properties are:
 
-- enabled: if this is false, the corresponding feature toggle gets ignored
+- active: if this is false, the corresponding feature toggle gets ignored
 - appUrl: optional regex for activating _only_ for matching appUrls
   - for CANARY landscape `"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`
   - for EU10 landscape `"\\.cfapps\\.eu10\\.hana\\.ondemand\\.com$"`

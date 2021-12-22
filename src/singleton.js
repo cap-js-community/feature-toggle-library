@@ -17,6 +17,8 @@ module.exports = {
   validateInput: instance.validateInput.bind(instance),
   refreshFeatureValues: instance.refreshFeatureValues.bind(instance),
   initializeFeatureValues: instance.initializeFeatureValues.bind(instance),
+  getFeatureConfig: instance.getFeatureConfig.bind(instance),
+  getFeatureConfigs: instance.getFeatureConfigs.bind(instance),
   getFeatureValue: instance.getFeatureValue.bind(instance),
   getFeatureValues: instance.getFeatureValues.bind(instance),
   changeFeatureValue: instance.changeFeatureValue.bind(instance),

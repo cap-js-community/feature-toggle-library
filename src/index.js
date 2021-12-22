@@ -1,6 +1,6 @@
 "use strict";
 
-const { FeatureToggles, readConfigFromFilepath } = require("./featureToggles");
+const { FeatureToggles, readConfigFromFile } = require("./featureToggles");
 const singleton = require("./singleton");
 const redisWrapper = require("./redisWrapper");
 const { promiseAllDone } = require("./promiseAllDone");
@@ -9,7 +9,7 @@ const { HandlerCollection } = require("./handlerCollection");
 
 module.exports = {
   FeatureToggles,
-  readConfigFromFilepath,
+  readConfigFromFile,
   singleton,
   redisWrapper,
   promiseAllDone,

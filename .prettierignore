@@ -1,15 +1,4 @@
-bower_components/
 node_modules/
-gen/
 temp/
-app-deployer/
-_i18n/
-dist/
+docs/vendor/
 package-lock.json
-reports/
-bin/frontend-test-template/
-bin/patch-wip/
-bin/migration-check/csn-prod.json
-bin/migration-check/csn-prod-hash.json
-stress-test/src/stress-test-requests.json
-docs/acd/acd.html

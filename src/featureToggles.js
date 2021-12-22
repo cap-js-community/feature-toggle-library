@@ -28,16 +28,11 @@
 
 // TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages
 
-// TODO we had an interesting case regarding appUrl filters:
-//  while running code in excluded appUrls, should getFeatureToggles return
-//  (a) null <= current implementation reflecting that the toggle does not exist
-//  (b) the fallback value <= could be more intuitive, but also misleading/harder to catch
-
 const { promisify } = require("util");
 const path = require("path");
 const { readFile } = require("fs");
 const VError = require("verror");
-const yaml = require("js-yaml");
+const yaml = require("yaml");
 const {
   registerMessageHandler,
   getObject: redisGetObject,
@@ -56,18 +51,24 @@ const DEFAULT_REFRESH_MESSAGE = "refresh";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
+const CACHE_KEY = Object.freeze({
+  VALIDATION_REG_EXP: "validationRegExp",
+  APP_URL_ACTIVE: "appUrlActive",
+  FALLBACK_VALUE_VALIDATION: "fallbackValueValidation",
+});
+
 const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
 const readFileAsync = promisify(readFile);
 const logger = Logger(COMPONENT_NAME);
 
-const readConfigFromFilepath = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
+const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
   if (/\.ya?ml$/i.test(configFilepath)) {
-    return yaml.load(await readFileAsync(configFilepath));
+    return yaml.parse(await readFileAsync(configFilepath));
   }
   if (/\.json$/i.test(configFilepath)) {
-    return require(configFilepath);
+    return JSON.parse(await readFileAsync(configFilepath));
   }
   throw new VError(
     {
@@ -84,30 +85,42 @@ class FeatureToggles {
   // ========================================
 
   /**
-   * Process base config that is passed in during construction.
-   * Goal is to filter out toggles where
-   *  - enabled is false or
-   *  - appUrl does not match cf app url
+   * Populate this.__configCache.
    */
-  static _processConfigBase(configBase) {
-    if (configBase) {
-      const cfAppData = cfApp();
-      return Object.fromEntries(
-        Object.entries(configBase).filter(([, value]) => {
-          if (!value.enabled) {
-            return false;
-          }
-          if (value.appUrl) {
-            const appUrlRegex = new RegExp(value.appUrl);
+  async _populateConfigCache() {
+    const { uris: cfAppUris } = cfApp();
+    for (const [key, value] of Object.entries(this.__config)) {
+      this.__configCache.setCb(
+        [key, CACHE_KEY.VALIDATION_REG_EXP],
+        ({ validation }) => (validation ? new RegExp(validation) : null),
+        value
+      );
+      this.__configCache.setCb(
+        [key, CACHE_KEY.APP_URL_ACTIVE],
+        ({ appUrl }) => {
+          if (appUrl) {
+            const appUrlRegex = new RegExp(appUrl);
             if (
-              Array.isArray(cfAppData.uris) &&
-              !cfAppData.uris.reduce((current, next) => current && appUrlRegex.test(next), true)
+              Array.isArray(cfAppUris) &&
+              !cfAppUris.reduce((current, next) => current && appUrlRegex.test(next), true)
             ) {
               return false;
             }
           }
           return true;
-        })
+        },
+        value
+      );
+      await this.__configCache.setCbAsync(
+        [key, CACHE_KEY.FALLBACK_VALUE_VALIDATION],
+        async ({ fallbackValue }) => {
+          if (isNull(fallbackValue)) {
+            return [null];
+          }
+          const entryValidationErrors = await this._validateInputEntry(key, fallbackValue);
+          return entryValidationErrors ? [null, entryValidationErrors] : [fallbackValue];
+        },
+        value
       );
     }
   }
@@ -133,6 +146,24 @@ class FeatureToggles {
       return;
     }
 
+    const { active, appUrl, type: targetType, validation } = this.__config[key];
+
+    // NOTE: skip validating active properties during initialization
+    if (this.__isInitialized) {
+      if (active === false) {
+        return [{ errorMessage: 'key "{0}" is not active', errorMessageValues: [key] }];
+      }
+
+      if (!this.__configCache.get([key, CACHE_KEY.APP_URL_ACTIVE])) {
+        return [
+          {
+            errorMessage: 'key "{0}" is not active because app url does not match regular expression {1}',
+            errorMessageValues: [key, appUrl],
+          },
+        ];
+      }
+    }
+
     const valueType = typeof value;
     if (!FeatureToggles._isValidFeatureValueType(value)) {
       return [
@@ -143,7 +174,6 @@ class FeatureToggles {
       ];
     }
 
-    const { type: targetType, validation } = this.__config[key];
     if (targetType && valueType !== targetType) {
       return [
         {
@@ -153,11 +183,7 @@ class FeatureToggles {
       ];
     }
 
-    const validationRegExp = this.__configCache.getSetCb(
-      [key, "validationRegExp"],
-      ({ validation }) => (validation ? new RegExp(validation) : null),
-      this.__config[key]
-    );
+    const validationRegExp = this.__configCache.get([key, CACHE_KEY.VALIDATION_REG_EXP]);
     if (validationRegExp && !validationRegExp.test(value)) {
       return [
         {
@@ -270,7 +296,7 @@ class FeatureToggles {
               : await Promise.all(
                   handlers.map(async (handler) => {
                     try {
-                      return await handler(key, value);
+                      return await handler(newValue, value);
                     } catch (err) {
                       logger.error(
                         new VError(
@@ -382,16 +408,17 @@ class FeatureToggles {
   // START OF INITIALIZE SECTION
   // ========================================
 
-  async initializeFeatureValues({ config: configBaseInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
+  async initializeFeatureValues({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
     if (this.__isInitialized) {
       return;
     }
 
-    let configBase;
+    let config;
     try {
-      configBase = configBaseInput ? configBaseInput : await readConfigFromFilepath(configFilepath);
-      this.__config = FeatureToggles._processConfigBase(configBase);
+      config = configInput ? configInput : await readConfigFromFile(configFilepath);
+      this.__config = config;
       this.__configKeys = Object.keys(this.__config);
+      await this._populateConfigCache();
     } catch (err) {
       logger.error(
         new VError(
@@ -400,8 +427,8 @@ class FeatureToggles {
             cause: err,
             info: {
               configFilepath,
-              ...(configBaseInput && { configBaseInput: JSON.stringify(configBaseInput) }),
-              ...(configBase && { configBase: JSON.stringify(configBase) }),
+              ...(configInput && { configBaseInput: JSON.stringify(configInput) }),
+              ...(config && { configBase: JSON.stringify(config) }),
             },
           },
           "initializtion aborted, could not resolve configuration"
@@ -466,6 +493,43 @@ class FeatureToggles {
   // END OF INITIALIZE SECTION
   // ========================================
   // ========================================
+  // START OF GET_FEATURE_CONFIGS SECTION
+  // ========================================
+
+  /**
+   * Get feature configuration for specific key.
+   */
+  getFeatureConfig(key) {
+    this._ensureInitialized();
+    if (!Object.prototype.hasOwnProperty.call(this.__config, key)) {
+      return null;
+    }
+    const result = { ...this.__config[key] };
+    for (const cacheKey of Object.values(CACHE_KEY)) {
+      result[cacheKey] = this.__configCache.get([key, cacheKey]);
+    }
+    return result;
+  }
+
+  /**
+   * Get feature configurations for all keys.
+   */
+  getFeatureConfigs() {
+    this._ensureInitialized();
+    const result = {};
+    for (const [key, value] of Object.entries(this.__config)) {
+      result[key] = { ...value };
+      for (const cacheKey of Object.values(CACHE_KEY)) {
+        result[key][cacheKey] = this.__configCache.get([key, cacheKey]);
+      }
+    }
+    return result;
+  }
+
+  // ========================================
+  // END OF GET_FEATURE_CONFIGS SECTION
+  // ========================================
+  // ========================================
   // START OF GET_FEATURE_VALUES SECTION
   // ========================================
 
@@ -503,7 +567,7 @@ class FeatureToggles {
   // ========================================
 
   _changeRemoteFeatureValuesCallbackFromInput(validatedInput) {
-    return async (oldValue) => {
+    return (oldValue) => {
       if (oldValue === null) {
         return null;
       }
@@ -511,17 +575,10 @@ class FeatureToggles {
       // If the fallback value is invalid no change is triggered.
       for (const [key, value] of Object.entries(validatedInput)) {
         if (value === null) {
-          const [validatedFallbackValue, entryValidationErrors] = await this.__configCache.getSetCbAsync(
-            [key, "validatedFallbackValue"],
-            async ({ fallbackValue }) => {
-              if (isNull(fallbackValue)) {
-                return [null];
-              }
-              const entryValidationErrors = await this._validateInputEntry(key, fallbackValue);
-              return entryValidationErrors ? [null, entryValidationErrors] : [fallbackValue];
-            },
-            this.__config[key]
-          );
+          const [validatedFallbackValue, entryValidationErrors] = this.__configCache.get([
+            key,
+            CACHE_KEY.FALLBACK_VALUE_VALIDATION,
+          ]);
           if (validatedFallbackValue !== null) {
             validatedInput[key] = validatedFallbackValue;
           } else {
@@ -631,11 +688,19 @@ class FeatureToggles {
   // ========================================
 
   /**
+   * @callback handler
+   *
+   * The change handler gets the new value as well as the old value, immediately after the update is propagated.
+   *
+   * @param {boolean | number | string} newValue
+   * @param {boolean | number | string} oldValue
+   */
+  /**
    * Register given handler to receive changes of given feature value key.
    * Errors happening during handler execution will be caught and logged.
    *
    * @param key
-   * @param handler signature (oldValue, newValue) => void
+   * @param handler
    */
   registerFeatureValueChangeHandler(key, handler) {
     this.__featureValueChangeHandlers.registerHandler(key, handler);
@@ -726,7 +791,7 @@ class FeatureToggles {
 
 module.exports = {
   FeatureToggles,
-  readConfigFromFilepath,
+  readConfigFromFile,
 
   _: {
     _getLogger: () => logger,

@@ -1,9 +1,4 @@
-bower_components/
 node_modules/
-gen/
 temp/
-app-deployer/
-_i18n/
-dist/
-bin/frontend-test-template/
-bin/patch-wip/
+docs/vendor/
+docs/_site/

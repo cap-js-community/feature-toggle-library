@@ -1,0 +1,125 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`feature toggles test getFeatureConfigs 1`] = `
+Object {
+  "test/feature_a": Object {
+    "appUrlActive": true,
+    "fallbackValue": false,
+    "fallbackValueValidation": Array [
+      false,
+    ],
+    "type": "boolean",
+    "validationRegExp": null,
+  },
+  "test/feature_b": Object {
+    "appUrlActive": true,
+    "fallbackValue": 1,
+    "fallbackValueValidation": Array [
+      1,
+    ],
+    "type": "number",
+    "validationRegExp": null,
+  },
+  "test/feature_c": Object {
+    "appUrlActive": true,
+    "fallbackValue": "best",
+    "fallbackValueValidation": Array [
+      "best",
+    ],
+    "type": "string",
+    "validationRegExp": null,
+  },
+  "test/feature_d": Object {
+    "appUrlActive": true,
+    "fallbackValue": true,
+    "fallbackValueValidation": Array [
+      true,
+    ],
+    "type": "boolean",
+    "validation": "^(?:true)$",
+    "validationRegExp": /\\^\\(\\?:true\\)\\$/,
+  },
+  "test/feature_e": Object {
+    "appUrlActive": true,
+    "fallbackValue": 5,
+    "fallbackValueValidation": Array [
+      5,
+    ],
+    "type": "number",
+    "validation": "^\\\\d{1}$",
+    "validationRegExp": /\\^\\\\d\\{1\\}\\$/,
+  },
+  "test/feature_f": Object {
+    "appUrlActive": true,
+    "fallbackValue": "best",
+    "fallbackValueValidation": Array [
+      "best",
+    ],
+    "type": "string",
+    "validation": "^(?:best|worst)$",
+    "validationRegExp": /\\^\\(\\?:best\\|worst\\)\\$/,
+  },
+  "test/feature_g": Object {
+    "active": false,
+    "appUrlActive": true,
+    "fallbackValue": "activeTest",
+    "fallbackValueValidation": Array [
+      "activeTest",
+    ],
+    "type": "string",
+    "validationRegExp": null,
+  },
+  "test/feature_h": Object {
+    "appUrl": "\\\\.cfapps\\\\.sap\\\\.hana\\\\.ondemand\\\\.com$",
+    "appUrlActive": true,
+    "fallbackValue": "appUrlTest",
+    "fallbackValueValidation": Array [
+      "appUrlTest",
+    ],
+    "type": "string",
+    "validationRegExp": null,
+  },
+}
+`;
+
+exports[`feature toggles test initializeFeatureToggles 1`] = `
+Object {
+  "test/feature_a": Object {
+    "fallbackValue": false,
+    "type": "boolean",
+  },
+  "test/feature_b": Object {
+    "fallbackValue": 1,
+    "type": "number",
+  },
+  "test/feature_c": Object {
+    "fallbackValue": "best",
+    "type": "string",
+  },
+  "test/feature_d": Object {
+    "fallbackValue": true,
+    "type": "boolean",
+    "validation": "^(?:true)$",
+  },
+  "test/feature_e": Object {
+    "fallbackValue": 5,
+    "type": "number",
+    "validation": "^\\\\d{1}$",
+  },
+  "test/feature_f": Object {
+    "fallbackValue": "best",
+    "type": "string",
+    "validation": "^(?:best|worst)$",
+  },
+  "test/feature_g": Object {
+    "active": false,
+    "fallbackValue": "activeTest",
+    "type": "string",
+  },
+  "test/feature_h": Object {
+    "appUrl": "\\\\.cfapps\\\\.sap\\\\.hana\\\\.ondemand\\\\.com$",
+    "fallbackValue": "appUrlTest",
+    "type": "string",
+  },
+}
+`;
