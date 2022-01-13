@@ -64,11 +64,12 @@ const readFileAsync = promisify(readFile);
 const logger = Logger(COMPONENT_NAME);
 
 const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
+  const fileData = await readFileAsync(configFilepath);
   if (/\.ya?ml$/i.test(configFilepath)) {
-    return yaml.parse(await readFileAsync(configFilepath));
+    return yaml.parse(fileData.toString());
   }
   if (/\.json$/i.test(configFilepath)) {
-    return JSON.parse(await readFileAsync(configFilepath));
+    return JSON.parse(fileData);
   }
   throw new VError(
     {

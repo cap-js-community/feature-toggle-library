@@ -582,7 +582,7 @@ describe("feature toggles test", () => {
 
   it("readConfigFromFile json", async () => {
     const mockFilePath = "inmemory.json";
-    const mockConfigData = JSON.stringify(mockConfig);
+    const mockConfigData = Buffer.from(JSON.stringify(mockConfig));
     readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
     const config = await readConfigFromFile(mockFilePath);
 
@@ -593,7 +593,7 @@ describe("feature toggles test", () => {
 
   it("readConfigFromFile yaml", async () => {
     const mockFilePath = "inmemory.yml";
-    const mockConfigData = yaml.stringify(mockConfig);
+    const mockConfigData = Buffer.from(yaml.stringify(mockConfig));
     readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
     const config = await readConfigFromFile(mockFilePath);
 
