@@ -9,9 +9,10 @@
   "scripts": {
     "lint": "npm run eslint && npm run prettier",
     "eslint": "eslint . --fix",
-    "prettier": "prettier \"**/*.{js,json,md,yml,yaml}\" --write --loglevel error",
+    "prettier": "prettier . --write --loglevel error",
     "test": "jest",
     "prepareRelease": "npm prune --production",
+    "docs": "cd docs && bundle exec jekyll serve",
     "upgrade-lock": "npx shx rm -rf package-lock.json node_modules && npm i --package-lock=true"
   },
   "engines": {
