@@ -135,6 +135,16 @@ so that new values can be deserialized correctly.
 When using active or appUrl to block activation of a feature toggle, then user-code accessing the
 feature toggle value will _always_ get the fallback value.
 
+## Environment Variables
+
+The following environment variables can be used to fine-tune the library's behavior:
+
+| variable                   | default                 | meaning                                                                  |
+| :------------------------- | :---------------------- | :----------------------------------------------------------------------- |
+| `BTP_FEATURES_UNIQUE_NAME` | `<cfAppName>`           | override `uniqueName` of singleton (see [Class](#feature-toggles-class)) |
+| `BTP_FEATURES_KEY`         | `features-<uniqueName>` | override Redis key for central state                                     |
+| `BTP_FEATURES_CHANNEL`     | `features-<uniqueName>` | override Redis channel for synchronization                               |
+
 ## User-Code
 
 In this section, we will assume that the [initialization](#initialization) has happened and the configuration contained

@@ -1,6 +1,6 @@
 {
   "name": "@sap/btp-feature-toggles",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "btp feature toggles via redis service",
   "main": "src/index.js",
   "files": [
@@ -13,30 +13,31 @@
     "test": "jest",
     "prepareRelease": "npm prune --production",
     "docs": "cd docs && bundle exec jekyll serve",
-    "upgrade-lock": "npx shx rm -rf package-lock.json node_modules && npm i --package-lock=true"
+    "upgrade-lock": "npx shx rm -rf package-lock.json node_modules && npm i --package-lock"
   },
   "engines": {
     "node": ">=10.10.0",
     "npm": ">=6.0.0"
   },
   "dependencies": {
-    "@sap/logging": "^6.0.3",
-    "@sap/xsenv": "^3.1.1",
+    "@sap/logging": "^6.1.0",
+    "@sap/xsenv": "^3.2.0",
     "redis": "^3.1.2",
     "verror": "^1.10.1",
     "yaml": "^1.10.2"
   },
   "devDependencies": {
-    "eslint": "^8.4.1",
+    "eslint": "^8.8.0",
     "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-jest": "^25.3.0",
-    "jest": "^27.4.3",
+    "eslint-plugin-jest": "^26.0.0",
+    "jest": "^27.4.7",
     "prettier": "^2.5.1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.wdf.sap.corp/cds-community/btp-feature-toggles"
+    "url": "https://github.wdf.sap.corp/cds-community/btp-feature-toggles.git"
   },
+  "homepage": "https://github.wdf.sap.corp/pages/cds-community/btp-feature-toggles/",
   "bugs": {
     "url": "https://github.wdf.sap.corp/cds-community/btp-feature-toggles/issues"
   },

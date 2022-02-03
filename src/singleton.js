@@ -2,6 +2,9 @@
 
 const { FeatureToggles } = require("./featureToggles");
 const { cfApp } = require("./env");
+const { ENV } = require("./helper");
+
+const _uniqueNameFromEnv = process.env[ENV.UNIQUE_NAME] || null;
 
 const _uniqueNameFromCfApp = () => {
   try {
@@ -12,7 +15,7 @@ const _uniqueNameFromCfApp = () => {
   }
 };
 
-const instance = new FeatureToggles({ uniqueName: _uniqueNameFromCfApp() });
+const instance = new FeatureToggles({ uniqueName: _uniqueNameFromEnv || _uniqueNameFromCfApp() });
 module.exports = {
   validateInput: instance.validateInput.bind(instance),
   refreshFeatureValues: instance.refreshFeatureValues.bind(instance),

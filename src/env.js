@@ -2,11 +2,11 @@
 
 const VError = require("verror");
 const xsenv = require("@sap/xsenv");
+const { ENV } = require("./helper");
 
-const CF_APP_ENV = "VCAP_APPLICATION";
 const VERROR_CLUSTER_NAME = "Env";
 
-const isLocal = process.env.USER !== "vcap";
+const isLocal = process.env[ENV.USER] !== "vcap";
 const isOnCF = !isLocal;
 
 let cfAppCache = null;
@@ -16,8 +16,8 @@ const cfServiceCredentials = xsenv.cfServiceCredentials;
 const cfApp = () => {
   if (!cfAppCache) {
     try {
-      cfAppCache = Object.prototype.hasOwnProperty.call(process.env, CF_APP_ENV)
-        ? JSON.parse(process.env[CF_APP_ENV])
+      cfAppCache = Object.prototype.hasOwnProperty.call(process.env, ENV.CF_APP)
+        ? JSON.parse(process.env[ENV.CF_APP])
         : {};
     } catch (err) {
       throw new VError(
@@ -26,7 +26,7 @@ const cfApp = () => {
           cause: err,
         },
         "environment variable %s is not valid JSON",
-        CF_APP_ENV
+        ENV.CF_APP
       );
     }
   }

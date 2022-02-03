@@ -42,11 +42,11 @@ const {
 const { Logger } = require("./logger");
 const { LazyCache } = require("./lazyCaches");
 const { HandlerCollection } = require("./handlerCollection");
-const { isNull } = require("./helper");
+const { ENV, isNull } = require("./helper");
 const { isOnCF, cfApp } = require("./env");
 
-const DEFAULT_FEATURES_CHANNEL = process.env.BTP_FEATURES_CHANNEL || "features";
-const DEFAULT_FEATURES_KEY = process.env.BTP_FEATURES_KEY || "features";
+const DEFAULT_FEATURES_CHANNEL = process.env[ENV.CHANNEL] || "features";
+const DEFAULT_FEATURES_KEY = process.env[ENV.KEY] || "features";
 const DEFAULT_REFRESH_MESSAGE = "refresh";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
