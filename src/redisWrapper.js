@@ -5,7 +5,6 @@
 
 const redis = require("redis");
 const VError = require("verror");
-const { promisify } = require("util");
 const { Logger } = require("./logger");
 const { HandlerCollection } = require("./handlerCollection");
 const { isOnCF, cfServiceCredentials } = require("./env");
@@ -20,19 +19,16 @@ const MODE = Object.freeze({
 });
 
 let redisIsOnCF = isOnCF;
-let client = null;
+let mainClient = null;
 let subscriberClient = null;
 let messageHandlers = new HandlerCollection();
 
 const _reset = () => {
   redisIsOnCF = isOnCF;
-  client = null;
+  mainClient = null;
   subscriberClient = null;
   messageHandlers = new HandlerCollection();
 };
-const _setRedisIsOnCF = (value) => (redisIsOnCF = value);
-const _getClient = () => client;
-const _getSubscriberClient = () => subscriberClient;
 
 const _logErrorOnEvent = (err, ...messages) =>
   redisIsOnCF
@@ -43,7 +39,7 @@ const _logErrorOnEvent = (err, ...messages) =>
       )
     : logger.warning("error caught during event: %s", err.message);
 
-const _onMessage = async (channel, message) => {
+const _subscribedMessageHandler = async (message, channel) => {
   const handlers = messageHandlers.getHandlers(channel);
   return handlers.length === 0
     ? null
@@ -62,33 +58,47 @@ const _onMessage = async (channel, message) => {
 };
 
 /**
- * Lazily create a new redis client unless the variable that is passed in already is a redis client. Client creation
- * transparently handles both the Cloud Foundry "redis-cache" service (hyperscaler option) and a local redis-server.
+ * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
+ * (hyperscaler option) and a local redis-server.
  *
- * @param input  variable ensuring we don't create a redundant client
  * @returns {RedisClient}
  * @private
  */
-const _createClientBase = (input) => {
-  if (!input) {
-    if (redisIsOnCF) {
-      try {
-        const credentials = cfServiceCredentials({ label: "redis-cache" });
-        // NOTE: settings the user explicitly to empty resolves auth problems, see
-        // https://github.com/go-redis/redis/issues/1343
-        const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
-        input = redis.createClient(url, { no_ready_check: true });
-      } catch (err) {
-        throw new VError(
-          { name: VERROR_CLUSTER_NAME, cause: err },
-          "error during create client with redis-cache service"
-        );
-      }
-    } else {
-      input = redis.createClient();
+const _createClientBase = () => {
+  if (redisIsOnCF) {
+    try {
+      const credentials = cfServiceCredentials({ label: "redis-cache" });
+      // NOTE: settings the user explicitly to empty resolves auth problems, see
+      // https://github.com/go-redis/redis/issues/1343
+      const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
+      return redis.createClient({ url });
+    } catch (err) {
+      throw new VError(
+        { name: VERROR_CLUSTER_NAME, cause: err },
+        "error during create client with redis-cache service"
+      );
     }
+  } else {
+    return redis.createClient();
   }
-  return input;
+};
+
+const _createClientAndConnect = async (errorHandler) => {
+  let client = null;
+  try {
+    client = _createClientBase();
+  } catch (err) {
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client");
+  }
+
+  client.on("error", errorHandler);
+
+  try {
+    await client.connect();
+  } catch (err) {
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during initial connect");
+  }
+  return client;
 };
 
 /**
@@ -101,18 +111,26 @@ const _createClientBase = (input) => {
  * @returns {RedisClient}
  * @private
  */
-const _createClient = () => {
-  client = _createClientBase(client);
-
-  client.on("error", (err) => {
-    _logErrorOnEvent(err, "error event on redis client");
-    client && client.quit();
-    client = null;
-  });
-  client.getAsync = promisify(client.get).bind(client);
-  client.setAsync = promisify(client.set).bind(client);
-  client.watchAsync = promisify(client.watch).bind(client);
-  return client;
+const _createMainClientAndConnect = async () => {
+  if (!mainClient) {
+    const mainClientErrorHandler = async (err) => {
+      _logErrorOnEvent(err, "error event on main redis client");
+      if (mainClient) {
+        let quitError = null;
+        try {
+          await mainClient.quit();
+        } catch (err) {
+          quitError = err;
+        }
+        mainClient = null;
+        if (quitError) {
+          throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
+        }
+      }
+    };
+    mainClient = await _createClientAndConnect(mainClientErrorHandler);
+  }
+  return mainClient;
 };
 
 /**
@@ -124,33 +142,38 @@ const _createClient = () => {
  * @returns {RedisClient}
  * @private
  */
-const _createSubscriber = () => {
-  subscriberClient = _createClientBase(subscriberClient);
-
-  subscriberClient.on("error", (err) => {
-    _logErrorOnEvent(err, "error event on redis subscriber client");
-    subscriberClient.quit();
-    subscriberClient = null;
-  });
-
-  subscriberClient.on("message", _onMessage);
+const _createSubscriberAndConnect = async () => {
+  if (!subscriberClient) {
+    const subscriberClientErrorHandler = async (err) => {
+      _logErrorOnEvent(err, "error event on subscriber redis client");
+      if (subscriberClient) {
+        let quitError = null;
+        try {
+          await subscriberClient.quit();
+        } catch (err) {
+          quitError = err;
+        }
+        subscriberClient = null;
+        if (quitError) {
+          throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
+        }
+      }
+    };
+    subscriberClient = await _createClientAndConnect(subscriberClientErrorHandler);
+  }
   return subscriberClient;
 };
 
 const _clientExec = async (functionName, argsObject) => {
-  if (!client) {
-    try {
-      client = _createClient();
-    } catch (err) {
-      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client");
-    }
+  if (!mainClient) {
+    mainClient = await _createMainClientAndConnect();
   }
 
   try {
-    return await client[functionName](...Object.values(argsObject));
+    return await mainClient[functionName](...Object.values(argsObject));
   } catch (err) {
     throw new VError(
-      { name: VERROR_CLUSTER_NAME, cause: err, info: { functionName, argsObject } },
+      { name: VERROR_CLUSTER_NAME, cause: err, info: { functionName, ...argsObject } },
       "error during redis client %s",
       functionName
     );
@@ -163,7 +186,7 @@ const _clientExec = async (functionName, argsObject) => {
  * @param key
  * @returns {Promise<string|null>}
  */
-const get = async (key) => _clientExec("getAsync", { key });
+const get = async (key) => _clientExec("get", { key });
 
 /**
  * Asynchronously get the value for a given key and parse it into an object.
@@ -183,7 +206,7 @@ const getObject = async (key) => {
  * @param value
  * @returns {Promise<*>}
  */
-const set = async (key, value) => _clientExec("setAsync", { key, value });
+const set = async (key, value) => _clientExec("set", { key, value });
 
 /**
  * Asynchronously set a stringified object as value for a given key.
@@ -198,19 +221,15 @@ const setObject = async (key, value) => {
 };
 
 const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempts = 10) => {
-  if (!client) {
-    try {
-      client = _createClient();
-    } catch (err) {
-      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client");
-    }
+  if (!mainClient) {
+    mainClient = await _createMainClientAndConnect();
   }
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await client.watchAsync(key);
+      await mainClient.watch(key);
 
-      const oldValueRaw = await client.getAsync(key);
+      const oldValueRaw = await mainClient.get(key);
       const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
       const newValue = await newValueCallback(oldValue);
       const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
@@ -220,13 +239,13 @@ const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempt
       }
 
       const doDelete = newValueRaw === null;
-      const clientMulti = client.multi();
+      const clientMulti = mainClient.multi();
       if (doDelete) {
         clientMulti.del(key);
       } else {
         clientMulti.set(key, newValueRaw);
       }
-      const replies = await promisify(clientMulti.exec).bind(clientMulti)();
+      const replies = await clientMulti.exec();
       if (replies !== null) {
         if (!Array.isArray(replies) || replies.length !== 1 || replies[0] !== (doDelete ? 1 : "OK")) {
           throw new VError(
@@ -284,54 +303,63 @@ const watchedGetSetObject = async (key, newValueCallback, attempts = 10) =>
 const publishMessage = async (channel, message) => _clientExec("publish", { channel, message });
 
 /**
+ * Subscribe to a given channel. New messages will be processed on all registered message handlers for that channel.
+ * This will lazily create the necessary subscriber client. Errors happening during channel subscribe will be thrown
+ * and event errors will be logged.
+ *
+ * @param channel whose messages should be processed
+ */
+const subscribe = async (channel) => {
+  if (!subscriberClient) {
+    subscriberClient = await _createSubscriberAndConnect();
+  }
+  try {
+    await subscriberClient.subscribe(channel, _subscribedMessageHandler);
+  } catch (err) {
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during subscribe");
+  }
+};
+
+/**
+ * Unsubscribe from a given channel. Errors happening during channel unsubscribe will be thrown and event errors will
+ * be logged.
+ *
+ * @param channel whose messages should no longer be processed
+ */
+const unsubscribe = async (channel) => {
+  if (!subscriberClient) {
+    subscriberClient = await _createSubscriberAndConnect();
+  }
+  try {
+    await subscriberClient.unsubscribe(channel);
+  } catch (err) {
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during unsubscribe");
+  }
+};
+
+/**
  * Register a given handler for messages of a given channel. This will lazily create the necessary subscriber client.
  * Errors happening during channel subscribe will be thrown and event errors will be logged.
  *
  * @param channel whose messages should be processed
  * @param handler to process messages
  */
-const registerMessageHandler = (channel, handler) => {
-  if (!subscriberClient) {
-    try {
-      subscriberClient = _createSubscriber();
-    } catch (err) {
-      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create subscriber");
-    }
-  }
-  const count = messageHandlers.registerHandler(channel, handler);
-  if (count === 1) {
-    subscriberClient.subscribe(channel);
-  }
-};
+const registerMessageHandler = (channel, handler) => messageHandlers.registerHandler(channel, handler);
 
 /**
- * Stop a given handler from processing messages of a given channel.
+ * Stop a given handler from processing messages of a given subscribed channel.
  *
  * @param channel whose messages should not be processed
  * @param handler to remove
  */
-const removeMessageHandler = (channel, handler) => {
-  if (!subscriberClient || !messageHandlers.hasHandlers(channel)) {
-    return;
-  }
-  const count = messageHandlers.removeHandler(channel, handler);
-  if (count === 0) {
-    subscriberClient.unsubscribe(channel);
-  }
-};
+const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler(channel, handler);
 
 /**
- * Stop all handlers from processing messages of a given channel.
+ * Stop all handlers from processing messages of a given subscribed channel.
  *
  * @param channel whose messages should not be processed
  */
-const removeAllMessageHandlers = (channel) => {
-  if (!subscriberClient || !messageHandlers.hasHandlers(channel)) {
-    return;
-  }
-  messageHandlers.removeAllHandlers(channel);
-  subscriberClient.unsubscribe(channel);
-};
+const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
 module.exports = {
   get,
@@ -341,21 +369,26 @@ module.exports = {
   watchedGetSet,
   watchedGetSetObject,
   publishMessage,
+  subscribe,
+  unsubscribe,
   registerMessageHandler,
   removeMessageHandler,
   removeAllMessageHandlers,
 
   _: {
+    _reset,
     _getMessageHandlers: () => messageHandlers,
     _getLogger: () => logger,
-    _reset,
-    _setRedisIsOnCF,
-    _getClient,
-    _getSubscriberClient,
-    _onMessage,
+    _setRedisIsOnCF: (value) => (redisIsOnCF = value),
+    _getMainClient: () => mainClient,
+    _setMainClient: (value) => (mainClient = value),
+    _getSubscriberClient: () => subscriberClient,
+    _setSubscriberClient: (value) => (subscriberClient = value),
+    _subscribedMessageHandler,
     _createClientBase,
-    _createClient,
-    _createSubscriber,
+    _createClientAndConnect,
+    _createMainClientAndConnect,
+    _createSubscriberAndConnect,
     _clientExec,
   },
 };

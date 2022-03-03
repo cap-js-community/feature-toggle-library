@@ -22,11 +22,7 @@
  */
 "use strict";
 
-// TODO migrate to redis v4 https://github.com/redis/node-redis/blob/master/docs/v3-to-v4.md
-
 // TODO locale for validation messages
-
-// TODO online documentation covering usage examples incl rest-api and one-key advantages/disadvantages
 
 const { promisify } = require("util");
 const path = require("path");
@@ -34,10 +30,11 @@ const { readFile } = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
 const {
-  registerMessageHandler,
   getObject: redisGetObject,
   watchedGetSetObject: redisWatchedGetSetObject,
   publishMessage,
+  subscribe: redisSubscribe,
+  registerMessageHandler,
 } = require("./redisWrapper");
 const { Logger } = require("./logger");
 const { LazyCache } = require("./lazyCaches");
@@ -469,6 +466,7 @@ class FeatureToggles {
         return { ...validatedFallback, ...validatedOldValues };
       });
       registerMessageHandler(this.__featuresChannel, this.__messageHandler);
+      await redisSubscribe(this.__featuresChannel);
     } catch (err) {
       logger.warning(
         isOnCF

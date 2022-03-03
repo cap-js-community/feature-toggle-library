@@ -15,6 +15,7 @@ jest.mock("../src/redisWrapper", () => ({
   publishMessage: jest.fn(),
   getObject: jest.fn(),
   watchedGetSetObject: jest.fn(),
+  subscribe: jest.fn(),
 }));
 
 const FEATURE = {
@@ -106,7 +107,9 @@ describe("feature toggles test", () => {
     expect(redisWrapper.watchedGetSetObject).toBeCalledWith(featuresKey, expect.any(Function));
     expect(redisWrapper.registerMessageHandler).toBeCalledTimes(1);
     expect(redisWrapper.registerMessageHandler).toBeCalledWith(featuresChannel, featureToggles.__messageHandler);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(redisWrapper.subscribe).toBeCalledTimes(1);
+    expect(redisWrapper.subscribe).toBeCalledWith(featuresChannel);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("_changeRemoteFeatureValues", async () => {
@@ -121,7 +124,7 @@ describe("feature toggles test", () => {
     expect(redisWrapper.watchedGetSetObject).toBeCalledWith(featuresKey, expect.any(Function));
     expect(redisWrapper.publishMessage).toBeCalledTimes(1);
     expect(redisWrapper.publishMessage).toBeCalledWith(featuresChannel, refreshMessage);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("_changeRemoteFeatureValuesCallbackFromInput", async () => {
@@ -139,7 +142,7 @@ describe("feature toggles test", () => {
       [FEATURE.B]: 1,
       [FEATURE.C]: "c",
     });
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("validateInput", async () => {
@@ -210,7 +213,7 @@ describe("feature toggles test", () => {
       expect(result).toStrictEqual(output);
       expect(validationErrors).toStrictEqual(expectedValidationErrors);
     }
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("isValidFeatureValueType", async () => {
@@ -231,7 +234,7 @@ describe("feature toggles test", () => {
     expect(validKeys.map((key) => FeatureToggles._isValidFeatureKey(validKeys, key))).toStrictEqual(
       validKeys.map(() => true)
     );
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("getFeatureConfig", async () => {
@@ -296,7 +299,7 @@ describe("feature toggles test", () => {
     expect(otherEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
       otherEntries.map(() => null)
     );
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("getFeatureValues", async () => {
@@ -312,7 +315,7 @@ describe("feature toggles test", () => {
     const result = featureToggles.getFeatureValues();
     expect(result).not.toBe(mockFeatureValues);
     expect(result).toStrictEqual(mockFeatureValues);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("changeFeatureValue", async () => {
@@ -330,7 +333,7 @@ describe("feature toggles test", () => {
     expect(redisWrapper.publishMessage).toHaveBeenCalledWith(featuresChannel, refreshMessage);
     expect(redisWrapper.getObject).toHaveBeenCalledTimes(1);
     expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("changeFeatureValues", async () => {
@@ -349,7 +352,7 @@ describe("feature toggles test", () => {
     expect(redisWrapper.publishMessage).toHaveBeenCalledWith(featuresChannel, refreshMessage);
     expect(redisWrapper.getObject).toHaveBeenCalledTimes(1);
     expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("changeFeatureValues failing", async () => {
@@ -369,10 +372,10 @@ describe("feature toggles test", () => {
         },
       ]
     `);
-    expect(redisWrapper.watchedGetSetObject).toHaveBeenCalledTimes(0);
-    expect(redisWrapper.publishMessage).toHaveBeenCalledTimes(0);
-    expect(redisWrapper.getObject).toHaveBeenCalledTimes(0);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(redisWrapper.watchedGetSetObject).not.toHaveBeenCalled();
+    expect(redisWrapper.publishMessage).not.toHaveBeenCalled();
+    expect(redisWrapper.getObject).not.toHaveBeenCalled();
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("refreshFeatureValues", async () => {
@@ -384,7 +387,7 @@ describe("feature toggles test", () => {
     expect(redisWrapper.getObject).toHaveBeenCalledTimes(1);
     expect(redisWrapper.getObject).toHaveBeenCalledWith(featuresKey);
     expect(featureToggles.__featureValues).toBe("getObjectReturn");
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("FeatureValueChangeHandler and refreshFeatureValues", async () => {
@@ -399,14 +402,14 @@ describe("feature toggles test", () => {
     // other toggle
     redisWrapper.getObject.mockReturnValueOnce({ ...mockFeatureValues, [FEATURE.B]: 100 });
     await featureToggles.refreshFeatureValues();
-    expect(handler).toHaveBeenCalledTimes(0);
+    expect(handler).not.toHaveBeenCalled();
 
     // right toggle
     redisWrapper.getObject.mockReturnValueOnce({ ...mockFeatureValues, [FEATURE.B]: 101, [FEATURE.C]: newValue });
     await featureToggles.refreshFeatureValues();
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(newValue, oldValue);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
 
     // right toggle but throwing
     const error = new Error("bad handler");
@@ -439,7 +442,7 @@ describe("feature toggles test", () => {
     // other toggle
     validationErrors = await featureToggles.changeFeatureValues({ [FEATURE.B]: 100 });
     expect(validationErrors).toMatchInlineSnapshot(`undefined`);
-    expect(validator).toHaveBeenCalledTimes(0);
+    expect(validator).not.toHaveBeenCalled();
 
     // right toggle
     validationErrors = await featureToggles.changeFeatureValues({ [FEATURE.B]: 101, [FEATURE.C]: newValue });
@@ -522,7 +525,7 @@ describe("feature toggles test", () => {
     expect(validator).toHaveBeenCalledTimes(1);
     expect(validator).toHaveBeenCalledWith(newValue);
 
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("FeatureValueValidation and inactive", async () => {

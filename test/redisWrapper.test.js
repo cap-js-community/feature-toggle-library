@@ -10,14 +10,15 @@ const mockMessageHandlerTwo = jest.fn();
 const mockMultiClient = {
   del: jest.fn(() => mockMultiClient),
   set: jest.fn(() => mockMultiClient),
-  exec: jest.fn((callback) => callback(null, "multiexecreturn")),
+  exec: jest.fn(async () => "multiexecreturn"),
 };
 const mockClient = {
   on: jest.fn(),
-  get: jest.fn((key, callback) => callback(null, "getreturn")),
-  set: jest.fn((key, value, callback) => callback(null, "setreturn")),
-  watch: jest.fn((key, callback) => callback(null, "watchreturn")),
-  publish: jest.fn(() => "publishreturn"),
+  get: jest.fn(async () => "getreturn"),
+  set: jest.fn(async () => "setreturn"),
+  watch: jest.fn(async () => "watchreturn"),
+  publish: jest.fn(async () => "publishreturn"),
+  connect: jest.fn(async () => "connectreturn"),
   subscribe: jest.fn(),
   unsubscribe: jest.fn(),
   multi: jest.fn(() => mockMultiClient),
@@ -45,13 +46,18 @@ describe("redis wrapper test", () => {
     redisWrapper._._reset();
   });
 
-  it("_createClientBase shortcut", async () => {
-    const shortcut = "shortcut";
-    const client = redisWrapper._._createClientBase(shortcut);
+  it("_createMainClientAndConnect/_createSubscriberClientAndConnect shortcut", async () => {
+    const shortcutMain = "shortcutMain";
+    const shortcutSubscriber = "shortcutSubscriber";
+    redisWrapper._._setMainClient(shortcutMain);
+    redisWrapper._._setSubscriberClient(shortcutSubscriber);
+    const mainClient = await redisWrapper._._createMainClientAndConnect();
+    const subscriberClient = await redisWrapper._._createSubscriberAndConnect();
 
     expect(redis.createClient).not.toHaveBeenCalled();
-    expect(client).toBe(shortcut);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(mainClient).toBe(shortcutMain);
+    expect(subscriberClient).toBe(shortcutSubscriber);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("_createClientBase local", async () => {
@@ -61,7 +67,7 @@ describe("redis wrapper test", () => {
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveBeenCalledWith();
     expect(client).toBe(mockClient);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("_createClientBase on CF", async () => {
@@ -75,174 +81,174 @@ describe("redis wrapper test", () => {
     expect(env.cfServiceCredentials).toHaveBeenCalledTimes(1);
     expect(env.cfServiceCredentials).toHaveBeenCalledWith({ label: "redis-cache" });
     expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redis.createClient).toHaveBeenCalledWith(mockUrlUsable, { no_ready_check: true });
+    expect(redis.createClient).toHaveBeenCalledWith({ url: mockUrlUsable });
     expect(client).toBe(mockClient);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  it("_createClient", async () => {
-    const client = redisWrapper._._createClient();
+  it("_createMainClientAndConnect", async () => {
+    const client = await redisWrapper._._createMainClientAndConnect();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redisWrapper._._getClient()).toBe(client);
+    expect(client.connect).toHaveBeenCalledTimes(1);
+    expect(redisWrapper._._getMainClient()).toBe(client);
     expect(mockClient.on).toHaveBeenCalledTimes(1);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.subscribe).not.toHaveBeenCalled();
     expect(mockClient.publish).not.toHaveBeenCalled();
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  it("_createSubscriber", async () => {
-    const client = redisWrapper._._createSubscriber();
+  it("_createSubscriberAndConnect", async () => {
+    const client = await redisWrapper._._createSubscriberAndConnect();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redisWrapper._._getSubscriberClient()).toBe(client);
-    expect(mockClient.on).toHaveBeenCalledTimes(2);
-    expect(mockClient.on).toHaveBeenNthCalledWith(1, "error", expect.any(Function));
-    expect(mockClient.on).toHaveBeenNthCalledWith(2, "message", redisWrapper._._onMessage);
+    expect(mockClient.on).toHaveBeenCalledTimes(1);
+    expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.subscribe).not.toHaveBeenCalled();
     expect(mockClient.publish).not.toHaveBeenCalled();
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("_clientExec", async () => {
-    const result = await redisWrapper._._clientExec("setAsync", { key: "key", value: "value" });
-    const client = redisWrapper._._getClient();
+    const result = await redisWrapper._._clientExec("set", { key: "key", value: "value" });
+    const client = redisWrapper._._getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(client);
     expect(client.on).toHaveBeenCalledTimes(1);
     expect(client.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.set).toHaveBeenCalledTimes(1);
-    expect(mockClient.set).toHaveBeenCalledWith("key", "value", expect.any(Function));
+    expect(mockClient.set).toHaveBeenCalledWith("key", "value");
     expect(result).toBe("setreturn");
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("get key", async () => {
     const result = await redisWrapper.get("key");
     expect(mockClient.get).toHaveBeenCalledTimes(1);
-    expect(mockClient.get).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenCalledWith("key");
     expect(result).toBe("getreturn");
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("getObject key", async () => {
     const resultObj = { result: "result" };
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(resultObj)));
+    mockClient.get.mockImplementationOnce(async () => JSON.stringify(resultObj));
     const result = await redisWrapper.getObject("key");
     expect(mockClient.get).toHaveBeenCalledTimes(1);
-    expect(mockClient.get).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenCalledWith("key");
     expect(result).toMatchObject(resultObj);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("set key value", async () => {
     const result = await redisWrapper.set("key", "value");
     expect(mockClient.set).toHaveBeenCalledTimes(1);
-    expect(mockClient.set).toHaveBeenCalledWith("key", "value", expect.any(Function));
+    expect(mockClient.set).toHaveBeenCalledWith("key", "value");
     expect(result).toBe("setreturn");
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("setObject key value", async () => {
     const inputObj = { input: "input" };
     const result = await redisWrapper.setObject("key", inputObj);
     expect(mockClient.set).toHaveBeenCalledTimes(1);
-    expect(mockClient.set).toHaveBeenCalledWith("key", JSON.stringify(inputObj), expect.any(Function));
+    expect(mockClient.set).toHaveBeenCalledWith("key", JSON.stringify(inputObj));
     expect(result).toBe("setreturn");
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("watchedGetSet", async () => {
     const oldValue = "oldValue";
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, oldValue));
-    mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, ["OK"]));
+    mockClient.get.mockImplementationOnce(async () => oldValue);
+    mockMultiClient.exec.mockImplementationOnce(async () => ["OK"]);
     const newValue = "newValue";
     const newValueCallback = jest.fn(() => newValue);
     const result = await redisWrapper.watchedGetSet("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
-    expect(mockClient.watch).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.watch).toHaveBeenCalledWith("key");
     expect(mockClient.get).toHaveBeenCalledTimes(1);
-    expect(mockClient.get).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenCalledWith("key");
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.set).toHaveBeenCalledTimes(1);
     expect(mockMultiClient.set).toHaveBeenCalledWith("key", newValue);
     expect(mockMultiClient.exec).toHaveBeenCalledTimes(1);
-    expect(mockMultiClient.exec).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockMultiClient.exec).toHaveBeenCalledWith();
     expect(result).toBe(newValue);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("watchedGetSetObject", async () => {
     const oldValue = { oldValue: "oldValue" };
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue)));
-    mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, ["OK"]));
+    mockClient.get.mockImplementationOnce(async () => JSON.stringify(oldValue));
+    mockMultiClient.exec.mockImplementationOnce(async () => ["OK"]);
     const newValue = { newValue: "newValue" };
     const newValueCallback = jest.fn(() => newValue);
     const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
-    expect(mockClient.watch).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.watch).toHaveBeenCalledWith("key");
     expect(mockClient.get).toHaveBeenCalledTimes(1);
-    expect(mockClient.get).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenCalledWith("key");
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.set).toHaveBeenCalledTimes(1);
     expect(mockMultiClient.set).toHaveBeenCalledWith("key", JSON.stringify(newValue));
     expect(mockMultiClient.exec).toHaveBeenCalledTimes(1);
-    expect(mockMultiClient.exec).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockMultiClient.exec).toHaveBeenCalledWith();
     expect(result).toBe(newValue);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("watchedGetSetObject newValue = null", async () => {
     const oldValue = { oldValue: "oldValue" };
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue)));
-    mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, [1]));
+    mockClient.get.mockImplementationOnce(async () => JSON.stringify(oldValue));
+    mockMultiClient.exec.mockImplementationOnce(async () => [1]);
     const newValue = null;
     const newValueCallback = jest.fn(() => newValue);
     const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
-    expect(mockClient.watch).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.watch).toHaveBeenCalledWith("key");
     expect(mockClient.get).toHaveBeenCalledTimes(1);
-    expect(mockClient.get).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenCalledWith("key");
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.del).toHaveBeenCalledTimes(1);
     expect(mockMultiClient.del).toHaveBeenCalledWith("key");
     expect(mockMultiClient.exec).toHaveBeenCalledTimes(1);
-    expect(mockMultiClient.exec).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockMultiClient.exec).toHaveBeenCalledWith();
     expect(result).toBe(newValue);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("watchedGetSetObject oldValue = newValue", async () => {
     const oldValue = { oldValue: "oldValue" };
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue)));
+    mockClient.get.mockImplementationOnce(async () => JSON.stringify(oldValue));
     const newValueCallback = jest.fn((oldValue) => oldValue);
     const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(1);
-    expect(mockClient.watch).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.watch).toHaveBeenCalledWith("key");
     expect(mockClient.get).toHaveBeenCalledTimes(1);
-    expect(mockClient.get).toHaveBeenCalledWith("key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenCalledWith("key");
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.set).not.toHaveBeenCalled();
     expect(mockMultiClient.del).not.toHaveBeenCalled();
     expect(mockMultiClient.exec).not.toHaveBeenCalled();
     expect(result).toMatchObject(oldValue);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("watchedGetSetObject 2x attempts", async () => {
     const oldValue1 = { oldValue1: "oldValue" };
     const oldValue2 = { oldValue2: "oldValue" };
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue1)));
-    mockClient.get.mockImplementationOnce((key, callback) => callback(null, JSON.stringify(oldValue2)));
-    mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, null));
-    mockMultiClient.exec.mockImplementationOnce((callback) => callback(null, ["OK"]));
+    mockClient.get.mockImplementationOnce(async () => JSON.stringify(oldValue1));
+    mockClient.get.mockImplementationOnce(async () => JSON.stringify(oldValue2));
+    mockMultiClient.exec.mockImplementationOnce(async () => null);
+    mockMultiClient.exec.mockImplementationOnce(async () => ["OK"]);
     const newValue1 = { newValue1: "newValue" };
     const newValue2 = { newValue2: "newValue" };
     const newValueCallback = jest.fn();
@@ -251,11 +257,11 @@ describe("redis wrapper test", () => {
     const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
 
     expect(mockClient.watch).toHaveBeenCalledTimes(2);
-    expect(mockClient.watch).toHaveBeenNthCalledWith(1, "key", expect.any(Function));
-    expect(mockClient.watch).toHaveBeenNthCalledWith(2, "key", expect.any(Function));
+    expect(mockClient.watch).toHaveBeenNthCalledWith(1, "key");
+    expect(mockClient.watch).toHaveBeenNthCalledWith(2, "key");
     expect(mockClient.get).toHaveBeenCalledTimes(2);
-    expect(mockClient.get).toHaveBeenNthCalledWith(1, "key", expect.any(Function));
-    expect(mockClient.get).toHaveBeenNthCalledWith(2, "key", expect.any(Function));
+    expect(mockClient.get).toHaveBeenNthCalledWith(1, "key");
+    expect(mockClient.get).toHaveBeenNthCalledWith(2, "key");
     expect(newValueCallback).toHaveBeenCalledTimes(2);
     expect(newValueCallback).toHaveBeenNthCalledWith(1, oldValue1);
     expect(newValueCallback).toHaveBeenNthCalledWith(2, oldValue2);
@@ -263,10 +269,10 @@ describe("redis wrapper test", () => {
     expect(mockMultiClient.set).toHaveBeenNthCalledWith(1, "key", JSON.stringify(newValue1));
     expect(mockMultiClient.set).toHaveBeenNthCalledWith(2, "key", JSON.stringify(newValue2));
     expect(mockMultiClient.exec).toHaveBeenCalledTimes(2);
-    expect(mockMultiClient.exec).toHaveBeenNthCalledWith(1, expect.any(Function));
-    expect(mockMultiClient.exec).toHaveBeenNthCalledWith(2, expect.any(Function));
+    expect(mockMultiClient.exec).toHaveBeenNthCalledWith(1);
+    expect(mockMultiClient.exec).toHaveBeenNthCalledWith(2);
     expect(result).toBe(newValue2);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("publishMessage", async () => {
@@ -274,42 +280,21 @@ describe("redis wrapper test", () => {
     expect(mockClient.publish).toHaveBeenCalledTimes(1);
     expect(mockClient.publish).toHaveBeenCalledWith(channel, message);
     expect(result).toBe("publishreturn");
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  it("registerMessageHandler", async () => {
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
-    const subscriber = redisWrapper._._getSubscriberClient();
-    expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redis.createClient).toHaveReturnedWith(subscriber);
-    expect(subscriber.on).toHaveBeenCalledTimes(2);
-    expect(subscriber.on).toHaveBeenNthCalledWith(1, "error", expect.any(Function));
-    expect(subscriber.on).toHaveBeenNthCalledWith(2, "message", redisWrapper._._onMessage);
-    expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
-    expect(subscriber.subscribe).toHaveBeenCalledWith(channel);
-    expect(mockClient.publish).not.toHaveBeenCalled();
-
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
-    expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
-
-    await redisWrapper._._onMessage(channel, message);
-    expect(mockMessageHandler).toHaveBeenCalledTimes(1);
-    expect(mockMessageHandler).toHaveBeenCalledWith(message);
-    expect(mockMessageHandlerTwo).toHaveBeenCalledTimes(1);
-    expect(mockMessageHandlerTwo).toHaveBeenCalledWith(message);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
-  });
-
-  it("onMessage error", async () => {
+  it("_subscribedMessageHandler error", async () => {
     redisWrapper._._setRedisIsOnCF(true);
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
     env.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
+    redisWrapper.registerMessageHandler(channel, mockMessageHandler);
+    redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
+    await redisWrapper.subscribe(channel);
 
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     const error = new Error("bad");
     mockMessageHandlerTwo.mockRejectedValue(error);
-    await redisWrapper._._onMessage(channel, message);
+    await redisWrapper._._subscribedMessageHandler(message, channel);
+
     expect(loggerSpy.error).toHaveBeenCalledTimes(1);
     expect(loggerSpy.error).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -318,32 +303,64 @@ describe("redis wrapper test", () => {
     );
   });
 
-  it("removeMessageHandler", async () => {
-    redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
-    await redisWrapper.registerMessageHandler(channelTwo, mockMessageHandlerTwo);
+  it("registerMessageHandler and subscribe", async () => {
+    redisWrapper.registerMessageHandler(channel, mockMessageHandler);
+    await redisWrapper.subscribe(channel);
+
     const subscriber = redisWrapper._._getSubscriberClient();
+    expect(redis.createClient).toHaveBeenCalledTimes(1);
+    expect(redis.createClient).toHaveReturnedWith(subscriber);
+    expect(subscriber.on).toHaveBeenCalledTimes(1);
+    expect(subscriber.on).toHaveBeenCalledWith("error", expect.any(Function));
+    expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
+    expect(subscriber.subscribe).toHaveBeenCalledWith(channel, redisWrapper._._subscribedMessageHandler);
+    expect(mockClient.publish).not.toHaveBeenCalled();
 
-    await redisWrapper.removeMessageHandler(channel, mockMessageHandler);
-    expect(subscriber.unsubscribe).not.toHaveBeenCalled();
+    redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
 
-    await redisWrapper.removeMessageHandler(channel, mockMessageHandlerTwo);
+    await redisWrapper._._subscribedMessageHandler(message, channel);
+    expect(mockMessageHandler).toHaveBeenCalledTimes(1);
+    expect(mockMessageHandler).toHaveBeenCalledWith(message);
+    expect(mockMessageHandlerTwo).toHaveBeenCalledTimes(1);
+    expect(mockMessageHandlerTwo).toHaveBeenCalledWith(message);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
+
+  it("removeMessageHandler and unsubscribe", async () => {
+    redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
+    redisWrapper.registerMessageHandler(channel, mockMessageHandler);
+    redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
+    redisWrapper.registerMessageHandler(channelTwo, mockMessageHandlerTwo);
+
+    redisWrapper.removeMessageHandler(channel, mockMessageHandler);
+    redisWrapper.removeMessageHandler(channel, mockMessageHandlerTwo);
+    await redisWrapper.unsubscribe(channel);
+    const subscriber = redisWrapper._._getSubscriberClient();
+    await redisWrapper._._subscribedMessageHandler(message, channel);
+
     expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscriber.unsubscribe).toHaveBeenCalledWith(channel);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(mockMessageHandler).not.toHaveBeenCalled();
+    expect(mockMessageHandlerTwo).not.toHaveBeenCalled();
+
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
   it("removeAllMessageHandlers", async () => {
     redisWrapper._._getMessageHandlers().removeAllHandlers(channel);
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandler);
-    await redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
-    await redisWrapper.registerMessageHandler(channelTwo, mockMessageHandlerTwo);
-    const subscriber = redisWrapper._._getSubscriberClient();
+    redisWrapper.registerMessageHandler(channel, mockMessageHandler);
+    redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
+    redisWrapper.registerMessageHandler(channelTwo, mockMessageHandlerTwo);
 
-    await redisWrapper.removeAllMessageHandlers(channel);
+    redisWrapper.removeAllMessageHandlers(channel);
+    await redisWrapper.unsubscribe(channel);
+    const subscriber = redisWrapper._._getSubscriberClient();
+    await redisWrapper._._subscribedMessageHandler(message, channel);
+
     expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscriber.unsubscribe).toHaveBeenCalledWith(channel);
-    expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(mockMessageHandler).not.toHaveBeenCalled();
+    expect(mockMessageHandlerTwo).not.toHaveBeenCalled();
+    expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 });
