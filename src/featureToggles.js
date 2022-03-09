@@ -429,7 +429,7 @@ class FeatureToggles {
               ...(config && { configBase: JSON.stringify(config) }),
             },
           },
-          "initializtion aborted, could not resolve configuration"
+          "initialization aborted, could not resolve configuration"
         )
       );
     }

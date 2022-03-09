@@ -30,14 +30,22 @@ const _reset = () => {
   messageHandlers = new HandlerCollection();
 };
 
-const _logErrorOnEvent = (err, ...messages) =>
-  redisIsOnCF
-    ? logger.error(
-        messages.length
-          ? new VError({ name: VERROR_CLUSTER_NAME, cause: err }, ...messages)
-          : new VError({ name: VERROR_CLUSTER_NAME, cause: err })
-      )
-    : logger.warning("error caught during event: %s", err.message);
+const _logErrorOnEvent = (err, ...messages) => {
+  if (redisIsOnCF) {
+    if (messages.length) {
+      logger.error(new VError({ name: VERROR_CLUSTER_NAME, cause: err }, ...messages));
+    } else {
+      logger.error(new VError({ name: VERROR_CLUSTER_NAME, cause: err }));
+    }
+  } else {
+    // !redisIsOnCF
+    if (messages.length) {
+      logger.warning("caught error event: %s | %s", err.message, messages.join("\n"));
+    } else {
+      logger.warning("caught error event: %s", err.message);
+    }
+  }
+};
 
 const _subscribedMessageHandler = async (message, channel) => {
   const handlers = messageHandlers.getHandlers(channel);
@@ -113,19 +121,18 @@ const _createClientAndConnect = async (errorHandler) => {
  */
 const _createMainClientAndConnect = async () => {
   if (!mainClient) {
-    const mainClientErrorHandler = async (err) => {
+    const mainClientErrorHandler = async function (err) {
       _logErrorOnEvent(err, "error event on main redis client");
-      if (mainClient) {
-        let quitError = null;
-        try {
-          await mainClient.quit();
-        } catch (err) {
-          quitError = err;
-        }
-        mainClient = null;
-        if (quitError) {
-          throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
-        }
+      mainClient = this;
+      let quitError = null;
+      try {
+        await mainClient.quit();
+      } catch (err) {
+        quitError = err;
+      }
+      mainClient = null;
+      if (quitError) {
+        throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
       }
     };
     mainClient = await _createClientAndConnect(mainClientErrorHandler);
@@ -144,19 +151,18 @@ const _createMainClientAndConnect = async () => {
  */
 const _createSubscriberAndConnect = async () => {
   if (!subscriberClient) {
-    const subscriberClientErrorHandler = async (err) => {
+    const subscriberClientErrorHandler = async function (err) {
       _logErrorOnEvent(err, "error event on subscriber redis client");
-      if (subscriberClient) {
-        let quitError = null;
-        try {
-          await subscriberClient.quit();
-        } catch (err) {
-          quitError = err;
-        }
-        subscriberClient = null;
-        if (quitError) {
-          throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
-        }
+      subscriberClient = this;
+      let quitError = null;
+      try {
+        await subscriberClient.quit();
+      } catch (err) {
+        quitError = err;
+      }
+      subscriberClient = null;
+      if (quitError) {
+        throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
       }
     };
     subscriberClient = await _createClientAndConnect(subscriberClientErrorHandler);
