@@ -30,22 +30,8 @@ const _reset = () => {
   messageHandlers = new HandlerCollection();
 };
 
-const _logErrorOnEvent = (err, ...messages) => {
-  if (redisIsOnCF) {
-    if (messages.length) {
-      logger.error(new VError({ name: VERROR_CLUSTER_NAME, cause: err }, ...messages));
-    } else {
-      logger.error(new VError({ name: VERROR_CLUSTER_NAME, cause: err }));
-    }
-  } else {
-    // !redisIsOnCF
-    if (messages.length) {
-      logger.warning("caught error event: %s | %s", err.message, messages.join("\n"));
-    } else {
-      logger.warning("caught error event: %s", err.message);
-    }
-  }
-};
+const _logErrorOnEvent = (err) =>
+  redisIsOnCF ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
 
 const _subscribedMessageHandler = async (message, channel) => {
   const handlers = messageHandlers.getHandlers(channel);
@@ -56,14 +42,26 @@ const _subscribedMessageHandler = async (message, channel) => {
           try {
             return await handler(message);
           } catch (err) {
-            _logErrorOnEvent(err, "error during message handler %O", {
-              handler: handler.name || "anonymous",
-              channel,
-            });
+            _logErrorOnEvent(
+              new VError(
+                {
+                  name: VERROR_CLUSTER_NAME,
+                  cause: err,
+                  info: {
+                    handler: handler.name || "anonymous",
+                    channel,
+                  },
+                },
+                "error during message handler"
+              )
+            );
           }
         })
       );
 };
+
+const _localReconnectStrategy = () =>
+  new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
 
 /**
  * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
@@ -87,7 +85,7 @@ const _createClientBase = () => {
       );
     }
   } else {
-    return redis.createClient();
+    return redis.createClient({ socket: { reconnectStrategy: _localReconnectStrategy } });
   }
 };
 
@@ -109,6 +107,23 @@ const _createClientAndConnect = async (errorHandler) => {
   return client;
 };
 
+const _clientErrorHandlerBase = async (client, err, clientName) => {
+  _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
+  if (client.isOpen) {
+    let quitError = null;
+    try {
+      await client.quit();
+    } catch (err) {
+      quitError = err;
+    }
+    if (quitError) {
+      _logErrorOnEvent(
+        new VError({ name: VERROR_CLUSTER_NAME, cause: quitError, info: { clientName } }, "error during client quit")
+      );
+    }
+  }
+};
+
 /**
  * Lazily create a regular client to be used
  * - for getting/setting values
@@ -121,21 +136,10 @@ const _createClientAndConnect = async (errorHandler) => {
  */
 const _createMainClientAndConnect = async () => {
   if (!mainClient) {
-    const mainClientErrorHandler = async function (err) {
-      _logErrorOnEvent(err, "error event on main redis client");
-      mainClient = this;
-      let quitError = null;
-      try {
-        await mainClient.quit();
-      } catch (err) {
-        quitError = err;
-      }
+    mainClient = await _createClientAndConnect(async function (err) {
       mainClient = null;
-      if (quitError) {
-        throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
-      }
-    };
-    mainClient = await _createClientAndConnect(mainClientErrorHandler);
+      await _clientErrorHandlerBase(this, err, "main");
+    });
   }
   return mainClient;
 };
@@ -151,21 +155,10 @@ const _createMainClientAndConnect = async () => {
  */
 const _createSubscriberAndConnect = async () => {
   if (!subscriberClient) {
-    const subscriberClientErrorHandler = async function (err) {
-      _logErrorOnEvent(err, "error event on subscriber redis client");
-      subscriberClient = this;
-      let quitError = null;
-      try {
-        await subscriberClient.quit();
-      } catch (err) {
-        quitError = err;
-      }
+    subscriberClient = await _createClientAndConnect(async function (err) {
       subscriberClient = null;
-      if (quitError) {
-        throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during quit");
-      }
-    };
-    subscriberClient = await _createClientAndConnect(subscriberClientErrorHandler);
+      await _clientErrorHandlerBase(this, err, "subscriber");
+    });
   }
   return subscriberClient;
 };
@@ -391,6 +384,7 @@ module.exports = {
     _getSubscriberClient: () => subscriberClient,
     _setSubscriberClient: (value) => (subscriberClient = value),
     _subscribedMessageHandler,
+    _localReconnectStrategy,
     _createClientBase,
     _createClientAndConnect,
     _createMainClientAndConnect,
