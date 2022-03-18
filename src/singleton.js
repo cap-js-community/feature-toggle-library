@@ -1,14 +1,14 @@
 "use strict";
 
 const { FeatureToggles } = require("./featureToggles");
-const { cfApp } = require("./env");
+const { cfEnv } = require("./env");
 const { ENV } = require("./helper");
 
 const _uniqueNameFromEnv = process.env[ENV.UNIQUE_NAME] || null;
 
 const _uniqueNameFromCfApp = () => {
   try {
-    const { application_name } = cfApp();
+    const { application_name } = cfEnv.cfApp();
     return application_name;
   } catch (err) {
     return null;

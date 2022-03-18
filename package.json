@@ -1,6 +1,6 @@
 {
   "name": "@sap/btp-feature-toggles",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "description": "btp feature toggles via redis service",
   "main": "src/index.js",
   "files": [
@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@sap/logging": "^6.1.0",
-    "@sap/xsenv": "^3.2.1",
     "redis": "^4.0.4",
     "verror": "^1.10.1",
     "yaml": "^1.10.2"

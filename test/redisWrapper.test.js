@@ -1,10 +1,13 @@
 "use strict";
 
-const redisWrapper = require("../src/redisWrapper");
+const mockCfEnv = {
+  cfServiceCredentials: jest.fn(),
+};
+jest.mock("../src/env", () => ({
+  isOnCF: false,
+  cfEnv: mockCfEnv,
+}));
 
-const channel = "channel";
-const channelTwo = "channelTwo";
-const message = "message";
 const mockMessageHandler = jest.fn();
 const mockMessageHandlerTwo = jest.fn();
 const mockMultiClient = {
@@ -29,11 +32,11 @@ jest.mock("redis", () => ({
   createClient: jest.fn(() => mockClient),
 }));
 
-const env = require("../src/env");
-jest.mock("../src/env", () => ({
-  isOnCF: false,
-  cfServiceCredentials: jest.fn(),
-}));
+const redisWrapper = require("../src/redisWrapper");
+
+const channel = "channel";
+const channelTwo = "channelTwo";
+const message = "message";
 
 let loggerSpy = {
   info: jest.spyOn(redisWrapper._._getLogger(), "info"),
@@ -76,12 +79,12 @@ describe("redis wrapper test", () => {
     redisWrapper._._setRedisIsOnCF(true);
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
     const mockUrlUsable = mockUrl.replace("BAD_USERNAME", "");
-    env.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
+    mockCfEnv.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
 
     const client = redisWrapper._._createClientBase();
 
-    expect(env.cfServiceCredentials).toHaveBeenCalledTimes(1);
-    expect(env.cfServiceCredentials).toHaveBeenCalledWith({ label: "redis-cache" });
+    expect(mockCfEnv.cfServiceCredentials).toHaveBeenCalledTimes(1);
+    expect(mockCfEnv.cfServiceCredentials).toHaveBeenCalledWith({ label: "redis-cache" });
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveBeenCalledWith({ url: mockUrlUsable });
     expect(client).toBe(mockClient);
@@ -288,7 +291,7 @@ describe("redis wrapper test", () => {
   it("_subscribedMessageHandler error", async () => {
     redisWrapper._._setRedisIsOnCF(true);
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
-    env.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
+    mockCfEnv.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
     redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     await redisWrapper.subscribe(channel);

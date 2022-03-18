@@ -40,7 +40,7 @@ const { Logger } = require("./logger");
 const { LazyCache } = require("./lazyCaches");
 const { HandlerCollection } = require("./handlerCollection");
 const { ENV, isNull } = require("./helper");
-const { isOnCF, cfApp } = require("./env");
+const { isOnCF, cfEnv } = require("./env");
 
 const DEFAULT_FEATURES_CHANNEL = process.env[ENV.CHANNEL] || "features";
 const DEFAULT_FEATURES_KEY = process.env[ENV.KEY] || "features";
@@ -86,7 +86,7 @@ class FeatureToggles {
    * Populate this.__configCache.
    */
   async _populateConfigCache() {
-    const { uris: cfAppUris } = cfApp();
+    const { uris: cfAppUris } = cfEnv.cfApp();
     for (const [key, value] of Object.entries(this.__config)) {
       this.__configCache.setCb(
         [key, CACHE_KEY.VALIDATION_REG_EXP],

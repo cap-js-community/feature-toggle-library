@@ -7,7 +7,7 @@ const redis = require("redis");
 const VError = require("verror");
 const { Logger } = require("./logger");
 const { HandlerCollection } = require("./handlerCollection");
-const { isOnCF, cfServiceCredentials } = require("./env");
+const { isOnCF, cfEnv } = require("./env");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
@@ -73,7 +73,7 @@ const _localReconnectStrategy = () =>
 const _createClientBase = () => {
   if (redisIsOnCF) {
     try {
-      const credentials = cfServiceCredentials({ label: "redis-cache" });
+      const credentials = cfEnv.cfServiceCredentials({ label: "redis-cache" });
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
       const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
