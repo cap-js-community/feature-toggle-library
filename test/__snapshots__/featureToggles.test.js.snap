@@ -1,5 +1,31 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`feature toggles test _changeRemoteFeatureValues 1`] = `
+Object {
+  "test/feature_a": false,
+  "test/feature_b": 1,
+  "test/feature_c": "best",
+  "test/feature_d": true,
+  "test/feature_e": 5,
+  "test/feature_f": "best",
+  "test/feature_g": "activeTest",
+  "test/feature_h": "appUrlTest",
+}
+`;
+
+exports[`feature toggles test _changeRemoteFeatureValues 2`] = `
+Object {
+  "test/feature_a": false,
+  "test/feature_b": 1,
+  "test/feature_c": "new_a",
+  "test/feature_d": true,
+  "test/feature_e": 5,
+  "test/feature_f": "best",
+  "test/feature_g": "activeTest",
+  "test/feature_h": "appUrlTest",
+}
+`;
+
 exports[`feature toggles test getFeatureConfigs 1`] = `
 Object {
   "test/feature_a": Object {

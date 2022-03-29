@@ -36,6 +36,13 @@ class CfEnv {
   constructor(env = process.env) {
     this.__cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
     this.__cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
+    this.__cfServiceList = [].concat(...Object.values(this.__cfServices));
+    this.__cfServiceLabelMap = this.__cfServiceList.reduce((result, service) => {
+      if (service.label && !result[service.label]) {
+        result[service.label] = service;
+      }
+      return result;
+    }, {});
   }
 
   cfApp() {
@@ -47,15 +54,15 @@ class CfEnv {
   }
 
   cfServiceCredentials(options) {
-    const serivce = []
-      .concat(...Object.values(this.__cfServices))
-      .find((service) =>
-        Object.entries(options).reduce((result, [key, value]) => result && service[key] === value, true)
-      );
-    if (serivce && serivce.credentials) {
-      return serivce.credentials;
-    }
-    return {};
+    const service = this.__cfServiceList.find((service) =>
+      Object.entries(options).reduce((result, [key, value]) => result && service[key] === value, true)
+    );
+    return service && service.credentials ? service.credentials : {};
+  }
+
+  cfServiceCredentialsForLabel(label) {
+    const service = this.__cfServiceLabelMap[label];
+    return service && service.credentials ? service.credentials : {};
   }
 }
 

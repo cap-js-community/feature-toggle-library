@@ -1,7 +1,7 @@
 "use strict";
 
 const mockCfEnv = {
-  cfServiceCredentials: jest.fn(),
+  cfServiceCredentialsForLabel: jest.fn(),
 };
 jest.mock("../src/env", () => ({
   isOnCF: false,
@@ -79,12 +79,12 @@ describe("redis wrapper test", () => {
     redisWrapper._._setRedisIsOnCF(true);
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
     const mockUrlUsable = mockUrl.replace("BAD_USERNAME", "");
-    mockCfEnv.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
+    mockCfEnv.cfServiceCredentialsForLabel.mockImplementationOnce(() => ({ uri: mockUrl }));
 
     const client = redisWrapper._._createClientBase();
 
-    expect(mockCfEnv.cfServiceCredentials).toHaveBeenCalledTimes(1);
-    expect(mockCfEnv.cfServiceCredentials).toHaveBeenCalledWith({ label: "redis-cache" });
+    expect(mockCfEnv.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
+    expect(mockCfEnv.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveBeenCalledWith({ url: mockUrlUsable });
     expect(client).toBe(mockClient);
@@ -291,7 +291,7 @@ describe("redis wrapper test", () => {
   it("_subscribedMessageHandler error", async () => {
     redisWrapper._._setRedisIsOnCF(true);
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
-    mockCfEnv.cfServiceCredentials.mockImplementationOnce(() => ({ uri: mockUrl }));
+    mockCfEnv.cfServiceCredentialsForLabel.mockImplementationOnce(() => ({ uri: mockUrl }));
     redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
     await redisWrapper.subscribe(channel);

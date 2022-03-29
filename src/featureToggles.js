@@ -144,7 +144,7 @@ class FeatureToggles {
       return;
     }
 
-    const { active, appUrl, type: targetType, validation } = this.__config[key];
+    const { active, appUrl, type: targetType, validation } = this.__config[key] || {};
 
     // NOTE: skip validating active properties during initialization
     if (this.__isInitialized) {
@@ -281,39 +281,60 @@ class FeatureToggles {
     return [result, validationErrors];
   }
 
-  async _triggerChangeHandlers(newFeatureValues) {
-    const featureValueEntries = Object.entries(this.__featureValues);
-    return featureValueEntries.length === 0
-      ? null
-      : await Promise.all(
-          featureValueEntries.map(async ([key, value]) => {
-            const newValue = newFeatureValues[key];
-            const handlers = this.__featureValueChangeHandlers.getHandlers(key);
-            return newValue === value || handlers.length === 0
-              ? null
-              : await Promise.all(
-                  handlers.map(async (handler) => {
-                    try {
-                      return await handler(newValue, value);
-                    } catch (err) {
-                      logger.error(
-                        new VError(
-                          {
-                            name: VERROR_CLUSTER_NAME,
-                            cause: err,
-                            info: {
-                              handler: handler.name || "anonymous",
-                              key,
-                            },
-                          },
-                          "error during feature value change handler"
-                        )
-                      );
-                    }
-                  })
-                );
+  async _triggerChangeHandlers(newStateValues) {
+    const oldStateValues = this.__stateValues;
+    const deltaEntries = [];
+
+    for (const [key, oldValue] of Object.entries(oldStateValues)) {
+      const newValue = FeatureToggles._getFeatureValueForStateAndFallback(newStateValues, this.__fallbackValues, key);
+      if (newValue !== null && oldValue !== newValue) {
+        deltaEntries.push([key, oldValue, newValue]);
+      }
+    }
+    for (const [key, newValue] of Object.entries(newStateValues)) {
+      if (Object.prototype.hasOwnProperty.call(oldStateValues, key)) {
+        continue;
+      }
+      const oldValue = this.__fallbackValues[key];
+      if (oldValue !== newValue) {
+        deltaEntries.push([key, oldValue, newValue]);
+      }
+    }
+
+    if (deltaEntries.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      deltaEntries.map(async ([key, oldValue, newValue]) => {
+        const handlers = this.__featureValueChangeHandlers.getHandlers(key);
+        if (handlers.length === 0) {
+          return;
+        }
+
+        await Promise.all(
+          handlers.map(async (handler) => {
+            try {
+              return await handler(newValue, oldValue);
+            } catch (err) {
+              logger.error(
+                new VError(
+                  {
+                    name: VERROR_CLUSTER_NAME,
+                    cause: err,
+                    info: {
+                      handler: handler.name || "anonymous",
+                      key,
+                    },
+                  },
+                  "error during feature value change handler"
+                )
+              );
+            }
           })
         );
+      })
+    );
   }
 
   _ensureInitialized() {
@@ -332,13 +353,27 @@ class FeatureToggles {
   async refreshFeatureValues() {
     this._ensureInitialized();
     try {
-      const newFeatureValues = await redisGetObject(this.__featuresKey);
-      if (!newFeatureValues) {
+      const newStateValues = await redisGetObject(this.__featuresKey);
+      if (!newStateValues) {
         logger.error(new VError({ name: VERROR_CLUSTER_NAME }, "received empty feature values object from redis"));
         return;
       }
-      await this._triggerChangeHandlers(newFeatureValues);
-      this.__featureValues = newFeatureValues;
+
+      const [validatedNewStateRaw, validationErrors] = await this.validateInput(newStateValues);
+      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+        logger.warning(
+          new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              info: { validationErrors: JSON.stringify(validationErrors) },
+            },
+            "received and removed invalid values from redis"
+          )
+        );
+      }
+      const validatedNewState = validatedNewStateRaw !== null ? validatedNewStateRaw : {};
+      await this._triggerChangeHandlers(validatedNewState);
+      this.__stateValues = validatedNewState;
     } catch (err) {
       logger.error(new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during refresh feature values"));
     }
@@ -395,7 +430,8 @@ class FeatureToggles {
 
     this.__config = null;
     this.__configKeys = null;
-    this.__featureValues = null;
+    this.__fallbackValues = null;
+    this.__stateValues = null;
     this.__isInitialized = false;
   }
 
@@ -405,6 +441,20 @@ class FeatureToggles {
   // ========================================
   // START OF INITIALIZE SECTION
   // ========================================
+
+  /**
+   * This will filter out inactive values, which is needed during intitialization, where inactive keys are not
+   * considered invalid.
+   */
+  _filterInactive(values) {
+    return Object.entries(values).reduce((result, [key, value]) => {
+      const { active } = this.__config[key] || {};
+      if (active !== false && this.__configCache.get([key, CACHE_KEY.APP_URL_ACTIVE])) {
+        result[key] = value;
+      }
+      return result;
+    }, {});
+  }
 
   async initializeFeatureValues({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
     if (this.__isInitialized) {
@@ -434,12 +484,12 @@ class FeatureToggles {
       );
     }
 
-    const featureValuesFallback = Object.fromEntries(
+    this.__fallbackValues = Object.fromEntries(
       Object.entries(this.__config).map(([key, value]) => [key, value.fallbackValue])
     );
-    const [validatedFallback, validationErrors] = await this.validateInput(featureValuesFallback);
+    const [validatedFallback, validationErrors] = await this.validateInput(this.__fallbackValues);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-      logger.error(
+      logger.warning(
         new VError(
           {
             name: VERROR_CLUSTER_NAME,
@@ -450,7 +500,7 @@ class FeatureToggles {
       );
     }
     try {
-      this.__featureValues = await redisWatchedGetSetObject(this.__featuresKey, async (oldValue) => {
+      this.__stateValues = await redisWatchedGetSetObject(this.__featuresKey, async (oldValue) => {
         const [validatedOldValues, validationErrors] = await this.validateInput(oldValue);
         if (Array.isArray(validationErrors) && validationErrors.length > 0) {
           logger.warning(
@@ -463,7 +513,8 @@ class FeatureToggles {
             )
           );
         }
-        return { ...validatedFallback, ...validatedOldValues };
+        const newValue = { ...validatedFallback, ...validatedOldValues };
+        return this._filterInactive(newValue);
       });
       registerMessageHandler(this.__featuresChannel, this.__messageHandler);
       await redisSubscribe(this.__featuresChannel);
@@ -479,7 +530,7 @@ class FeatureToggles {
             )
           : "error during initialization, using fallback values"
       );
-      this.__featureValues = validatedFallback;
+      this.__stateValues = this._filterInactive(validatedFallback);
     }
 
     const featureCount = this.__configKeys.length;
@@ -532,6 +583,14 @@ class FeatureToggles {
   // START OF GET_FEATURE_VALUES SECTION
   // ========================================
 
+  static _getFeatureValueForStateAndFallback(stateValues, fallbackValues, key) {
+    return Object.prototype.hasOwnProperty.call(stateValues, key)
+      ? stateValues[key]
+      : Object.prototype.hasOwnProperty.call(fallbackValues, key)
+      ? fallbackValues[key]
+      : null;
+  }
+
   /**
    * Get the value of a given feature key or null.
    *
@@ -545,7 +604,7 @@ class FeatureToggles {
    */
   getFeatureValue(key) {
     this._ensureInitialized();
-    return Object.prototype.hasOwnProperty.call(this.__featureValues, key) ? this.__featureValues[key] : null;
+    return FeatureToggles._getFeatureValueForStateAndFallback(this.__stateValues, this.__fallbackValues, key);
   }
 
   /**
@@ -555,7 +614,7 @@ class FeatureToggles {
    */
   getFeatureValues() {
     this._ensureInitialized();
-    return { ...this.__featureValues };
+    return { ...this.__fallbackValues, ...this.__stateValues };
   }
 
   // ========================================
@@ -570,8 +629,11 @@ class FeatureToggles {
       if (oldValue === null) {
         return null;
       }
-      // NOTE keys where value === null are reset to their fallback values, unless the fallback was invalid.
-      // If the fallback value is invalid no change is triggered.
+
+      const newValue = { ...oldValue, ...validatedInput };
+
+      // NOTE: keys where value === null are reset to their fallback values, unless the fallback was invalid.
+      //   If the fallback value is invalid, it is not returned in the new state.
       for (const [key, value] of Object.entries(validatedInput)) {
         if (value === null) {
           const [validatedFallbackValue, entryValidationErrors] = this.__configCache.get([
@@ -579,7 +641,7 @@ class FeatureToggles {
             CACHE_KEY.FALLBACK_VALUE_VALIDATION,
           ]);
           if (validatedFallbackValue !== null) {
-            validatedInput[key] = validatedFallbackValue;
+            newValue[key] = validatedFallbackValue;
           } else {
             logger.warning(
               new VError(
@@ -591,15 +653,15 @@ class FeatureToggles {
                     validationErrors: JSON.stringify(entryValidationErrors),
                   },
                 },
-                "could not reset key because fallback is invalid"
+                "could not reset key, because fallback is invalid"
               )
             );
-            Reflect.deleteProperty(validatedInput, key);
+            Reflect.deleteProperty(newValue, key);
           }
         }
       }
 
-      return { ...oldValue, ...validatedInput };
+      return newValue;
     };
   }
 
@@ -611,9 +673,9 @@ class FeatureToggles {
     if (validatedInput === null) {
       return;
     }
-    const newValueCallback = this._changeRemoteFeatureValuesCallbackFromInput(validatedInput);
+    const newRedisStateCallback = this._changeRemoteFeatureValuesCallbackFromInput(validatedInput);
     try {
-      await redisWatchedGetSetObject(this.__featuresKey, newValueCallback);
+      await redisWatchedGetSetObject(this.__featuresKey, newRedisStateCallback);
       await publishMessage(this.__featuresChannel, this.__refreshMessage);
     } catch (err) {
       logger.warning(
@@ -631,9 +693,10 @@ class FeatureToggles {
             )
           : "error during change remote feature values, switching to local update"
       );
-      const newFeatureValues = newValueCallback(this.__featureValues);
-      await this._triggerChangeHandlers(newFeatureValues);
-      this.__featureValues = newFeatureValues;
+      // NOTE: in local mode, we trust that the state only contains valid values
+      const newStateValues = newRedisStateCallback(this.__stateValues);
+      await this._triggerChangeHandlers(newStateValues);
+      this.__stateValues = newStateValues;
     }
   }
 

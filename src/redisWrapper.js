@@ -73,7 +73,7 @@ const _localReconnectStrategy = () =>
 const _createClientBase = () => {
   if (redisIsOnCF) {
     try {
-      const credentials = cfEnv.cfServiceCredentials({ label: "redis-cache" });
+      const credentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
       const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");

@@ -22,14 +22,17 @@ and, for example, retroactively applied to the central state.
 Initialization broadly has this workflow:
 
 - read the configuration
-- filter out fallback values inconsistent with validation rules
+- validate fallback values and warn about invalid fallback values
 - if Redis cannot be reached:
   - use fallback values as local state and stop
-- if Redis is reachable and has no state:
-  - publish validated fallback values as initial state
-- if Redis is reachable and has a state:
-  - read state and filter out values inconsistent with validation rules replacing them with validated fallbacks
+- if Redis is reachable:
+  - read state and filter out values inconsistent with validation rules
+  - publish those validated fallback values, where corresponding keys are missing from state
+  - use validated Redis values if possible or, if none exist, fallback values as local state
 - subscribe to future updates from Redis
+
+After intialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
+if possible, validated values from Redis.
 
 ## Single Key Approach
 
