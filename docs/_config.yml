@@ -25,7 +25,7 @@ description: >-
 
 # Build settings
 markdown: kramdown
-remote_theme: just-the-docs/just-the-docs
+remote_theme: just-the-docs/just-the-docs@main
 
 # Exclude from processing.
 # The following items will not be processed, by default.
