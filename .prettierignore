@@ -3,5 +3,4 @@ package-lock.json
 temp/
 
 docs/vendor/
-docs/_sass/
 docs/_site/

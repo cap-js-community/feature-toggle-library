@@ -8,6 +8,7 @@ const VError = require("verror");
 const { Logger } = require("./logger");
 const { HandlerCollection } = require("./handlerCollection");
 const { isOnCF, cfEnv } = require("./env");
+const Semaphore = require("./semaphore");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
@@ -22,6 +23,8 @@ let redisIsOnCF = isOnCF;
 let mainClient = null;
 let subscriberClient = null;
 let messageHandlers = new HandlerCollection();
+
+const watchedGetSetSemaphore = new Semaphore();
 
 const _reset = () => {
   redisIsOnCF = isOnCF;
@@ -219,6 +222,15 @@ const setObject = async (key, value) => {
   return set(key, valueRaw);
 };
 
+const _watchedGetSetExclusive = async (key, newValueCallback, mode, attempts) => {
+  await watchedGetSetSemaphore.acquire();
+  try {
+    return await _watchedGetSet(key, newValueCallback, mode, attempts);
+  } finally {
+    watchedGetSetSemaphore.release();
+  }
+};
+
 const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempts = 10) => {
   if (!mainClient) {
     mainClient = await _createMainClientAndConnect();
@@ -277,7 +289,7 @@ const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempt
  * @returns {Promise<*>}    promise for the new value that was set
  */
 const watchedGetSet = async (key, newValueCallback, attempts = 10) =>
-  _watchedGetSet(key, newValueCallback, MODE.RAW, attempts);
+  _watchedGetSetExclusive(key, newValueCallback, MODE.RAW, attempts);
 
 /**
  * See {@link watchedGetSet}. Difference here is that it does an implicit JSON.parse/JSON.stringify before getting and
@@ -289,7 +301,7 @@ const watchedGetSet = async (key, newValueCallback, attempts = 10) =>
  * @returns {Promise<*>}    promise for the new value that was set
  */
 const watchedGetSetObject = async (key, newValueCallback, attempts = 10) =>
-  _watchedGetSet(key, newValueCallback, MODE.OBJECT, attempts);
+  _watchedGetSetExclusive(key, newValueCallback, MODE.OBJECT, attempts);
 
 /**
  * Asynchronously publish a given message on a given channel. This will lazily create the necessary publisher client.

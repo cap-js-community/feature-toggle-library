@@ -30,4 +30,4 @@ npm install @sap/btp-feature-toggles@latest --save --@sap:registry=https://int.r
 
 - Configuration and User Code examples: [Usage](usage)
 - Explanation of Redis integration: [Architecture](architecture)
-<!-- TODO cap service example code -->
+- CAP service example: [CAP Example](cap-example)
