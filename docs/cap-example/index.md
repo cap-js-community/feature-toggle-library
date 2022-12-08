@@ -126,7 +126,7 @@ const stateHandler = async (context) => {
 /**
  * Refresh feature values from redis and then read all.
  */
-const readisReadHandler = async (context) => {
+const redisReadHandler = async (context) => {
   try {
     await refreshFeatureValues();
     const result = getFeatureValues();
@@ -178,7 +178,7 @@ module.exports = async (srv) => {
   const { config, state, redisRead, redisUpdate } = srv.operations("FeatureService");
   srv.on(config, configHandler);
   srv.on(state, stateHandler);
-  srv.on(redisRead, readisReadHandler);
+  srv.on(redisRead, redisReadHandler);
   srv.on(redisUpdate, redisUpdateHandler);
 };
 ```

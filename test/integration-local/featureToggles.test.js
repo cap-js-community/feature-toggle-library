@@ -117,12 +117,12 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(allowedNewValue);
 
     expect(failResult).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "errorMessage": "value \\"{0}\\" does not match validation regular expression {1}",
-          "errorMessageValues": Array [
+      [
+        {
+          "errorMessage": "value "{0}" does not match validation regular expression {1}",
+          "errorMessageValues": [
             10,
-            "^\\\\d{1}$",
+            "^\\d{1}$",
           ],
           "key": "test/feature_e",
         },

@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`feature toggles test _changeRemoteFeatureValues 1`] = `
-Object {
+{
   "test/feature_a": false,
   "test/feature_b": 1,
   "test/feature_c": "best",
@@ -14,7 +14,7 @@ Object {
 `;
 
 exports[`feature toggles test _changeRemoteFeatureValues 2`] = `
-Object {
+{
   "test/feature_a": false,
   "test/feature_b": 1,
   "test/feature_c": "new_a",
@@ -27,79 +27,79 @@ Object {
 `;
 
 exports[`feature toggles test getFeatureConfigs 1`] = `
-Object {
-  "test/feature_a": Object {
+{
+  "test/feature_a": {
     "appUrlActive": true,
     "fallbackValue": false,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       false,
     ],
     "type": "boolean",
     "validationRegExp": null,
   },
-  "test/feature_b": Object {
+  "test/feature_b": {
     "appUrlActive": true,
     "fallbackValue": 1,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       1,
     ],
     "type": "number",
     "validationRegExp": null,
   },
-  "test/feature_c": Object {
+  "test/feature_c": {
     "appUrlActive": true,
     "fallbackValue": "best",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "best",
     ],
     "type": "string",
     "validationRegExp": null,
   },
-  "test/feature_d": Object {
+  "test/feature_d": {
     "appUrlActive": true,
     "fallbackValue": true,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       true,
     ],
     "type": "boolean",
     "validation": "^(?:true)$",
     "validationRegExp": /\\^\\(\\?:true\\)\\$/,
   },
-  "test/feature_e": Object {
+  "test/feature_e": {
     "appUrlActive": true,
     "fallbackValue": 5,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       5,
     ],
     "type": "number",
-    "validation": "^\\\\d{1}$",
+    "validation": "^\\d{1}$",
     "validationRegExp": /\\^\\\\d\\{1\\}\\$/,
   },
-  "test/feature_f": Object {
+  "test/feature_f": {
     "appUrlActive": true,
     "fallbackValue": "best",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "best",
     ],
     "type": "string",
     "validation": "^(?:best|worst)$",
     "validationRegExp": /\\^\\(\\?:best\\|worst\\)\\$/,
   },
-  "test/feature_g": Object {
+  "test/feature_g": {
     "active": false,
     "appUrlActive": true,
     "fallbackValue": "activeTest",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "activeTest",
     ],
     "type": "string",
     "validationRegExp": null,
   },
-  "test/feature_h": Object {
-    "appUrl": "\\\\.cfapps\\\\.sap\\\\.hana\\\\.ondemand\\\\.com$",
+  "test/feature_h": {
+    "appUrl": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
     "appUrlActive": true,
     "fallbackValue": "appUrlTest",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "appUrlTest",
     ],
     "type": "string",
@@ -109,41 +109,41 @@ Object {
 `;
 
 exports[`feature toggles test initializeFeatureToggles 1`] = `
-Object {
-  "test/feature_a": Object {
+{
+  "test/feature_a": {
     "fallbackValue": false,
     "type": "boolean",
   },
-  "test/feature_b": Object {
+  "test/feature_b": {
     "fallbackValue": 1,
     "type": "number",
   },
-  "test/feature_c": Object {
+  "test/feature_c": {
     "fallbackValue": "best",
     "type": "string",
   },
-  "test/feature_d": Object {
+  "test/feature_d": {
     "fallbackValue": true,
     "type": "boolean",
     "validation": "^(?:true)$",
   },
-  "test/feature_e": Object {
+  "test/feature_e": {
     "fallbackValue": 5,
     "type": "number",
-    "validation": "^\\\\d{1}$",
+    "validation": "^\\d{1}$",
   },
-  "test/feature_f": Object {
+  "test/feature_f": {
     "fallbackValue": "best",
     "type": "string",
     "validation": "^(?:best|worst)$",
   },
-  "test/feature_g": Object {
+  "test/feature_g": {
     "active": false,
     "fallbackValue": "activeTest",
     "type": "string",
   },
-  "test/feature_h": Object {
-    "appUrl": "\\\\.cfapps\\\\.sap\\\\.hana\\\\.ondemand\\\\.com$",
+  "test/feature_h": {
+    "appUrl": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
     "fallbackValue": "appUrlTest",
     "type": "string",
   },

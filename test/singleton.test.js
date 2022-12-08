@@ -41,7 +41,7 @@ describe("singleton test", () => {
       const singletonFunc = singleton[prop];
       const instanceFunc = instance[prop];
       await singletonFunc(...inputs);
-      expect(instanceFunc).toBeCalledTimes(1);
+      expect(instanceFunc).toHaveBeenCalledTimes(1);
       expect(instanceFunc).toHaveBeenCalledWith(...inputs);
     }
   });
@@ -52,9 +52,9 @@ describe("singleton test", () => {
 
     require("../src/singleton");
     expect(MockFeatureToggles.mock.calls).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          Object {
+      [
+        [
+          {
             "uniqueName": "test_app_name",
           },
         ],
@@ -71,9 +71,9 @@ describe("singleton test", () => {
 
     require("../src/singleton");
     expect(MockFeatureToggles.mock.calls).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          Object {
+      [
+        [
+          {
             "uniqueName": "test_unqiue_name",
           },
         ],

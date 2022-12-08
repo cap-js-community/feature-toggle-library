@@ -5,14 +5,14 @@
 
 const redis = require("redis");
 const VError = require("verror");
-const { Logger } = require("./logger");
+const Logger = require("./logger");
 const { HandlerCollection } = require("./handlerCollection");
 const { isOnCF, cfEnv } = require("./env");
 const Semaphore = require("./semaphore");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
-const logger = Logger(COMPONENT_NAME);
+const logger = new Logger(COMPONENT_NAME, isOnCF);
 
 const MODE = Object.freeze({
   RAW: "raw",

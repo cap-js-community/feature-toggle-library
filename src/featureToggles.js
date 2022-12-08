@@ -36,7 +36,7 @@ const {
   subscribe: redisSubscribe,
   registerMessageHandler,
 } = require("./redisWrapper");
-const { Logger } = require("./logger");
+const Logger = require("./logger");
 const { LazyCache } = require("./lazyCaches");
 const { HandlerCollection } = require("./handlerCollection");
 const { ENV, isNull } = require("./helper");
@@ -58,7 +58,7 @@ const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
 const readFileAsync = promisify(readFile);
-const logger = Logger(COMPONENT_NAME);
+let logger = new Logger(COMPONENT_NAME, isOnCF);
 
 const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
   const fileData = await readFileAsync(configFilepath);
@@ -412,7 +412,7 @@ class FeatureToggles {
    *
    * For syntax and details regarding the configuration object refer to README.md.
    */
-  // NOTE constructors cannot be async, so we need to split this state preparation part from the intialize part
+  // NOTE constructors cannot be async, so we need to split this state preparation part from the initialize part
   constructor({
     uniqueName,
     featuresChannel = DEFAULT_FEATURES_CHANNEL,
@@ -443,7 +443,7 @@ class FeatureToggles {
   // ========================================
 
   /**
-   * This will filter out inactive values, which is needed during intitialization, where inactive keys are not
+   * This will filter out inactive values, which is needed during initialization, where inactive keys are not
    * considered invalid.
    */
   _filterInactive(values) {
@@ -857,5 +857,6 @@ module.exports = {
 
   _: {
     _getLogger: () => logger,
+    _setLogger: (value) => (logger = value),
   },
 };

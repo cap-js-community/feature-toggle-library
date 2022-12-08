@@ -1,114 +1,107 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`local integration test getFeatureValue, changeFeatureValue 2`] = `Array []`;
+exports[`local integration test getFeatureValue, changeFeatureValue 2`] = `[]`;
 
 exports[`local integration test getFeatureValue, changeFeatureValue 3`] = `
-Array [
-  Array [
+[
+  [
     "%s | %O",
     "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    Object {
-      "clientName": "main",
-    },
-  ],
-  Array [
-    "%s | %O",
-    "error during client quit: connect ECONNREFUSED 127.0.0.1:6379",
-    Object {
+    {
       "clientName": "main",
     },
   ],
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue 4`] = `Array []`;
+exports[`local integration test getFeatureValue, changeFeatureValue 4`] = `[]`;
 
-exports[`local integration test getFeatureValue, changeFeatureValue 5`] = `Array []`;
+exports[`local integration test getFeatureValue, changeFeatureValue 5`] = `[]`;
 
 exports[`local integration test getFeatureValue, changeFeatureValue 6`] = `
-Array [
-  Array [
+[
+  [
     "error during change remote feature values, switching to local update",
   ],
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue 7`] = `Array []`;
+exports[`local integration test getFeatureValue, changeFeatureValue 7`] = `[]`;
 
 exports[`local integration test getFeatureValues, getFeatureConfigs 1`] = `
-Object {
-  "test/feature_a": Object {
+{
+  "test/feature_a": {
     "appUrlActive": true,
     "fallbackValue": false,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       false,
     ],
     "type": "boolean",
     "validationRegExp": null,
   },
-  "test/feature_b": Object {
+  "test/feature_b": {
     "appUrlActive": true,
     "fallbackValue": 1,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       1,
     ],
     "type": "number",
     "validationRegExp": null,
   },
-  "test/feature_c": Object {
+  "test/feature_c": {
     "appUrlActive": true,
     "fallbackValue": "best",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "best",
     ],
     "type": "string",
     "validationRegExp": null,
   },
-  "test/feature_d": Object {
+  "test/feature_d": {
     "appUrlActive": true,
     "fallbackValue": true,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       true,
     ],
     "type": "boolean",
     "validation": "^(?:true)$",
     "validationRegExp": /\\^\\(\\?:true\\)\\$/,
   },
-  "test/feature_e": Object {
+  "test/feature_e": {
     "appUrlActive": true,
     "fallbackValue": 5,
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       5,
     ],
     "type": "number",
-    "validation": "^\\\\d{1}$",
+    "validation": "^\\d{1}$",
     "validationRegExp": /\\^\\\\d\\{1\\}\\$/,
   },
-  "test/feature_f": Object {
+  "test/feature_f": {
     "appUrlActive": true,
     "fallbackValue": "best",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "best",
     ],
     "type": "string",
     "validation": "^(?:best|worst)$",
     "validationRegExp": /\\^\\(\\?:best\\|worst\\)\\$/,
   },
-  "test/feature_g": Object {
+  "test/feature_g": {
     "active": false,
     "appUrlActive": true,
     "fallbackValue": "activeTest",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "activeTest",
     ],
     "type": "string",
     "validationRegExp": null,
   },
-  "test/feature_h": Object {
-    "appUrl": "\\\\.cfapps\\\\.sap\\\\.hana\\\\.ondemand\\\\.com$",
+  "test/feature_h": {
+    "appUrl": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
     "appUrlActive": true,
     "fallbackValue": "appUrlTest",
-    "fallbackValueValidation": Array [
+    "fallbackValueValidation": [
       "appUrlTest",
     ],
     "type": "string",
@@ -117,32 +110,25 @@ Object {
 }
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 2`] = `Array []`;
+exports[`local integration test getFeatureValues, getFeatureConfigs 2`] = `[]`;
 
 exports[`local integration test getFeatureValues, getFeatureConfigs 3`] = `
-Array [
-  Array [
+[
+  [
     "%s | %O",
     "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    Object {
-      "clientName": "main",
-    },
-  ],
-  Array [
-    "%s | %O",
-    "error during client quit: connect ECONNREFUSED 127.0.0.1:6379",
-    Object {
+    {
       "clientName": "main",
     },
   ],
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 4`] = `Array []`;
+exports[`local integration test getFeatureValues, getFeatureConfigs 4`] = `[]`;
 
 exports[`local integration test getFeatureValues, getFeatureConfigs 5`] = `
-Array [
-  Array [
+[
+  [
     "finished initialization with %i feature toggle%s",
     8,
     "s",
@@ -151,11 +137,11 @@ Array [
 `;
 
 exports[`local integration test getFeatureValues, getFeatureConfigs 6`] = `
-Array [
-  Array [
+[
+  [
     "error during initialization, using fallback values",
   ],
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 7`] = `Array []`;
+exports[`local integration test getFeatureValues, getFeatureConfigs 7`] = `[]`;

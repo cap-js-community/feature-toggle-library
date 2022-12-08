@@ -49,7 +49,7 @@ describe("lazyCaches", () => {
       expect(lazyCache.get("c with cbA")).toBe("c with cbA");
 
       expect(lazyCache._data()).toMatchInlineSnapshot(`
-        Object {
+        {
           "": "empty",
           "a": "a",
           "a with cb": "a with cb",
@@ -80,7 +80,7 @@ describe("lazyCaches", () => {
       expect(cbAsyncSpy).toHaveBeenCalledTimes(1);
 
       expect(lazyCache._data()).toMatchInlineSnapshot(`
-        Object {
+        {
           "a": "a result",
           "b": "b result",
         }
