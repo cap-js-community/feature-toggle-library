@@ -1,6 +1,6 @@
 {
   "name": "@sap/btp-feature-toggles",
-  "version": "0.5.16",
+  "version": "0.5.17",
   "description": "btp feature toggles via redis service",
   "main": "src/index.js",
   "files": [

@@ -9,7 +9,7 @@
  * - have a constant redis key "features" where the feature toggle state is expected
  * - on init this key is read
  *   - if it's not empty: take the value and save it in memory for runtime queries
- *   - if it's empty: do a (optimistcally locked) write with the fallback values
+ *   - if it's empty: do a (optimistically locked) write with the fallback values
  * - to synchronize changes we use redis pub/sub system and a dedicated "features" channel
  *   - when feature changes are triggered the "features" key is locked and updated and
  *   - a "refresh" message is published to all instances

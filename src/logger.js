@@ -7,6 +7,18 @@ const globalLogger = require("cf-nodejs-logging-support");
 const CUSTOM_FIELD_LAYER = "layer";
 const CUSTOM_FIELD_ERROR_INFO = "errInfo";
 
+const LEVEL = Object.freeze({
+  OFF: "off",
+  ERROR: "error",
+  WARNING: "warn",
+  INFO: "info",
+  VERBOSE: "verbose",
+  DEBUG: "debug",
+  SILLY: "silly",
+});
+
+const noopLogger = () => {};
+
 globalLogger.registerCustomFields([CUSTOM_FIELD_LAYER, CUSTOM_FIELD_ERROR_INFO]);
 
 // Readable logger for running locally
@@ -20,8 +32,17 @@ class ReadableLogger {
   }
 
   logMessage(level, ...args) {
-    // eslint-disable-next-line no-console
-    const logger = level === "error" ? console.error : level === "warning" ? console.warn : console.info;
+    const logger =
+      level === LEVEL.OFF
+        ? noopLogger
+        : level === LEVEL.ERROR
+        ? // eslint-disable-next-line no-console
+          console.error
+        : level === LEVEL.WARNING
+        ? // eslint-disable-next-line no-console
+          console.warn
+        : // eslint-disable-next-line no-console
+          console.info;
     const { [CUSTOM_FIELD_LAYER]: layer, [CUSTOM_FIELD_ERROR_INFO]: errInfo } = this.__fields;
 
     const formattedMessage = util.format(...args.map((arg) => (arg instanceof VError ? VError.fullStack(arg) : arg)));
@@ -78,14 +99,24 @@ class Logger {
       this.__logger.logMessage(level, ...args);
     }
   }
-  info(...args) {
-    return this._log("info", ...args);
+
+  error(...args) {
+    return this._log(LEVEL.ERROR, ...args);
   }
   warning(...args) {
-    return this._log("warning", ...args);
+    return this._log(LEVEL.WARNING, ...args);
   }
-  error(...args) {
-    return this._log("error", ...args);
+  info(...args) {
+    return this._log(LEVEL.INFO, ...args);
+  }
+  verbose(...args) {
+    return this._log(LEVEL.VERBOSE, ...args);
+  }
+  debug(...args) {
+    return this._log(LEVEL.DEBUG, ...args);
+  }
+  silly(...args) {
+    return this._log(LEVEL.SILLY, ...args);
   }
 }
 
