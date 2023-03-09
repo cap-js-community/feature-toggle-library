@@ -88,7 +88,7 @@ describe("feature toggles test", () => {
       [FEATURE.C]: "c",
     };
     const changeObject = { [FEATURE.A]: "new_a", [FEATURE.B]: null };
-    const result = featureToggles._changeRemoteFeatureValuesCallbackFromInput(changeObject)(oldFeatureValues);
+    const result = await featureToggles._changeRemoteFeatureValuesCallbackFromInput(changeObject)(oldFeatureValues);
     expect(result).toStrictEqual({
       [FEATURE.A]: "new_a",
       [FEATURE.B]: 1,
@@ -197,7 +197,7 @@ describe("feature toggles test", () => {
 
   it("getFeatureConfig", async () => {
     await featureToggles.initializeFeatureValues({ config: mockConfig });
-    expect(featureToggles.getFeatureConfig(FEATURE.A)).toMatchInlineSnapshot(`
+    expect(await featureToggles.getFeatureConfig(FEATURE.A)).toMatchInlineSnapshot(`
       {
         "appUrlActive": true,
         "fallbackValue": false,
@@ -208,7 +208,7 @@ describe("feature toggles test", () => {
         "validationRegExp": null,
       }
     `);
-    expect(featureToggles.getFeatureConfig(FEATURE.B)).toMatchInlineSnapshot(`
+    expect(await featureToggles.getFeatureConfig(FEATURE.B)).toMatchInlineSnapshot(`
       {
         "appUrlActive": true,
         "fallbackValue": 1,
@@ -219,7 +219,7 @@ describe("feature toggles test", () => {
         "validationRegExp": null,
       }
     `);
-    expect(featureToggles.getFeatureConfig(FEATURE.C)).toMatchInlineSnapshot(`
+    expect(await featureToggles.getFeatureConfig(FEATURE.C)).toMatchInlineSnapshot(`
       {
         "appUrlActive": true,
         "fallbackValue": "best",
@@ -234,7 +234,7 @@ describe("feature toggles test", () => {
 
   it("getFeatureConfigs", async () => {
     await featureToggles.initializeFeatureValues({ config: mockConfig });
-    expect(featureToggles.getFeatureConfigs()).toMatchSnapshot();
+    expect(await featureToggles.getFeatureConfigs()).toMatchSnapshot();
   });
 
   it("getFeatureValue", async () => {
@@ -509,7 +509,7 @@ describe("feature toggles test", () => {
     redisWrapper.watchedGetSetObject.mockReturnValueOnce(mockFeatureValues);
     await featureToggles.initializeFeatureValues({ config: mockConfig });
     const oldValue = featureToggles.getFeatureValue(FEATURE.G);
-    const featureConfig = featureToggles.getFeatureConfig(FEATURE.G);
+    const featureConfig = await featureToggles.getFeatureConfig(FEATURE.G);
 
     const validationErrors = await featureToggles.changeFeatureValues({ [FEATURE.G]: newValue });
     const afterChangeValue = featureToggles.getFeatureValue(FEATURE.G);

@@ -2,8 +2,8 @@
 
 const VError = require("verror");
 
-const Logger = require("./logger");
-const { ENV } = require("./helper");
+const { Logger } = require("./logger");
+const { ENV } = require("./shared/static");
 
 const COMPONENT_NAME = "/Env";
 const VERROR_CLUSTER_NAME = "Env";

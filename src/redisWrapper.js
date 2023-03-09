@@ -5,10 +5,10 @@
 
 const redis = require("redis");
 const VError = require("verror");
-const Logger = require("./logger");
-const { HandlerCollection } = require("./handlerCollection");
+const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
-const Semaphore = require("./semaphore");
+const { HandlerCollection } = require("./shared/handlerCollection");
+const { Semaphore } = require("./shared/semaphore");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";

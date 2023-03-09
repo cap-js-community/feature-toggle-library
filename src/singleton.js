@@ -2,7 +2,7 @@
 
 const { FeatureToggles } = require("./featureToggles");
 const { cfEnv } = require("./env");
-const { ENV } = require("./helper");
+const { ENV } = require("./shared/static");
 
 const _uniqueNameFromEnv = process.env[ENV.UNIQUE_NAME] || null;
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const { HandlerCollection } = require("../src/handlerCollection");
+const { HandlerCollection } = require("../src/shared/handlerCollection");
 
 const key = "key";
 const otherKey = "otherKey";

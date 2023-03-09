@@ -14,7 +14,7 @@ jest.mock("../src/featureToggles", () => {
 
 const { FeatureToggles } = jest.requireActual("../src/featureToggles");
 const singleton = require("../src/singleton");
-const { ENV } = require("../src/helper");
+const { ENV } = require("../src/shared/static");
 
 describe("singleton test", () => {
   beforeEach(() => {

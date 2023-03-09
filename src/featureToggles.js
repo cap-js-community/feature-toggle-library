@@ -36,11 +36,11 @@ const {
   subscribe: redisSubscribe,
   registerMessageHandler,
 } = require("./redisWrapper");
-const Logger = require("./logger");
-const { LazyCache } = require("./lazyCaches");
-const { HandlerCollection } = require("./handlerCollection");
-const { ENV, isNull } = require("./helper");
+const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
+const { LazyCache } = require("./shared/cache");
+const { HandlerCollection } = require("./shared/handlerCollection");
+const { ENV, isNull } = require("./shared/static");
 
 const DEFAULT_FEATURES_CHANNEL = process.env[ENV.CHANNEL] || "features";
 const DEFAULT_FEATURES_KEY = process.env[ENV.KEY] || "features";
@@ -87,39 +87,27 @@ class FeatureToggles {
    */
   async _populateConfigCache() {
     const { uris: cfAppUris } = cfEnv.cfApp();
-    for (const [key, value] of Object.entries(this.__config)) {
-      this.__configCache.setCb(
-        [key, CACHE_KEY.VALIDATION_REG_EXP],
-        ({ validation }) => (validation ? new RegExp(validation) : null),
-        value
-      );
-      this.__configCache.setCb(
-        [key, CACHE_KEY.APP_URL_ACTIVE],
-        ({ appUrl }) => {
-          if (appUrl) {
-            const appUrlRegex = new RegExp(appUrl);
-            if (
-              Array.isArray(cfAppUris) &&
-              !cfAppUris.reduce((current, next) => current && appUrlRegex.test(next), true)
-            ) {
-              return false;
-            }
+    for (const [key, { validation, appUrl, fallbackValue }] of Object.entries(this.__config)) {
+      this.__configCache.setCb([key, CACHE_KEY.VALIDATION_REG_EXP], () => (validation ? new RegExp(validation) : null));
+      this.__configCache.setCb([key, CACHE_KEY.APP_URL_ACTIVE], () => {
+        if (appUrl) {
+          const appUrlRegex = new RegExp(appUrl);
+          if (
+            Array.isArray(cfAppUris) &&
+            !cfAppUris.reduce((current, next) => current && appUrlRegex.test(next), true)
+          ) {
+            return false;
           }
-          return true;
-        },
-        value
-      );
-      await this.__configCache.setCbAsync(
-        [key, CACHE_KEY.FALLBACK_VALUE_VALIDATION],
-        async ({ fallbackValue }) => {
-          if (isNull(fallbackValue)) {
-            return [null];
-          }
-          const entryValidationErrors = await this._validateInputEntry(key, fallbackValue);
-          return entryValidationErrors ? [null, entryValidationErrors] : [fallbackValue];
-        },
-        value
-      );
+        }
+        return true;
+      });
+      await this.__configCache.setCb([key, CACHE_KEY.FALLBACK_VALUE_VALIDATION], async () => {
+        if (isNull(fallbackValue)) {
+          return [null];
+        }
+        const entryValidationErrors = await this._validateInputEntry(key, fallbackValue);
+        return entryValidationErrors ? [null, entryValidationErrors] : [fallbackValue];
+      });
     }
   }
 
@@ -250,7 +238,7 @@ class FeatureToggles {
    * and result are all inputs that passed validated or null for illegal/empty input.
    *
    * @param input
-   * @returns {[null|*, Array<ValidationError>]}
+   * @returns {Promise<[null|*, Array<ValidationError>]>}
    */
   async validateInput(input) {
     let validationErrors = [];
@@ -549,14 +537,14 @@ class FeatureToggles {
   /**
    * Get feature configuration for specific key.
    */
-  getFeatureConfig(key) {
+  async getFeatureConfig(key) {
     this._ensureInitialized();
     if (!Object.prototype.hasOwnProperty.call(this.__config, key)) {
       return null;
     }
     const result = { ...this.__config[key] };
     for (const cacheKey of Object.values(CACHE_KEY)) {
-      result[cacheKey] = this.__configCache.get([key, cacheKey]);
+      result[cacheKey] = await this.__configCache.get([key, cacheKey]);
     }
     return result;
   }
@@ -564,13 +552,13 @@ class FeatureToggles {
   /**
    * Get feature configurations for all keys.
    */
-  getFeatureConfigs() {
+  async getFeatureConfigs() {
     this._ensureInitialized();
     const result = {};
     for (const [key, value] of Object.entries(this.__config)) {
       result[key] = { ...value };
       for (const cacheKey of Object.values(CACHE_KEY)) {
-        result[key][cacheKey] = this.__configCache.get([key, cacheKey]);
+        result[key][cacheKey] = await this.__configCache.get([key, cacheKey]);
       }
     }
     return result;
@@ -625,7 +613,7 @@ class FeatureToggles {
   // ========================================
 
   _changeRemoteFeatureValuesCallbackFromInput(validatedInput) {
-    return (oldValue) => {
+    return async (oldValue) => {
       if (oldValue === null) {
         return null;
       }
@@ -636,7 +624,7 @@ class FeatureToggles {
       //   If the fallback value is invalid, it is not returned in the new state.
       for (const [key, value] of Object.entries(validatedInput)) {
         if (value === null) {
-          const [validatedFallbackValue, entryValidationErrors] = this.__configCache.get([
+          const [validatedFallbackValue, entryValidationErrors] = await this.__configCache.get([
             key,
             CACHE_KEY.FALLBACK_VALUE_VALIDATION,
           ]);
@@ -694,7 +682,7 @@ class FeatureToggles {
           : "error during change remote feature values, switching to local update"
       );
       // NOTE: in local mode, we trust that the state only contains valid values
-      const newStateValues = newRedisStateCallback(this.__stateValues);
+      const newStateValues = await newRedisStateCallback(this.__stateValues);
       await this._triggerChangeHandlers(newStateValues);
       this.__stateValues = newStateValues;
     }
@@ -718,7 +706,7 @@ class FeatureToggles {
    */
   async changeFeatureValue(key, newValue) {
     this._ensureInitialized();
-    return this._changeRemoteFeatureValues({ [key]: newValue });
+    return await this._changeRemoteFeatureValues({ [key]: newValue });
   }
 
   /**

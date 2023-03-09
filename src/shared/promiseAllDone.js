@@ -7,7 +7,7 @@ const VError = require("verror");
  * promises rejects. Any subsequent rejects are unhandled expections.
  *
  * With promiseAllDone you can mitigate that behavior. It will wait for all passed promises to complete and collect any
- * number of occuring errors in a single VError.MultiError.
+ * number of occurring errors in a single VError.MultiError.
  */
 async function promiseAllDone(iterable) {
   const results = await Promise.allSettled(iterable);

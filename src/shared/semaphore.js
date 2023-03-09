@@ -55,4 +55,4 @@ class Semaphore {
   }
 }
 
-module.exports = Semaphore;
+module.exports = { Semaphore };

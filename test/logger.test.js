@@ -2,7 +2,7 @@
 
 const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles } = featureTogglesModule;
-const Logger = require("../src/logger");
+const { Logger } = require("../src/logger");
 
 const redisWrapper = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
