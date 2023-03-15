@@ -1,6 +1,6 @@
 {
   "name": "@sap/btp-feature-toggles",
-  "version": "0.5.18",
+  "version": "0.6.0",
   "description": "The SAP BTP feature toggle library will enable JavaScript applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.",
   "main": "src/index.js",
   "files": [

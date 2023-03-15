@@ -4,7 +4,7 @@ const { singleton } = require("../../src/index");
 const featureTogglesModule = require("../../src/featureToggles");
 const redisWrapper = require("../../src/redisWrapper");
 
-const { initializeFeatureValues, getFeatureValues, getFeatureConfigs, getFeatureValue, changeFeatureValue } = singleton;
+const { initializeFeatureValues, getFeatureValues, getFeatureStates, getFeatureValue, changeFeatureValue } = singleton;
 
 const featureTogglesLoggerSpy = {
   info: jest.spyOn(featureTogglesModule._._getLogger(), "info"),
@@ -82,18 +82,18 @@ describe("local integration test", () => {
     jest.clearAllMocks();
   });
 
-  it("getFeatureValues, getFeatureConfigs", async () => {
+  it("getFeatureValues, getFeatureStates", async () => {
     const featureValuesResult = await getFeatureValues();
-    const featureConfigsResult = await getFeatureConfigs();
+    const featureStatesResult = await getFeatureStates();
 
     expect(featureValuesResult).toStrictEqual(featureValues);
 
-    expect(Object.keys(featureConfigsResult)).toEqual(Object.keys(config));
-    Object.entries(featureConfigsResult).forEach(([key, subconfig]) => {
-      expect(subconfig).toEqual(expect.objectContaining(config[key]));
+    expect(Object.keys(featureStatesResult)).toEqual(Object.keys(config));
+    Object.entries(featureStatesResult).forEach(([key, featureState]) => {
+      expect(featureState.config).toEqual(expect.objectContaining(config[key]));
     });
 
-    expect(featureConfigsResult).toMatchSnapshot();
+    expect(featureStatesResult).toMatchSnapshot();
 
     expect(redisWrapperLoggerSpy.info.mock.calls).toMatchSnapshot();
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();

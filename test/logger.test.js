@@ -87,11 +87,6 @@ describe("logger test", () => {
       caused by: Error: bad validator
       error info: { validator: 'mockConstructor', key: 'test/feature_b', value: 1 }",
         ],
-        [
-          "88:88:88.888 | error | Testing | FeatureTogglesError: error during registered validator: bad validator
-      caused by: Error: bad validator
-      error info: { validator: 'mockConstructor', key: 'test/feature_b', value: 1 }",
-        ],
       ]
     `);
   });
@@ -106,9 +101,6 @@ describe("logger test", () => {
 
     expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)).toMatchInlineSnapshot(`
       [
-        [
-          "{"component_type":"application","layer":"Testing","logger":"nodejs-logger","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"msg":"","type":"log","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"key\\":\\"test/feature_b\\",\\"value\\":1}"}",
-        ],
         [
           "{"component_type":"application","layer":"Testing","logger":"nodejs-logger","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"msg":"","type":"log","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"key\\":\\"test/feature_b\\",\\"value\\":1}"}",
         ],

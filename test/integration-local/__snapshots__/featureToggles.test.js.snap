@@ -28,91 +28,107 @@ exports[`local integration test getFeatureValue, changeFeatureValue 6`] = `
 
 exports[`local integration test getFeatureValue, changeFeatureValue 7`] = `[]`;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 1`] = `
+exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
 {
   "test/feature_a": {
-    "appUrlActive": true,
+    "config": {
+      "appUrlActive": true,
+      "fallbackValue": false,
+      "type": "boolean",
+      "validationRegExp": null,
+    },
     "fallbackValue": false,
-    "fallbackValueValidation": [
-      false,
-    ],
-    "type": "boolean",
-    "validationRegExp": null,
+    "key": "test/feature_a",
+    "stateValue": undefined,
   },
   "test/feature_b": {
-    "appUrlActive": true,
+    "config": {
+      "appUrlActive": true,
+      "fallbackValue": 1,
+      "type": "number",
+      "validationRegExp": null,
+    },
     "fallbackValue": 1,
-    "fallbackValueValidation": [
-      1,
-    ],
-    "type": "number",
-    "validationRegExp": null,
+    "key": "test/feature_b",
+    "stateValue": undefined,
   },
   "test/feature_c": {
-    "appUrlActive": true,
+    "config": {
+      "appUrlActive": true,
+      "fallbackValue": "best",
+      "type": "string",
+      "validationRegExp": null,
+    },
     "fallbackValue": "best",
-    "fallbackValueValidation": [
-      "best",
-    ],
-    "type": "string",
-    "validationRegExp": null,
+    "key": "test/feature_c",
+    "stateValue": undefined,
   },
   "test/feature_d": {
-    "appUrlActive": true,
+    "config": {
+      "appUrlActive": true,
+      "fallbackValue": true,
+      "type": "boolean",
+      "validation": "^(?:true)$",
+      "validationRegExp": /\\^\\(\\?:true\\)\\$/,
+    },
     "fallbackValue": true,
-    "fallbackValueValidation": [
-      true,
-    ],
-    "type": "boolean",
-    "validation": "^(?:true)$",
-    "validationRegExp": /\\^\\(\\?:true\\)\\$/,
+    "key": "test/feature_d",
+    "stateValue": undefined,
   },
   "test/feature_e": {
-    "appUrlActive": true,
+    "config": {
+      "appUrlActive": true,
+      "fallbackValue": 5,
+      "type": "number",
+      "validation": "^\\d{1}$",
+      "validationRegExp": /\\^\\\\d\\{1\\}\\$/,
+    },
     "fallbackValue": 5,
-    "fallbackValueValidation": [
-      5,
-    ],
-    "type": "number",
-    "validation": "^\\d{1}$",
-    "validationRegExp": /\\^\\\\d\\{1\\}\\$/,
+    "key": "test/feature_e",
+    "stateValue": undefined,
   },
   "test/feature_f": {
-    "appUrlActive": true,
+    "config": {
+      "appUrlActive": true,
+      "fallbackValue": "best",
+      "type": "string",
+      "validation": "^(?:best|worst)$",
+      "validationRegExp": /\\^\\(\\?:best\\|worst\\)\\$/,
+    },
     "fallbackValue": "best",
-    "fallbackValueValidation": [
-      "best",
-    ],
-    "type": "string",
-    "validation": "^(?:best|worst)$",
-    "validationRegExp": /\\^\\(\\?:best\\|worst\\)\\$/,
+    "key": "test/feature_f",
+    "stateValue": undefined,
   },
   "test/feature_g": {
-    "active": false,
-    "appUrlActive": true,
+    "config": {
+      "active": false,
+      "appUrlActive": true,
+      "fallbackValue": "activeTest",
+      "type": "string",
+      "validationRegExp": null,
+    },
     "fallbackValue": "activeTest",
-    "fallbackValueValidation": [
-      "activeTest",
-    ],
-    "type": "string",
-    "validationRegExp": null,
+    "key": "test/feature_g",
+    "stateValue": undefined,
   },
   "test/feature_h": {
-    "appUrl": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
-    "appUrlActive": true,
+    "config": {
+      "appUrl": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+      "appUrlActive": true,
+      "fallbackValue": "appUrlTest",
+      "type": "string",
+      "validationRegExp": null,
+    },
     "fallbackValue": "appUrlTest",
-    "fallbackValueValidation": [
-      "appUrlTest",
-    ],
-    "type": "string",
-    "validationRegExp": null,
+    "key": "test/feature_h",
+    "stateValue": undefined,
   },
 }
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 2`] = `[]`;
+exports[`local integration test getFeatureValues, getFeatureStates 2`] = `[]`;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 3`] = `
+exports[`local integration test getFeatureValues, getFeatureStates 3`] = `
 [
   [
     "%s | %O",
@@ -124,9 +140,9 @@ exports[`local integration test getFeatureValues, getFeatureConfigs 3`] = `
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 4`] = `[]`;
+exports[`local integration test getFeatureValues, getFeatureStates 4`] = `[]`;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 5`] = `
+exports[`local integration test getFeatureValues, getFeatureStates 5`] = `
 [
   [
     "finished initialization with %i feature toggle%s",
@@ -136,7 +152,7 @@ exports[`local integration test getFeatureValues, getFeatureConfigs 5`] = `
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 6`] = `
+exports[`local integration test getFeatureValues, getFeatureStates 6`] = `
 [
   [
     "error during initialization, using fallback values",
@@ -144,4 +160,4 @@ exports[`local integration test getFeatureValues, getFeatureConfigs 6`] = `
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeatureConfigs 7`] = `[]`;
+exports[`local integration test getFeatureValues, getFeatureStates 7`] = `[]`;
