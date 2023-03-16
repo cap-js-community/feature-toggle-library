@@ -38,7 +38,6 @@ const {
 } = require("./redisWrapper");
 const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
-const { LazyCache } = require("./shared/cache");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { ENV, isNull } = require("./shared/static");
 
@@ -48,9 +47,13 @@ const DEFAULT_REFRESH_MESSAGE = "refresh";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
-const CACHE_KEY = Object.freeze({
-  VALIDATION_REG_EXP: "validationRegExp",
-  APP_URL_ACTIVE: "appUrlActive",
+const CONFIG_CACHE_KEY = Object.freeze({
+  TYPE: "TYPE",
+  ACTIVE: "ACTIVE",
+  APP_URL: "APP_URL",
+  VALIDATION: "VALIDATION",
+  APP_URL_ACTIVE: "APP_URL_ACTIVE",
+  VALIDATION_REG_EXP: "VALIDATION_REG_EXP",
 });
 
 const COMPONENT_NAME = "/FeatureToggles";
@@ -82,25 +85,44 @@ class FeatureToggles {
   // ========================================
 
   /**
-   * Populate this.__configCache.
+   * Populate this.__config.
    */
-  _populateConfigCache() {
+  _processConfig(config) {
     const { uris: cfAppUris } = cfEnv.cfApp();
-    for (const [key, { validation, appUrl }] of Object.entries(this.__config)) {
-      const validationRegex = validation ? new RegExp(validation) : null;
-      this.__configCache.set([key, CACHE_KEY.VALIDATION_REG_EXP], validationRegex);
 
-      const appUrlRegex = appUrl && new RegExp(appUrl);
-      const appUrlActive =
-        !appUrlRegex ||
-        !Array.isArray(cfAppUris) ||
-        cfAppUris.reduce((current, next) => current && appUrlRegex.test(next), true);
-      this.__configCache.set([key, CACHE_KEY.APP_URL_ACTIVE], appUrlActive);
+    const configEntries = Object.entries(config);
+    for (const [key, { type, active, appUrl, validation, fallbackValue }] of configEntries) {
+      this.__fallbackValues[key] = fallbackValue;
+      this.__config[key] = {};
+
+      if (type) {
+        this.__config[key][CONFIG_CACHE_KEY.TYPE] = type;
+      }
+
+      if (active !== undefined) {
+        this.__config[key][CONFIG_CACHE_KEY.ACTIVE] = active;
+      }
+
+      if (validation) {
+        this.__config[key][CONFIG_CACHE_KEY.VALIDATION] = validation;
+        this.__config[key][CONFIG_CACHE_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
+      }
+
+      if (appUrl) {
+        this.__config[key][CONFIG_CACHE_KEY.APP_URL] = appUrl;
+
+        const appUrlRegex = new RegExp(appUrl);
+        this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] =
+          !Array.isArray(cfAppUris) || cfAppUris.reduce((current, next) => current && appUrlRegex.test(next), true);
+      }
     }
+
+    this.__isConfigProcessed = true;
+    return configEntries.length;
   }
 
-  static _isValidFeatureKey(configKeys, key) {
-    return typeof key === "string" && configKeys.includes(key);
+  static _isValidFeatureKey(fallbackValues, key) {
+    return typeof key === "string" && Object.prototype.hasOwnProperty.call(fallbackValues, key);
   }
 
   static _isValidFeatureValueType(value) {
@@ -109,10 +131,10 @@ class FeatureToggles {
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
   async _validateInputEntry(key, value) {
-    if (this.__config === null || this.__configKeys === null) {
+    if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
-    if (!FeatureToggles._isValidFeatureKey(this.__configKeys, key)) {
+    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, key)) {
       return [{ errorMessage: 'key "{0}" is not valid', errorMessageValues: [key] }];
     }
     // NOTE: value === null is our way of encoding key resetting changes, so it is always allowed
@@ -120,19 +142,17 @@ class FeatureToggles {
       return;
     }
 
-    const { active, appUrl, type: targetType, validation } = this.__config[key] || {};
-
     // NOTE: skip validating active properties during initialization
     if (this.__isInitialized) {
-      if (active === false) {
+      if (this.__config[key][CONFIG_CACHE_KEY.ACTIVE] === false) {
         return [{ errorMessage: 'key "{0}" is not active', errorMessageValues: [key] }];
       }
 
-      if (!this.__configCache.get([key, CACHE_KEY.APP_URL_ACTIVE])) {
+      if (this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] === false) {
         return [
           {
             errorMessage: 'key "{0}" is not active because app url does not match regular expression {1}',
-            errorMessageValues: [key, appUrl],
+            errorMessageValues: [key, this.__config[key][CONFIG_CACHE_KEY.APP_URL]],
           },
         ];
       }
@@ -148,21 +168,21 @@ class FeatureToggles {
       ];
     }
 
-    if (targetType && valueType !== targetType) {
+    if (valueType !== this.__config[key][CONFIG_CACHE_KEY.TYPE]) {
       return [
         {
           errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
-          errorMessageValues: [value, valueType, targetType],
+          errorMessageValues: [value, valueType, this.__config[key][CONFIG_CACHE_KEY.TYPE]],
         },
       ];
     }
 
-    const validationRegExp = this.__configCache.get([key, CACHE_KEY.VALIDATION_REG_EXP]);
+    const validationRegExp = this.__config[key][CONFIG_CACHE_KEY.VALIDATION_REG_EXP];
     if (validationRegExp && !validationRegExp.test(value)) {
       return [
         {
           errorMessage: 'value "{0}" does not match validation regular expression {1}',
-          errorMessageValues: [value, validation],
+          errorMessageValues: [value, this.__config[key][CONFIG_CACHE_KEY.VALIDATION]],
         },
       ];
     }
@@ -399,16 +419,15 @@ class FeatureToggles {
     this.__featuresKey = uniqueName ? featuresKey + "-" + uniqueName : featuresKey;
     this.__refreshMessage = refreshMessage;
 
-    this.__configCache = new LazyCache();
     this.__featureValueChangeHandlers = new HandlerCollection();
     this.__featureValueValidators = new HandlerCollection();
     this.__messageHandler = this._messageHandler.bind(this); // needed for testing
 
-    this.__config = null;
-    this.__configKeys = null;
-    this.__fallbackValues = null;
-    this.__stateValues = null;
+    this.__config = {};
+    this.__fallbackValues = {};
+    this.__stateValues = {};
     this.__isInitialized = false;
+    this.__isConfigProcessed = false;
   }
 
   // ========================================
@@ -427,8 +446,10 @@ class FeatureToggles {
       return {};
     }
     return Object.entries(values).reduce((result, [key, value]) => {
-      const { active } = this.__config[key] || {};
-      if (active !== false && this.__configCache.get([key, CACHE_KEY.APP_URL_ACTIVE])) {
+      if (
+        this.__config[key][CONFIG_CACHE_KEY.ACTIVE] !== false &&
+        this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
+      ) {
         result[key] = value;
       }
       return result;
@@ -443,9 +464,6 @@ class FeatureToggles {
     let config;
     try {
       config = configInput ? configInput : await readConfigFromFile(configFilepath);
-      this.__config = config;
-      this.__configKeys = Object.keys(this.__config);
-      this._populateConfigCache();
     } catch (err) {
       logger.error(
         new VError(
@@ -463,9 +481,8 @@ class FeatureToggles {
       );
     }
 
-    this.__fallbackValues = Object.fromEntries(
-      Object.entries(this.__config).map(([key, value]) => [key, value.fallbackValue])
-    );
+    const toggleCount = this._processConfig(config);
+
     const [, validationErrors] = await this.validateInput(this.__fallbackValues);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       logger.warning(
@@ -508,11 +525,9 @@ class FeatureToggles {
             )
           : "error during initialization, using fallback values"
       );
-      this.__stateValues = {};
     }
 
-    const featureCount = this.__configKeys.length;
-    logger.info("finished initialization with %i feature toggle%s", featureCount, featureCount === 1 ? "" : "s");
+    logger.info("finished initialization with %i feature toggle%s", toggleCount, toggleCount === 1 ? "" : "s");
     this.__isInitialized = true;
     return this;
   }
@@ -525,18 +540,10 @@ class FeatureToggles {
   // ========================================
 
   _getFeatureState(key) {
-    const config = Object.values(CACHE_KEY).reduce(
-      (result, cacheKey) => {
-        result[cacheKey] = this.__configCache.get([key, cacheKey]);
-        return result;
-      },
-      { ...this.__config[key] }
-    );
     return {
-      key,
       fallbackValue: this.__fallbackValues[key],
       stateValue: this.__stateValues[key],
-      config,
+      config: this.__config[key],
     };
   }
 
@@ -545,7 +552,7 @@ class FeatureToggles {
    */
   getFeatureState(key) {
     this._ensureInitialized();
-    if (!Object.prototype.hasOwnProperty.call(this.__config, key)) {
+    if (!Object.prototype.hasOwnProperty.call(this.__fallbackValues, key)) {
       return null;
     }
     return this._getFeatureState(key);
@@ -557,7 +564,7 @@ class FeatureToggles {
   getFeatureStates() {
     this._ensureInitialized();
     const result = {};
-    for (const key of this.__configKeys) {
+    for (const key in this.__fallbackValues) {
       result[key] = this._getFeatureState(key);
     }
     return result;

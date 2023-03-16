@@ -175,6 +175,25 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
+    it("validateInput should fail if not initialized", async () => {
+      const input = { [FEATURE.E]: 1 };
+      const [failResult, failValidationErrors] = await featureToggles.validateInput(input);
+      expect(failResult).toStrictEqual(null);
+      expect(failValidationErrors).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "not initialized",
+            "key": "test/feature_e",
+          },
+        ]
+      `);
+
+      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      const [successResult, successValidationErrors] = await featureToggles.validateInput(input);
+      expect(successResult).toStrictEqual(input);
+      expect(successValidationErrors).toStrictEqual([]);
+    });
+
     it("isValidFeatureValueType", async () => {
       const invalidTypes = [undefined, () => {}, [], {}];
       const validTypes = [null, 0, "", true];
@@ -186,13 +205,13 @@ describe("feature toggles test", () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
 
       const invalidKeys = [undefined, () => {}, [], {}, null, 0, "", true, "nonsense"];
-      const validKeys = Object.keys(featureToggles.__config);
-      expect(invalidKeys.map((key) => FeatureToggles._isValidFeatureKey(validKeys, key))).toStrictEqual(
-        invalidKeys.map(() => false)
-      );
-      expect(validKeys.map((key) => FeatureToggles._isValidFeatureKey(validKeys, key))).toStrictEqual(
-        validKeys.map(() => true)
-      );
+      const validKeys = Object.keys(mockConfig);
+      expect(
+        invalidKeys.map((key) => FeatureToggles._isValidFeatureKey(featureToggles.__fallbackValues, key))
+      ).toStrictEqual(invalidKeys.map(() => false));
+      expect(
+        validKeys.map((key) => FeatureToggles._isValidFeatureKey(featureToggles.__fallbackValues, key))
+      ).toStrictEqual(validKeys.map(() => true));
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
@@ -203,39 +222,27 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureState(FEATURE.A)).toMatchInlineSnapshot(`
         {
           "config": {
-            "appUrlActive": true,
-            "fallbackValue": false,
-            "type": "boolean",
-            "validationRegExp": null,
+            "TYPE": "boolean",
           },
           "fallbackValue": false,
-          "key": "test/feature_a",
           "stateValue": undefined,
         }
       `);
       expect(featureToggles.getFeatureState(FEATURE.B)).toMatchInlineSnapshot(`
         {
           "config": {
-            "appUrlActive": true,
-            "fallbackValue": 1,
-            "type": "number",
-            "validationRegExp": null,
+            "TYPE": "number",
           },
           "fallbackValue": 1,
-          "key": "test/feature_b",
           "stateValue": undefined,
         }
       `);
       expect(featureToggles.getFeatureState(FEATURE.C)).toMatchInlineSnapshot(`
         {
           "config": {
-            "appUrlActive": true,
-            "fallbackValue": "best",
-            "type": "string",
-            "validationRegExp": null,
+            "TYPE": "string",
           },
           "fallbackValue": "best",
-          "key": "test/feature_c",
           "stateValue": undefined,
         }
       `);
@@ -525,7 +532,7 @@ describe("feature toggles test", () => {
 
       const validationErrors = await featureToggles.changeFeatureValues({ [FEATURE.G]: newValue });
       const afterChangeValue = featureToggles.getFeatureValue(FEATURE.G);
-      expect(featureConfig.active).toBe(false);
+      expect(featureConfig.ACTIVE).toBe(false);
       expect(validationErrors).toMatchInlineSnapshot(`
               [
                 {

@@ -90,7 +90,8 @@ describe("local integration test", () => {
 
     expect(Object.keys(featureStatesResult)).toEqual(Object.keys(config));
     Object.entries(featureStatesResult).forEach(([key, featureState]) => {
-      expect(featureState.config).toEqual(expect.objectContaining(config[key]));
+      expect(featureState.config.TYPE).toEqual(config[key].type);
+      expect(featureState.fallbackValue).toEqual(config[key].fallbackValue);
     });
 
     expect(featureStatesResult).toMatchSnapshot();
