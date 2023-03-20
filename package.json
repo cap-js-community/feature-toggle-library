@@ -1,7 +1,7 @@
 {
   "name": "@sap/btp-feature-toggles",
   "version": "0.6.0",
-  "description": "The SAP BTP feature toggle library will enable Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.",
+  "description": "SAP BTP feature toggle library will enable Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.",
   "main": "src/index.js",
   "files": [
     "src"
@@ -14,7 +14,6 @@
     "eslint:ci": "eslint .",
     "prettier": "prettier --write --loglevel error .",
     "prettier:ci": "prettier --check .",
-    "prepareRelease": "npm prune --production",
     "docs": "cd docs && bundle exec jekyll serve",
     "docs:install": "cd docs && npx shx rm -rf vendor Gemfile.lock && bundle install",
     "upgrade-lock": "npx shx rm -rf package-lock.json node_modules && npm i --package-lock"
@@ -36,13 +35,13 @@
     "jest": "^29.5.0",
     "prettier": "^2.8.8"
   },
+  "homepage": "https://cap-js-community.github.io/feature-toggle-library/",
   "repository": {
     "type": "git",
-    "url": "https://github.wdf.sap.corp/cds-community/btp-feature-toggles.git"
+    "url": "https://github.com/cap-js-community/feature-toggle-library.git"
   },
-  "homepage": "https://github.wdf.sap.corp/pages/cds-community/btp-feature-toggles/",
   "bugs": {
-    "url": "https://github.wdf.sap.corp/cds-community/btp-feature-toggles/issues"
+    "url": "https://github.com/cap-js-community/feature-toggle-library/issues"
   },
   "keywords": [
     "feature-flags",
@@ -53,5 +52,5 @@
     "cloud-foundry"
   ],
   "author": "Richard Lindner <richard.lindner@sap.com>",
-  "license": "MIT"
+  "license": "Apache-2.0"
 }
