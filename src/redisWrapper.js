@@ -403,8 +403,6 @@ module.exports = {
     _localReconnectStrategy,
     _createClientBase,
     _createClientAndConnect,
-    _createMainClientAndConnect: getMainClient, // TODO remove with 0.6.0 release
-    _createSubscriberAndConnect: getSubscriberClient, // TODO remove with 0.6.0 release
     _clientExec,
   },
 };
