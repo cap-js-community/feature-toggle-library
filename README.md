@@ -16,3 +16,10 @@ Head over to our [Documentation](https://github.wdf.sap.corp/pages/cds-community
 ## License
 
 Please see our [LICENSE](LICENSE.md) for copyright and license information.
+
+## Build
+
+- Milestone: 
+  https://xmake-nova.wdf.sap.corp/job_finder/?input=cds-community/cds-community-btp-feature-toggles-SP-MS-common
+- Release: 
+  https://xmake-nova.wdf.sap.corp/job_finder/?input=cds-community/cds-community-btp-feature-toggles-SP-REL-common_indirectshipment
