@@ -1,6 +1,6 @@
 # BTP Feature Toggles
 
-BTP Feature Toggles is a nodejs library, which will enable Cloud Foundry applications to maintain live-updatable feature
+BTP Feature Toggles is a Node.js library that enables Cloud Foundry applications to maintain live-updatable feature
 toggles.
 
 ## Install or Upgrade

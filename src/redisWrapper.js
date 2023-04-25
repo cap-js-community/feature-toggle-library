@@ -137,7 +137,7 @@ const _clientErrorHandlerBase = async (client, err, clientName) => {
  * @returns {RedisClient}
  * @private
  */
-const _createMainClientAndConnect = async () => {
+const getMainClient = async () => {
   if (!mainClient) {
     mainClient = await _createClientAndConnect(async function (err) {
       mainClient = null;
@@ -156,7 +156,7 @@ const _createMainClientAndConnect = async () => {
  * @returns {RedisClient}
  * @private
  */
-const _createSubscriberAndConnect = async () => {
+const getSubscriberClient = async () => {
   if (!subscriberClient) {
     subscriberClient = await _createClientAndConnect(async function (err) {
       subscriberClient = null;
@@ -168,7 +168,7 @@ const _createSubscriberAndConnect = async () => {
 
 const _clientExec = async (functionName, argsObject) => {
   if (!mainClient) {
-    mainClient = await _createMainClientAndConnect();
+    mainClient = await getMainClient();
   }
 
   try {
@@ -206,20 +206,22 @@ const getObject = async (key) => {
  *
  * @param key
  * @param value
+ * @param options
  * @returns {Promise<*>}
  */
-const set = async (key, value) => _clientExec("set", { key, value });
+const set = async (key, value, options) => _clientExec("set", { key, value, ...(options && { options }) });
 
 /**
  * Asynchronously set a stringified object as value for a given key.
  *
  * @param key
  * @param value
+ * @param options
  * @returns {Promise<*>}
  */
-const setObject = async (key, value) => {
+const setObject = async (key, value, options) => {
   const valueRaw = JSON.stringify(value);
-  return set(key, valueRaw);
+  return set(key, valueRaw, options);
 };
 
 const _watchedGetSetExclusive = async (key, newValueCallback, mode, attempts) => {
@@ -233,7 +235,7 @@ const _watchedGetSetExclusive = async (key, newValueCallback, mode, attempts) =>
 
 const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempts = 10) => {
   if (!mainClient) {
-    mainClient = await _createMainClientAndConnect();
+    mainClient = await getMainClient();
   }
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -322,7 +324,7 @@ const publishMessage = async (channel, message) => _clientExec("publish", { chan
  */
 const subscribe = async (channel) => {
   if (!subscriberClient) {
-    subscriberClient = await _createSubscriberAndConnect();
+    subscriberClient = await getSubscriberClient();
   }
   try {
     await subscriberClient.subscribe(channel, _subscribedMessageHandler);
@@ -339,7 +341,7 @@ const subscribe = async (channel) => {
  */
 const unsubscribe = async (channel) => {
   if (!subscriberClient) {
-    subscriberClient = await _createSubscriberAndConnect();
+    subscriberClient = await getSubscriberClient();
   }
   try {
     await subscriberClient.unsubscribe(channel);
@@ -373,6 +375,8 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
 module.exports = {
+  getMainClient,
+  getSubscriberClient,
   get,
   getObject,
   set,
@@ -399,8 +403,8 @@ module.exports = {
     _localReconnectStrategy,
     _createClientBase,
     _createClientAndConnect,
-    _createMainClientAndConnect,
-    _createSubscriberAndConnect,
+    _createMainClientAndConnect: getMainClient, // TODO remove with 0.6.0 release
+    _createSubscriberAndConnect: getSubscriberClient, // TODO remove with 0.6.0 release
     _clientExec,
   },
 };

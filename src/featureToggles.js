@@ -101,13 +101,15 @@ class FeatureToggles {
         }
         return true;
       });
-      await this.__configCache.setCb([key, CACHE_KEY.FALLBACK_VALUE_VALIDATION], async () => {
+
+      const _fallbackValueValidation = async () => {
         if (isNull(fallbackValue)) {
           return [null];
         }
         const entryValidationErrors = await this._validateInputEntry(key, fallbackValue);
         return entryValidationErrors ? [null, entryValidationErrors] : [fallbackValue];
-      });
+      };
+      this.__configCache.set([key, CACHE_KEY.FALLBACK_VALUE_VALIDATION], await _fallbackValueValidation());
     }
   }
 
@@ -537,14 +539,14 @@ class FeatureToggles {
   /**
    * Get feature configuration for specific key.
    */
-  async getFeatureConfig(key) {
+  getFeatureConfig(key) {
     this._ensureInitialized();
     if (!Object.prototype.hasOwnProperty.call(this.__config, key)) {
       return null;
     }
     const result = { ...this.__config[key] };
     for (const cacheKey of Object.values(CACHE_KEY)) {
-      result[cacheKey] = await this.__configCache.get([key, cacheKey]);
+      result[cacheKey] = this.__configCache.get([key, cacheKey]);
     }
     return result;
   }
@@ -552,13 +554,13 @@ class FeatureToggles {
   /**
    * Get feature configurations for all keys.
    */
-  async getFeatureConfigs() {
+  getFeatureConfigs() {
     this._ensureInitialized();
     const result = {};
     for (const [key, value] of Object.entries(this.__config)) {
       result[key] = { ...value };
       for (const cacheKey of Object.values(CACHE_KEY)) {
-        result[key][cacheKey] = await this.__configCache.get([key, cacheKey]);
+        result[key][cacheKey] = this.__configCache.get([key, cacheKey]);
       }
     }
     return result;
@@ -613,7 +615,7 @@ class FeatureToggles {
   // ========================================
 
   _changeRemoteFeatureValuesCallbackFromInput(validatedInput) {
-    return async (oldValue) => {
+    return (oldValue) => {
       if (oldValue === null) {
         return null;
       }
@@ -624,7 +626,7 @@ class FeatureToggles {
       //   If the fallback value is invalid, it is not returned in the new state.
       for (const [key, value] of Object.entries(validatedInput)) {
         if (value === null) {
-          const [validatedFallbackValue, entryValidationErrors] = await this.__configCache.get([
+          const [validatedFallbackValue, entryValidationErrors] = this.__configCache.get([
             key,
             CACHE_KEY.FALLBACK_VALUE_VALIDATION,
           ]);
@@ -682,7 +684,7 @@ class FeatureToggles {
           : "error during change remote feature values, switching to local update"
       );
       // NOTE: in local mode, we trust that the state only contains valid values
-      const newStateValues = await newRedisStateCallback(this.__stateValues);
+      const newStateValues = newRedisStateCallback(this.__stateValues);
       await this._triggerChangeHandlers(newStateValues);
       this.__stateValues = newStateValues;
     }

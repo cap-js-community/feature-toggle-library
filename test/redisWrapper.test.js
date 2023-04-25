@@ -54,8 +54,8 @@ describe("redis wrapper test", () => {
     const shortcutSubscriber = "shortcutSubscriber";
     redisWrapper._._setMainClient(shortcutMain);
     redisWrapper._._setSubscriberClient(shortcutSubscriber);
-    const mainClient = await redisWrapper._._createMainClientAndConnect();
-    const subscriberClient = await redisWrapper._._createSubscriberAndConnect();
+    const mainClient = await redisWrapper.getMainClient();
+    const subscriberClient = await redisWrapper.getSubscriberClient();
 
     expect(redis.createClient).not.toHaveBeenCalled();
     expect(mainClient).toBe(shortcutMain);
@@ -91,8 +91,8 @@ describe("redis wrapper test", () => {
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  it("_createMainClientAndConnect", async () => {
-    const client = await redisWrapper._._createMainClientAndConnect();
+  it("getMainClient", async () => {
+    const client = await redisWrapper.getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(client.connect).toHaveBeenCalledTimes(1);
     expect(redisWrapper._._getMainClient()).toBe(client);
@@ -103,8 +103,8 @@ describe("redis wrapper test", () => {
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  it("_createSubscriberAndConnect", async () => {
-    const client = await redisWrapper._._createSubscriberAndConnect();
+  it("getSubscriberClient", async () => {
+    const client = await redisWrapper.getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redisWrapper._._getSubscriberClient()).toBe(client);
     expect(mockClient.on).toHaveBeenCalledTimes(1);
