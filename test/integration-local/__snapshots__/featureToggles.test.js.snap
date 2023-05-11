@@ -163,6 +163,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
       "^\\d{1}$",
     ],
     "key": "test/feature_e",
+    "scopeKey": "//",
   },
 ]
 `;

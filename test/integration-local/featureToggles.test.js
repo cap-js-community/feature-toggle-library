@@ -156,7 +156,7 @@ describe("local integration test", () => {
     expect(await changeFeatureValue(FEATURE.E, newValue)).toBeUndefined();
     expect(getFeatureStates()[FEATURE.E].stateScopedValues).toMatchInlineSnapshot(`
       {
-        "": 9,
+        "//": 9,
       }
     `);
     expect(getFeatureValue(FEATURE.E)).toEqual(newValue);
@@ -246,7 +246,7 @@ describe("local integration test", () => {
     expect(await changeFeatureValue(FEATURE.E, rootNewValue)).toBeUndefined();
     expect(getFeatureStates()[FEATURE.E].stateScopedValues).toMatchInlineSnapshot(`
       {
-        "": 1,
+        "//": 1,
         "component::c1##layer::l1##tenant::t1": 4,
         "component::c1##tenant::t1": 3,
         "tenant::t1": 2,
@@ -291,7 +291,7 @@ describe("local integration test", () => {
     expect(await changeFeatureValue(FEATURE.E, rootNewValue)).toBeUndefined();
     expect(getFeatureStates()[FEATURE.E].stateScopedValues).toMatchInlineSnapshot(`
       {
-        "": 1,
+        "//": 1,
         "component::c1##layer::l1##tenant::t1": 4,
         "component::c1##tenant::t1": 3,
         "tenant::t1": 2,
@@ -305,7 +305,7 @@ describe("local integration test", () => {
     expect(await changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap, { clearSubScopes: true })).toBeUndefined();
     expect(getFeatureStates()[FEATURE.E].stateScopedValues).toMatchInlineSnapshot(`
       {
-        "": 1,
+        "//": 1,
         "component::c1##tenant::t1": 3,
         "tenant::t1": 2,
       }
