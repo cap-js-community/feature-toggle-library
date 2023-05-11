@@ -4,15 +4,14 @@ title: Home
 nav_order: 1
 ---
 
-# BTP Feature Toggles
+# SAP BTP Feature Toggle Library
 
-BTP Feature Toggles is a nodejs library, which will enable Cloud Foundry applications to maintain live-updatable feature
-toggles.
+SAP BTP feature toggle library will enable Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.
 
 ## Install or Upgrade
 
 ```bash
-npm install @sap/btp-feature-toggles@latest --save --@sap:registry=https://int.repositories.cloud.sap/artifactory/api/npm/build-releases-npm/
+npm install --save @cap-js-community/feature-toggle-library
 ```
 
 ## Core Features

@@ -9,13 +9,8 @@ SAP BTP feature toggle library will enable Node.js applications using the SAP Cl
 
 ## Install or Upgrade
 
-Prerequisite is an installed [CF cli](https://github.com/cloudfoundry/cli) v7 or newer. The tool can be installed either globally or locally for a specific project.
-
 ```bash
-# globally
-npm install --global @cap-js-community/feature-toggle-library
-# project local
-npm install --save-dev @cap-js-community/feature-toggle-library
+npm install --save @cap-js-community/feature-toggle-library
 ```
 
 ## Support, Feedback, Contributing
