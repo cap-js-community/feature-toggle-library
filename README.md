@@ -19,7 +19,7 @@ Please see our [LICENSE](LICENSE.md) for copyright and license information.
 
 ## Build
 
-- Milestone: 
+- Milestone:
   https://xmake-nova.wdf.sap.corp/job_finder/?input=cds-community/cds-community-btp-feature-toggles-SP-MS-common
-- Release: 
+- Release:
   https://xmake-nova.wdf.sap.corp/job_finder/?input=cds-community/cds-community-btp-feature-toggles-SP-REL-common_indirectshipment

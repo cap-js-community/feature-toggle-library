@@ -1,9 +1,49 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`local integration test getFeatureValue, changeFeatureValue 2`] = `[]`;
-
-exports[`local integration test getFeatureValue, changeFeatureValue 3`] = `
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes 1`] = `
 [
+  {
+    "errorMessage": "value "{0}" does not match validation regular expression {1}",
+    "errorMessageValues": [
+      10,
+      "^\\d{1}$",
+    ],
+    "key": "test/feature_e",
+    "scopeKey": "component::c1##tenant::t1",
+  },
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes 8`] = `
+[
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
   [
     "%s | %O",
     "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
@@ -14,19 +54,137 @@ exports[`local integration test getFeatureValue, changeFeatureValue 3`] = `
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue 4`] = `[]`;
-
-exports[`local integration test getFeatureValue, changeFeatureValue 5`] = `[]`;
-
-exports[`local integration test getFeatureValue, changeFeatureValue 6`] = `
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes 11`] = `
 [
+  [
+    "error during initialization, using fallback values",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
   [
     "error during change remote feature values, switching to local update",
   ],
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue 7`] = `[]`;
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
+[
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 8`] = `
+[
+  [
+    "error during initialization, using fallback values",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+  [
+    "error during change remote feature values, switching to local update",
+  ],
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue without scopes 1`] = `
+[
+  {
+    "errorMessage": "value "{0}" does not match validation regular expression {1}",
+    "errorMessageValues": [
+      10,
+      "^\\d{1}$",
+    ],
+    "key": "test/feature_e",
+  },
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue without scopes 4`] = `
+[
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+]
+`;
 
 exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
 {
@@ -35,21 +193,21 @@ exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
       "TYPE": "boolean",
     },
     "fallbackValue": false,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_b": {
     "config": {
       "TYPE": "number",
     },
     "fallbackValue": 1,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_c": {
     "config": {
       "TYPE": "string",
     },
     "fallbackValue": "best",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_d": {
     "config": {
@@ -58,7 +216,7 @@ exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
       "VALIDATION_REG_EXP": /\\^\\(\\?:true\\)\\$/,
     },
     "fallbackValue": true,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_e": {
     "config": {
@@ -67,7 +225,7 @@ exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
       "VALIDATION_REG_EXP": /\\^\\\\d\\{1\\}\\$/,
     },
     "fallbackValue": 5,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_f": {
     "config": {
@@ -76,7 +234,7 @@ exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
       "VALIDATION_REG_EXP": /\\^\\(\\?:best\\|worst\\)\\$/,
     },
     "fallbackValue": "best",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_g": {
     "config": {
@@ -84,7 +242,7 @@ exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "activeTest",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_h": {
     "config": {
@@ -93,43 +251,7 @@ exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
 }
 `;
-
-exports[`local integration test getFeatureValues, getFeatureStates 2`] = `[]`;
-
-exports[`local integration test getFeatureValues, getFeatureStates 3`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
-
-exports[`local integration test getFeatureValues, getFeatureStates 4`] = `[]`;
-
-exports[`local integration test getFeatureValues, getFeatureStates 5`] = `
-[
-  [
-    "finished initialization with %i feature toggle%s",
-    8,
-    "s",
-  ],
-]
-`;
-
-exports[`local integration test getFeatureValues, getFeatureStates 6`] = `
-[
-  [
-    "error during initialization, using fallback values",
-  ],
-]
-`;
-
-exports[`local integration test getFeatureValues, getFeatureStates 7`] = `[]`;

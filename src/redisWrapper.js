@@ -12,6 +12,13 @@ const { Semaphore } = require("./shared/semaphore");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
+
+const INTEGRATION_MODE = Object.freeze({
+  CF_REDIS: "CF_REDIS",
+  LOCAL_REDIS: "LOCAL_REDIS",
+  NO_REDIS: "NO_REDIS",
+});
+
 const logger = new Logger(COMPONENT_NAME, isOnCF);
 
 const MODE = Object.freeze({
@@ -374,9 +381,21 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
  */
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
+const getIntegrationMode = () => {
+  if (redisIsOnCF) {
+    return INTEGRATION_MODE.CF_REDIS;
+  }
+  if (mainClient) {
+    return INTEGRATION_MODE.LOCAL_REDIS;
+  }
+  return INTEGRATION_MODE.NO_REDIS;
+};
+
 module.exports = {
+  REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
   getMainClient,
   getSubscriberClient,
+  getIntegrationMode,
   get,
   getObject,
   set,

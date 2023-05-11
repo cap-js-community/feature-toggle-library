@@ -4,7 +4,7 @@ const VError = require("verror");
 
 /**
  * The regular Promise.all() cannot do proper error-handling. It will reject as soon as the first of the passed in
- * promises rejects. Any subsequent rejects are unhandled expections.
+ * promises rejects. Any subsequent rejects are unhandled exceptions.
  *
  * With promiseAllDone you can mitigate that behavior. It will wait for all passed promises to complete and collect any
  * number of occurring errors in a single VError.MultiError.

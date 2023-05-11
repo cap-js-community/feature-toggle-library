@@ -1,5 +1,7 @@
 "use strict";
 
+const { REDIS_INTEGRATION_MODE } = jest.requireActual("../../src/redisWrapper");
+
 const featuresKey = "feature-key";
 let mockRedisState = {};
 
@@ -51,6 +53,7 @@ module.exports = {
   getObject,
   watchedGetSetObject,
   subscribe: jest.fn(),
+  getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.NO_REDIS),
   _reset,
   _setValues,
   _setValue,

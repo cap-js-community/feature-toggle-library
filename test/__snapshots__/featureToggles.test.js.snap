@@ -1,28 +1,30 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`feature toggles test basic apis _changeRemoteFeatureValues 1`] = `
+exports[`feature toggles test basic apis _changeRemoteFeatureValues 2`] = `
 {
-  "test/feature_a": false,
-  "test/feature_b": 1,
-  "test/feature_c": "best",
-  "test/feature_d": true,
-  "test/feature_e": 5,
-  "test/feature_f": "best",
-  "test/feature_g": "activeTest",
-  "test/feature_h": "appUrlTest",
+  "test/feature_a": undefined,
+  "test/feature_b": undefined,
+  "test/feature_c": undefined,
+  "test/feature_d": undefined,
+  "test/feature_e": undefined,
+  "test/feature_f": undefined,
+  "test/feature_g": undefined,
+  "test/feature_h": undefined,
 }
 `;
 
-exports[`feature toggles test basic apis _changeRemoteFeatureValues 2`] = `
+exports[`feature toggles test basic apis _changeRemoteFeatureValues 3`] = `
 {
-  "test/feature_a": false,
-  "test/feature_b": 1,
-  "test/feature_c": "new_a",
-  "test/feature_d": true,
-  "test/feature_e": 5,
-  "test/feature_f": "best",
-  "test/feature_g": "activeTest",
-  "test/feature_h": "appUrlTest",
+  "test/feature_a": undefined,
+  "test/feature_b": undefined,
+  "test/feature_c": {
+    "//": "new_a",
+  },
+  "test/feature_d": undefined,
+  "test/feature_e": undefined,
+  "test/feature_f": undefined,
+  "test/feature_g": undefined,
+  "test/feature_h": undefined,
 }
 `;
 
@@ -33,21 +35,21 @@ exports[`feature toggles test basic apis getFeatureStates 1`] = `
       "TYPE": "boolean",
     },
     "fallbackValue": false,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_b": {
     "config": {
       "TYPE": "number",
     },
     "fallbackValue": 1,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_c": {
     "config": {
       "TYPE": "string",
     },
     "fallbackValue": "best",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_d": {
     "config": {
@@ -56,7 +58,7 @@ exports[`feature toggles test basic apis getFeatureStates 1`] = `
       "VALIDATION_REG_EXP": /\\^\\(\\?:true\\)\\$/,
     },
     "fallbackValue": true,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_e": {
     "config": {
@@ -65,7 +67,7 @@ exports[`feature toggles test basic apis getFeatureStates 1`] = `
       "VALIDATION_REG_EXP": /\\^\\\\d\\{1\\}\\$/,
     },
     "fallbackValue": 5,
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_f": {
     "config": {
@@ -74,7 +76,7 @@ exports[`feature toggles test basic apis getFeatureStates 1`] = `
       "VALIDATION_REG_EXP": /\\^\\(\\?:best\\|worst\\)\\$/,
     },
     "fallbackValue": "best",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_g": {
     "config": {
@@ -82,7 +84,7 @@ exports[`feature toggles test basic apis getFeatureStates 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "activeTest",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
   "test/feature_h": {
     "config": {
@@ -91,7 +93,7 @@ exports[`feature toggles test basic apis getFeatureStates 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",
-    "stateValue": undefined,
+    "stateScopedValues": undefined,
   },
 }
 `;

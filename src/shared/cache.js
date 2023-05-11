@@ -2,6 +2,7 @@
 
 const DEFAULT_SEPARATOR = "##";
 const DEFAULT_EXPIRATION_GAP = 5000; // 5 seconds
+const DEFAULT_SIZE_LIMIT = 15;
 
 class LazyCache {
   constructor({ separator = DEFAULT_SEPARATOR } = {}) {
@@ -127,9 +128,30 @@ class ExpiringLazyCache extends LazyCache {
   }
 }
 
+class LimitedLazyCache extends LazyCache {
+  constructor({ separator = DEFAULT_SEPARATOR, sizeLimit = DEFAULT_SIZE_LIMIT } = {}) {
+    super({ separator });
+    this.__sizeLimit = sizeLimit;
+    this.__keyQueue = [];
+  }
+
+  set(keyOrKeys, value) {
+    const key = super._key(keyOrKeys);
+    if (!super.has(key)) {
+      this.__keyQueue.unshift(key);
+      while (this.__keyQueue.length > this.__sizeLimit) {
+        super.delete(this.__keyQueue.pop());
+      }
+    }
+    return super.set(key, value);
+  }
+}
+
 module.exports = {
-  DEFAULT_EXPIRATION_GAP,
   DEFAULT_SEPARATOR,
+  DEFAULT_EXPIRATION_GAP,
+  DEFAULT_SIZE_LIMIT,
   LazyCache,
   ExpiringLazyCache,
+  LimitedLazyCache,
 };
