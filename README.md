@@ -5,7 +5,7 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/cap-js-community/feature-toggle-library)](https://api.reuse.software/info/github.com/cap-js-community/feature-toggle-library)
 [![CI Main](https://github.com/cap-js-community/feature-toggle-library/actions/workflows/ci-main.yml/badge.svg)](https://github.com/cap-js-community/feature-toggle-library/commits/main)
 
-SAP BTP feature toggle library will enable Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.
+SAP BTP feature toggle library enables Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.
 
 ## Install or Upgrade
 
