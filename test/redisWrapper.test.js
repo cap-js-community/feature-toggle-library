@@ -68,9 +68,16 @@ describe("redis wrapper test", () => {
     const client = redisWrapper._._createClientBase();
 
     expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redis.createClient).toHaveBeenCalledWith({
-      socket: { reconnectStrategy: redisWrapper._._localReconnectStrategy },
-    });
+    expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
+      [
+        {
+          "socket": {
+            "host": "127.0.0.1",
+            "reconnectStrategy": [Function],
+          },
+        },
+      ]
+    `);
     expect(client).toBe(mockClient);
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
