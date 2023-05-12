@@ -102,13 +102,13 @@ describe("logger test", () => {
     expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)).toMatchInlineSnapshot(`
       [
         [
-          "{"component_type":"application","layer":"Testing","logger":"nodejs-logger","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"msg":"","type":"log","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"key\\":\\"test/feature_b\\",\\"value\\":1}"}",
+          "{"logger":"nodejs-logger","type":"log","msg":"","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"layer":"Testing","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"key\\":\\"test/feature_b\\",\\"value\\":1}"}",
         ],
         [
-          "{"component_type":"application","layer":"Testing","logger":"nodejs-logger","level":"warn","stacktrace":["FeatureTogglesError: found invalid fallback values during initialization"],"msg":"","type":"log","errInfo":"{\\"validationErrors\\":\\"[{\\\\\\"key\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}"}",
+          "{"logger":"nodejs-logger","type":"log","msg":"","level":"warn","stacktrace":["FeatureTogglesError: found invalid fallback values during initialization"],"layer":"Testing","errInfo":"{\\"validationErrors\\":\\"[{\\\\\\"key\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}"}",
         ],
         [
-          "{"component_type":"application","layer":"Testing","logger":"nodejs-logger","level":"info","msg":"finished initialization with 8 feature toggles with NO_REDIS","type":"log"}",
+          "{"logger":"nodejs-logger","type":"log","msg":"finished initialization with 8 feature toggles with NO_REDIS","level":"info","layer":"Testing"}",
         ],
       ]
     `);

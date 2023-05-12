@@ -95,7 +95,9 @@ const _createClientBase = () => {
       );
     }
   } else {
-    return redis.createClient({ socket: { reconnectStrategy: _localReconnectStrategy } });
+    // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
+    // NOTE: we make the host explicit here to avoid ipv4/ipv6 ambivalence problems that got introduced with node v18
+    return redis.createClient({ socket: { host: "127.0.0.1", reconnectStrategy: _localReconnectStrategy } });
   }
 };
 
