@@ -233,16 +233,17 @@ const setObject = async (key, value, options) => {
   return set(key, valueRaw, options);
 };
 
-const _watchedGetSetExclusive = async (key, newValueCallback, mode, attempts) => {
+const _watchedGetSetExclusive = async (key, newValueCallback, options) => {
   await watchedGetSetSemaphore.acquire();
   try {
-    return await _watchedGetSet(key, newValueCallback, mode, attempts);
+    return await _watchedGetSet(key, newValueCallback, options);
   } finally {
     watchedGetSetSemaphore.release();
   }
 };
 
-const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempts = 10) => {
+const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
+  const useHash = field !== undefined;
   if (!mainClient) {
     mainClient = await getMainClient();
   }
@@ -251,7 +252,7 @@ const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempt
     try {
       await mainClient.watch(key);
 
-      const oldValueRaw = await mainClient.GET(key);
+      const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
       const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
       const newValue = await newValueCallback(oldValue);
       const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
@@ -263,69 +264,48 @@ const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempt
       const doDelete = newValueRaw === null;
       const clientMulti = mainClient.MULTI();
       if (doDelete) {
-        clientMulti.DEL(key);
+        useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
       } else {
-        clientMulti.SET(key, newValueRaw);
+        useHash ? clientMulti.HSET(key, field, newValueRaw) : clientMulti.SET(key, newValueRaw);
       }
       const replies = await clientMulti.EXEC();
       if (replies !== null) {
         if (!Array.isArray(replies) || replies.length !== 1 || replies[0] !== (doDelete ? 1 : "OK")) {
           throw new VError(
-            { name: VERROR_CLUSTER_NAME, info: { key, attempt, attempts, replies } },
+            { name: VERROR_CLUSTER_NAME, info: { key, ...(field && { field }), attempt, attempts, replies } },
             "received unexpected replies from redis"
           );
         }
         return newValue;
       }
     } catch (err) {
-      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { key } }, "error during watched get set");
+      throw new VError(
+        { name: VERROR_CLUSTER_NAME, cause: err, info: { key, ...(field && { field }) } },
+        "error during watched get set"
+      );
     }
   }
-  throw new VError({ name: VERROR_CLUSTER_NAME, info: { key, attempts } }, "reached watched get set attempt limit");
+  throw new VError(
+    { name: VERROR_CLUSTER_NAME, info: { key, ...(field && { field }), attempts } },
+    "reached watched get set attempt limit"
+  );
 };
 
-const _watchedHashGetSet = async (key, field, newValueCallback, mode = MODE.OBJECT, attempts = 10) => {
-  if (!mainClient) {
-    mainClient = await getMainClient();
-  }
-
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      await mainClient.watch(key);
-
-      const oldValueRaw = await mainClient.hget(key, field);
-      const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
-      const newValue = await newValueCallback(oldValue);
-      const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
-
-      if (oldValueRaw === newValueRaw) {
-        return oldValue;
-      }
-
-      const doDelete = newValueRaw === null;
-      const clientMulti = mainClient.multi();
-      if (doDelete) {
-        clientMulti.del(key);
-      } else {
-        clientMulti.set(key, newValueRaw);
-      }
-      const replies = await clientMulti.exec();
-      if (replies !== null) {
-        if (!Array.isArray(replies) || replies.length !== 1 || replies[0] !== (doDelete ? 1 : "OK")) {
-          throw new VError(
-            { name: VERROR_CLUSTER_NAME, info: { key, attempt, attempts, replies } },
-            "received unexpected replies from redis"
-          );
-        }
-        return newValue;
-      }
-    } catch (err) {
-      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { key } }, "error during watched get set");
-    }
-  }
-  throw new VError({ name: VERROR_CLUSTER_NAME, info: { key, attempts } }, "reached watched get set attempt limit");
-};
-
+/**
+ * @callback NewValueCallback
+ * @see watchedGetSet
+ *
+ * @param {string}  oldValue  previous value or null if the value was not set
+ * @returns {string} new value to set for
+ */
+/**
+ * @callback NewObjectValueCallback
+ * @see watchedGetSetObject
+ * @see watchedHashGetSetObject
+ *
+ * @param {object}  oldValue  previous value or null if the value was not set
+ * @returns {object} new value to set for
+ */
 /**
  * Asynchronously get and then set new value for a given key. The key is optimistically locked, meaning if someone else
  * updates the key concurrently, we lose one attempt and try again until the attempt limit is reached. For subsequent
@@ -336,25 +316,41 @@ const _watchedHashGetSet = async (key, field, newValueCallback, mode = MODE.OBJE
  *
  * This function will throw when one of the client instructions fail or when the attempt limit is reached.
  *
- * @param key               key to watch and modify
- * @param newValueCallback  asynchronous callback to compute new value for key, gets old value as input
- * @param attempts          number of attempts to modify key with optimistic locking
- * @returns {Promise<*>}    promise for the new value that was set
+ * @param {string}            key               key to watch and modify
+ * @param {NewValueCallback}  newValueCallback  asynchronous callback to compute new value for key, gets old value as
+ *                                                input
+ * @param {number}            attempts          number of attempts to modify key with optimistic locking
+ * @returns {Promise<string>}  promise for the new value that was set
  */
 const watchedGetSet = async (key, newValueCallback, attempts = 10) =>
-  _watchedGetSetExclusive(key, newValueCallback, MODE.RAW, attempts);
+  _watchedGetSetExclusive(key, newValueCallback, { mode: MODE.RAW, attempts });
 
 /**
  * See {@link watchedGetSet}. Difference here is that it does an implicit JSON.parse/JSON.stringify before getting and
  * setting.
  *
- * @param key               key to watch and modify
- * @param newValueCallback  asynchronous callback to compute new value for key, gets old value as input
- * @param attempts          number of attempts to modify key with optimistic locking
- * @returns {Promise<*>}    promise for the new value that was set
+ * @param {string}                  key               key to watch and modify
+ * @param {NewObjectValueCallback}  newValueCallback  asynchronous callback to compute new value for key, gets old
+ *                                                      value as input
+ * @param {number}                  attempts          number of attempts to modify key with optimistic locking
+ * @returns {Promise<object>}  promise for the new value that was set
  */
 const watchedGetSetObject = async (key, newValueCallback, attempts = 10) =>
-  _watchedGetSetExclusive(key, newValueCallback, MODE.OBJECT, attempts);
+  _watchedGetSetExclusive(key, newValueCallback, { mode: MODE.OBJECT, attempts });
+
+/**
+ * See {@link watchedGetSetObject}. In addition to an implicit JSON.parse/JSON.stringify this interface will use the
+ * hash variants HGET/HSET/HDEL for the underlying modifications.
+ *
+ * @param {string}                  key               key with hash fields to watch
+ * @param {string}                  field             hash field to modify
+ * @param {NewObjectValueCallback}  newValueCallback  asynchronous callback to compute new value for hash field, gets
+ *                                                      old value as input
+ * @param {number}                  attempts          number of attempts to modify hash field with optimistic locking
+ * @returns {Promise<object>}  promise for the new value that was set
+ */
+const watchedHashGetSetObject = async (key, field, newValueCallback, attempts = 10) =>
+  _watchedGetSetExclusive(key, newValueCallback, { field, mode: MODE.OBJECT, attempts });
 
 /**
  * Asynchronously publish a given message on a given channel. This will lazily create the necessary publisher client.
