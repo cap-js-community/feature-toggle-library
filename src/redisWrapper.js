@@ -197,7 +197,7 @@ const _clientExec = async (functionName, argsObject) => {
  * @param key
  * @returns {Promise<string|null>}
  */
-const get = async (key) => _clientExec("get", { key });
+const get = async (key) => _clientExec("GET", { key });
 
 /**
  * Asynchronously get the value for a given key and parse it into an object.
@@ -218,7 +218,7 @@ const getObject = async (key) => {
  * @param options
  * @returns {Promise<*>}
  */
-const set = async (key, value, options) => _clientExec("set", { key, value, ...(options && { options }) });
+const set = async (key, value, options) => _clientExec("SET", { key, value, ...(options && { options }) });
 
 /**
  * Asynchronously set a stringified object as value for a given key.
@@ -251,7 +251,49 @@ const _watchedGetSet = async (key, newValueCallback, mode = MODE.OBJECT, attempt
     try {
       await mainClient.watch(key);
 
-      const oldValueRaw = await mainClient.get(key);
+      const oldValueRaw = await mainClient.GET(key);
+      const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
+      const newValue = await newValueCallback(oldValue);
+      const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
+
+      if (oldValueRaw === newValueRaw) {
+        return oldValue;
+      }
+
+      const doDelete = newValueRaw === null;
+      const clientMulti = mainClient.MULTI();
+      if (doDelete) {
+        clientMulti.DEL(key);
+      } else {
+        clientMulti.SET(key, newValueRaw);
+      }
+      const replies = await clientMulti.EXEC();
+      if (replies !== null) {
+        if (!Array.isArray(replies) || replies.length !== 1 || replies[0] !== (doDelete ? 1 : "OK")) {
+          throw new VError(
+            { name: VERROR_CLUSTER_NAME, info: { key, attempt, attempts, replies } },
+            "received unexpected replies from redis"
+          );
+        }
+        return newValue;
+      }
+    } catch (err) {
+      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { key } }, "error during watched get set");
+    }
+  }
+  throw new VError({ name: VERROR_CLUSTER_NAME, info: { key, attempts } }, "reached watched get set attempt limit");
+};
+
+const _watchedHashGetSet = async (key, field, newValueCallback, mode = MODE.OBJECT, attempts = 10) => {
+  if (!mainClient) {
+    mainClient = await getMainClient();
+  }
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await mainClient.watch(key);
+
+      const oldValueRaw = await mainClient.hget(key, field);
       const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
       const newValue = await newValueCallback(oldValue);
       const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
@@ -322,7 +364,7 @@ const watchedGetSetObject = async (key, newValueCallback, attempts = 10) =>
  * @param message to publish
  * @returns {Promise<void>}
  */
-const publishMessage = async (channel, message) => _clientExec("publish", { channel, message });
+const publishMessage = async (channel, message) => _clientExec("PUBLISH", { channel, message });
 
 /**
  * Subscribe to a given channel. New messages will be processed on all registered message handlers for that channel.
@@ -336,7 +378,7 @@ const subscribe = async (channel) => {
     subscriberClient = await getSubscriberClient();
   }
   try {
-    await subscriberClient.subscribe(channel, _subscribedMessageHandler);
+    await subscriberClient.SUBSCRIBE(channel, _subscribedMessageHandler);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during subscribe");
   }
@@ -353,7 +395,7 @@ const unsubscribe = async (channel) => {
     subscriberClient = await getSubscriberClient();
   }
   try {
-    await subscriberClient.unsubscribe(channel);
+    await subscriberClient.UNSUBSCRIBE(channel);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during unsubscribe");
   }
