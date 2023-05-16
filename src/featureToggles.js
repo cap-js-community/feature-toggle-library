@@ -32,7 +32,7 @@ const yaml = require("yaml");
 const {
   getIntegrationMode: getRedisIntegrationMode,
   getObject: redisGetObject,
-  watchedGetSetObject: redisWatchedGetSetObject,
+  watchedHashGetGetSetObject: redisWatchedHashGetSetObject,
   publishMessage,
   subscribe: redisSubscribe,
   registerMessageHandler,
@@ -482,7 +482,9 @@ class FeatureToggles {
       );
     }
     try {
-      this.__stateScopedValues = await redisWatchedGetSetObject(this.__featuresKey, async (oldRemoteValues) => {
+      // TODO: do we want to remove values here???
+      // TODO: this has to iterate over all values
+      this.__stateScopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, async (oldRemoteValues) => {
         const [validatedOldRemoteValues, validationErrors] = await this._validateStateScopedValues(oldRemoteValues);
         if (Array.isArray(validationErrors) && validationErrors.length > 0) {
           logger.warning(
@@ -690,43 +692,51 @@ class FeatureToggles {
   // START OF CHANGE_FEATURE_VALUE SECTION
   // ========================================
 
-  // NOTE: stateScopedValues needs to be at least an empty object {}
-  static _setScopedValueInPlace(
-    stateScopedValues,
-    key,
-    newValue,
-    scopeKey = SCOPE_ROOT_KEY,
-    { clearSubScopes = false } = {}
-  ) {
+  // TODO this naming is horrific stateScopedValues are keyScopedValues for all Keys but they sound like the same thing
+
+  static _updateKeyScopedValues(keyScopedValues, newValue, scopeKey = SCOPE_ROOT_KEY, { clearSubScopes = false } = {}) {
     // NOTE: this first check is just an optimization
     if (clearSubScopes && scopeKey === SCOPE_ROOT_KEY) {
-      Reflect.deleteProperty(stateScopedValues, key);
+      return null;
     }
 
-    if (stateScopedValues[key]) {
+    if (keyScopedValues) {
       if (clearSubScopes) {
         const scopeKeyInnerPairs = scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR);
-        const subScopeKeys = Object.keys(stateScopedValues[key]).filter((someScopeKey) =>
+        const subScopeKeys = Object.keys(keyScopedValues).filter((someScopeKey) =>
           scopeKeyInnerPairs.every((scopeKeyInnerPair) => someScopeKey.includes(scopeKeyInnerPair))
         );
         for (const subScopeKey of subScopeKeys) {
-          Reflect.deleteProperty(stateScopedValues[key], subScopeKey);
+          Reflect.deleteProperty(keyScopedValues, subScopeKey);
         }
       }
 
       if (newValue !== null) {
-        stateScopedValues[key][scopeKey] = newValue;
+        keyScopedValues[scopeKey] = newValue;
       } else {
-        if (Object.keys(stateScopedValues).length > 1) {
-          Reflect.deleteProperty(stateScopedValues[key], scopeKey);
+        if (Object.keys(keyScopedValues).length > 1) {
+          Reflect.deleteProperty(keyScopedValues, scopeKey);
         } else {
-          Reflect.deleteProperty(stateScopedValues, key);
+          return null;
         }
       }
+      return keyScopedValues;
     } else {
       if (newValue !== null) {
-        stateScopedValues[key] = { [scopeKey]: newValue };
+        return { [scopeKey]: newValue };
+      } else {
+        return null;
       }
+    }
+  }
+
+  // NOTE: stateScopedValues needs to be at least an empty object {}
+  static _setScopedValueInPlace(stateScopedValues, key, newValue, scopeKey, options) {
+    const keyScopedValues = this._updateKeyScopedValues(stateScopedValues[key], newValue, scopeKey, options);
+    if (keyScopedValues !== null) {
+      stateScopedValues[key] = keyScopedValues;
+    } else {
+      Reflect.deleteProperty(stateScopedValues, key);
     }
   }
 
@@ -903,13 +913,10 @@ class FeatureToggles {
       return validationErrors;
     }
 
-    const newRedisStateCallback = (stateScopedValues) => {
-      stateScopedValues = stateScopedValues ?? {};
-      FeatureToggles._setScopedValueInPlace(stateScopedValues, key, newValue, scopeKey, options);
-      return stateScopedValues;
-    };
+    const newRedisStateCallback = (keyScopedValues) =>
+      FeatureToggles._updateKeyScopedValues(keyScopedValues, newValue, scopeKey, options);
     try {
-      await redisWatchedGetSetObject(this.__featuresKey, newRedisStateCallback);
+      await redisWatchedHashGetSetObject(this.__featuresKey, key, newRedisStateCallback);
       // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
       // from the scopeMap by the receiver, so we leave it out here.
       const changeEntry = { key, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
