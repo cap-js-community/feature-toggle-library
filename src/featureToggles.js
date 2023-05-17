@@ -6,7 +6,7 @@
  * - no nested features (though with stringify you could sort of get that)
  *
  * technical approach:
- * - have a constant redis key "features" where the feature toggle state is expected
+ * - have a constant redis key "features" where the feature toggle state are persisted
  * - on init this key is read
  *   - if it's not empty: take the value and save it in memory for runtime queries
  *   - if it's empty: do a (optimistically locked) write with the fallback values
@@ -20,8 +20,11 @@
  * @see registerFeatureValueChangeHandler
  *
  */
+
 "use strict";
 
+// TODO the top description is very outdated
+// TODO setting toggles to inactive should not delete remote state
 // TODO locale for validation messages
 
 const { promisify } = require("util");
@@ -379,6 +382,33 @@ class FeatureToggles {
     return validationErrors;
   }
 
+  // TODO keyScopedValues or just scopedValues?
+  // TODO why value, key?
+  // TODO can this mechanism of using [result, errors] per key inside a loop be generalized?
+  async _validateScopedValues(scopedValues, key) {
+    let validationErrors = [];
+    const validatedScopedValues = {};
+    const processEntry = async (key, value, scopeKey) => {
+      const entryValidationErrors = await this.validateFeatureValue(key, value, scopeKey);
+      if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
+        validationErrors = validationErrors.concat(entryValidationErrors);
+      } else {
+        FeatureToggles._updateKeyScopedValues(validatedScopedValues, key, value, scopeKey);
+      }
+    };
+
+    // NOTE: this is the migration case
+    if (typeof scopedValues !== "object") {
+      await processEntry(key, scopedValues);
+    } else {
+      for (const [scopeKey, value] of Object.entries(scopedValues)) {
+        await processEntry(key, value, scopeKey);
+      }
+    }
+
+    return [validatedScopedValues, validationErrors];
+  }
+
   /**
    * Validate the remote state scoped values. This will return a pair [result, validationErrors], where
    * validationErrors is a list of {@link ValidationError} objects and result are all inputs that passed validated or
@@ -389,28 +419,17 @@ class FeatureToggles {
    */
   async _validateStateScopedValues(stateScopedValues) {
     let validationErrors = [];
+    const validatedStateScopedValues = {};
     if (isNull(stateScopedValues) || typeof stateScopedValues !== "object") {
       return [null, validationErrors];
     }
 
-    const validatedStateScopedValues = {};
-    const processEntry = async (key, value, scopeKey) => {
-      const entryValidationErrors = await this.validateFeatureValue(key, value, scopeKey);
-      if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
-        validationErrors = validationErrors.concat(entryValidationErrors);
-      } else {
-        FeatureToggles._setScopedValueInPlace(validatedStateScopedValues, key, value, scopeKey);
-      }
-    };
     for (const [key, scopedValues] of Object.entries(stateScopedValues)) {
-      // NOTE: this is the migration case
-      if (typeof scopedValues !== "object") {
-        await processEntry(key, scopedValues);
-        continue;
-      }
-
-      for (const [scopeKey, value] of Object.entries(scopedValues)) {
-        await processEntry(key, value, scopeKey);
+      const [validatedScopedValues, validationErrorsScopedValues] = this._validateScopedValues(scopedValues, key);
+      validationErrors = validationErrors.concat(validationErrorsScopedValues);
+      // TODO can this be undefined?
+      if (validatedScopedValues !== null && validatedScopedValues !== undefined) {
+        validatedStateScopedValues[key] = validatedScopedValues;
       }
     }
     return [validatedStateScopedValues, validationErrors];
@@ -484,21 +503,28 @@ class FeatureToggles {
     try {
       // TODO: do we want to remove values here???
       // TODO: this has to iterate over all values
-      this.__stateScopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, async (oldRemoteValues) => {
-        const [validatedOldRemoteValues, validationErrors] = await this._validateStateScopedValues(oldRemoteValues);
-        if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-          logger.warning(
-            new VError(
-              {
-                name: VERROR_CLUSTER_NAME,
-                info: { validationErrors: JSON.stringify(validationErrors) },
-              },
-              "removed invalid entries from redis during initialization"
-            )
-          );
-        }
-        return this._filterInactive(validatedOldRemoteValues ?? {});
-      });
+      // TODO code on
+      for (const key in this.__fallbackValues) {
+        this.__stateScopedValues = await redisWatchedHashGetSetObject(
+          this.__featuresKey,
+          key,
+          async (oldRemoteValues) => {
+            const [validatedOldRemoteValues, validationErrors] = await this._validateStateScopedValues(oldRemoteValues);
+            if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+              logger.warning(
+                new VError(
+                  {
+                    name: VERROR_CLUSTER_NAME,
+                    info: { validationErrors: JSON.stringify(validationErrors) },
+                  },
+                  "removed invalid entries from redis during initialization"
+                )
+              );
+            }
+            return this._filterInactive(validatedOldRemoteValues ?? {});
+          }
+        );
+      }
       registerMessageHandler(this.__featuresChannel, this.__messageHandler);
       await redisSubscribe(this.__featuresChannel);
     } catch (err) {
@@ -557,6 +583,7 @@ class FeatureToggles {
   getFeatureStates() {
     this._ensureInitialized();
     const result = {};
+    // TODO should we really use in or just have an array that gets initialized normally
     for (const key in this.__fallbackValues) {
       result[key] = this._getFeatureState(key);
     }
@@ -693,7 +720,8 @@ class FeatureToggles {
   // ========================================
 
   // TODO this naming is horrific stateScopedValues are keyScopedValues for all Keys but they sound like the same thing
-
+  // TODO this function is also horrific by modifying in place and still needing the user to use the return value,
+  //  because it needs to communicate the delete case
   static _updateKeyScopedValues(keyScopedValues, newValue, scopeKey = SCOPE_ROOT_KEY, { clearSubScopes = false } = {}) {
     // NOTE: this first check is just an optimization
     if (clearSubScopes && scopeKey === SCOPE_ROOT_KEY) {
@@ -731,7 +759,7 @@ class FeatureToggles {
   }
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
-  static _setScopedValueInPlace(stateScopedValues, key, newValue, scopeKey, options) {
+  static _updateStateScopedValuesInPlace(stateScopedValues, key, newValue, scopeKey, options) {
     const keyScopedValues = this._updateKeyScopedValues(stateScopedValues[key], newValue, scopeKey, options);
     if (keyScopedValues !== null) {
       stateScopedValues[key] = keyScopedValues;
@@ -884,7 +912,7 @@ class FeatureToggles {
           }
 
           await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
-          FeatureToggles._setScopedValueInPlace(this.__stateScopedValues, key, newValue, scopeKey, options);
+          FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newValue, scopeKey, options);
         })
       );
     } catch (err) {
@@ -949,7 +977,7 @@ class FeatureToggles {
 
       // NOTE: in local mode, it makes no sense to validate newValue again
       await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
-      FeatureToggles._setScopedValueInPlace(this.__stateScopedValues, key, newValue, scopeKey, options);
+      FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newValue, scopeKey, options);
     }
   }
 
