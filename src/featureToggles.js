@@ -369,7 +369,6 @@ class FeatureToggles {
     return validationErrors;
   }
 
-  // TODO keyScopedValues or just scopedValues?
   // TODO can this mechanism of using [result, errors] per key inside a loop be generalized?
   async _validateScopedValues(key, scopedValues) {
     let validationErrors = [];
@@ -379,7 +378,7 @@ class FeatureToggles {
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
       } else {
-        FeatureToggles._updateKeyScopedValues(validatedScopedValues, key, value, scopeKey);
+        FeatureToggles._updateScopedValues(validatedScopedValues, key, value, scopeKey);
       }
     };
 
@@ -695,36 +694,36 @@ class FeatureToggles {
   // START OF CHANGE_FEATURE_VALUE SECTION
   // ========================================
 
-  // TODO this naming is horrific stateScopedValues are keyScopedValues for all Keys but they sound like the same thing
+  // TODO this naming is horrific stateScopedValues are scopedValues for all Keys but they sound like the same thing
   // TODO this function is also horrific by modifying in place and still needing the user to use the return value,
   //  because it needs to communicate the delete case
-  static _updateKeyScopedValues(keyScopedValues, newValue, scopeKey = SCOPE_ROOT_KEY, { clearSubScopes = false } = {}) {
+  static _updateScopedValues(scopedValues, newValue, scopeKey = SCOPE_ROOT_KEY, { clearSubScopes = false } = {}) {
     // NOTE: this first check is just an optimization
     if (clearSubScopes && scopeKey === SCOPE_ROOT_KEY) {
       return null;
     }
 
-    if (keyScopedValues) {
+    if (scopedValues) {
       if (clearSubScopes) {
         const scopeKeyInnerPairs = scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR);
-        const subScopeKeys = Object.keys(keyScopedValues).filter((someScopeKey) =>
+        const subScopeKeys = Object.keys(scopedValues).filter((someScopeKey) =>
           scopeKeyInnerPairs.every((scopeKeyInnerPair) => someScopeKey.includes(scopeKeyInnerPair))
         );
         for (const subScopeKey of subScopeKeys) {
-          Reflect.deleteProperty(keyScopedValues, subScopeKey);
+          Reflect.deleteProperty(scopedValues, subScopeKey);
         }
       }
 
       if (newValue !== null) {
-        keyScopedValues[scopeKey] = newValue;
+        scopedValues[scopeKey] = newValue;
       } else {
-        if (Object.keys(keyScopedValues).length > 1) {
-          Reflect.deleteProperty(keyScopedValues, scopeKey);
+        if (Object.keys(scopedValues).length > 1) {
+          Reflect.deleteProperty(scopedValues, scopeKey);
         } else {
           return null;
         }
       }
-      return keyScopedValues;
+      return scopedValues;
     } else {
       if (newValue !== null) {
         return { [scopeKey]: newValue };
@@ -736,9 +735,9 @@ class FeatureToggles {
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
   static _updateStateScopedValuesInPlace(stateScopedValues, key, newValue, scopeKey, options) {
-    const keyScopedValues = this._updateKeyScopedValues(stateScopedValues[key], newValue, scopeKey, options);
-    if (keyScopedValues !== null) {
-      stateScopedValues[key] = keyScopedValues;
+    const scopedValues = this._updateScopedValues(stateScopedValues[key], newValue, scopeKey, options);
+    if (scopedValues !== null) {
+      stateScopedValues[key] = scopedValues;
     } else {
       Reflect.deleteProperty(stateScopedValues, key);
     }
@@ -917,8 +916,8 @@ class FeatureToggles {
       return validationErrors;
     }
 
-    const newRedisStateCallback = (keyScopedValues) =>
-      FeatureToggles._updateKeyScopedValues(keyScopedValues, newValue, scopeKey, options);
+    const newRedisStateCallback = (scopedValues) =>
+      FeatureToggles._updateScopedValues(scopedValues, newValue, scopeKey, options);
     try {
       await redisWatchedHashGetSetObject(this.__featuresKey, key, newRedisStateCallback);
       // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
