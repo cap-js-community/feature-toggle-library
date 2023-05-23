@@ -1,29 +1,16 @@
 /**
- * simple feature toggle system.
+ * SAP BTP Feature Toggle Library
  *
- * - validates that feature value types are string, number, or boolean
- * - validates that only pre-defined feature keys are used
- * - no nested features (though with stringify you could sort of get that)
- *
- * technical approach:
- * - have a constant redis key "features" where the feature toggle state are persisted
- * - on init this key is read
- *   - if it's not empty: take the value and save it in memory for runtime queries
- *   - if it's empty: do a (optimistically locked) write with the fallback values
- * - to synchronize changes we use redis pub/sub system and a dedicated "features" channel
- *   - when feature changes are triggered the "features" key is locked and updated and
- *   - a "refresh" message is published to all instances
+ * {@link https://cap-js-community.github.io/feature-toggle-library/ Documentation}
  *
  * important usage functions:
  * @see getFeatureValue
  * @see changeFeatureValue
  * @see registerFeatureValueChangeHandler
- *
  */
 
 "use strict";
 
-// TODO the top description is very outdated
 // TODO setting toggles to inactive should not delete remote state
 // TODO locale for validation messages
 
@@ -442,23 +429,11 @@ class FeatureToggles {
   // START OF INITIALIZE SECTION
   // ========================================
 
-  /**
-   * This will filter out inactive values, which is needed during initialization, where inactive keys are not
-   * considered invalid.
-   */
-  _filterInactive(values) {
-    if (values === null || values === undefined) {
-      return {};
-    }
-    return Object.entries(values).reduce((result, [key, value]) => {
-      if (
-        this.__config[key][CONFIG_CACHE_KEY.ACTIVE] !== false &&
-        this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
-      ) {
-        result[key] = value;
-      }
-      return result;
-    }, {});
+  _isKeyInactive(key) {
+    return (
+      this.__config[key][CONFIG_CACHE_KEY.ACTIVE] !== false &&
+      this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
+    );
   }
 
   async initializeFeatureValues({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
@@ -501,15 +476,11 @@ class FeatureToggles {
       );
     }
     try {
-      // TODO: do we want to remove values here???
-      // TODO: this has to iterate over all values
-      // TODO code on
-      for (const key in this.__fallbackValues) {
-        this.__stateScopedValues = await redisWatchedHashGetSetObject(
-          this.__featuresKey,
-          key,
-          async (oldRemoteValues) => {
-            const [validatedOldRemoteValues, validationErrors] = await this._validateStateScopedValues(oldRemoteValues);
+      // TODO double check behavior for inactive
+      this.__stateScopedValues = await Object.keys(this.__fallbackValues).reduce(async (stateScopedValues, key) => {
+        if (!this._isKeyInactive(key)) {
+          const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
+            const [validatedScopedValues, validationErrors] = await this._validateScopedValues(scopedValues, key);
             if (Array.isArray(validationErrors) && validationErrors.length > 0) {
               logger.warning(
                 new VError(
@@ -521,10 +492,16 @@ class FeatureToggles {
                 )
               );
             }
-            return this._filterInactive(validatedOldRemoteValues ?? {});
+            return validatedScopedValues;
+          });
+          if (scopedValues) {
+            stateScopedValues = await stateScopedValues;
+            stateScopedValues[key] = scopedValues;
           }
-        );
-      }
+        }
+        return stateScopedValues;
+      }, Promise.resolve({}));
+
       registerMessageHandler(this.__featuresChannel, this.__messageHandler);
       await redisSubscribe(this.__featuresChannel);
     } catch (err) {
