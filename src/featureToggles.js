@@ -370,9 +370,8 @@ class FeatureToggles {
   }
 
   // TODO keyScopedValues or just scopedValues?
-  // TODO why value, key?
   // TODO can this mechanism of using [result, errors] per key inside a loop be generalized?
-  async _validateScopedValues(scopedValues, key) {
+  async _validateScopedValues(key, scopedValues) {
     let validationErrors = [];
     const validatedScopedValues = {};
     const processEntry = async (key, value, scopeKey) => {
@@ -412,7 +411,7 @@ class FeatureToggles {
     }
 
     for (const [key, scopedValues] of Object.entries(stateScopedValues)) {
-      const [validatedScopedValues, validationErrorsScopedValues] = this._validateScopedValues(scopedValues, key);
+      const [validatedScopedValues, validationErrorsScopedValues] = this._validateScopedValues(key, scopedValues);
       validationErrors = validationErrors.concat(validationErrorsScopedValues);
       // TODO can this be undefined?
       if (validatedScopedValues !== null && validatedScopedValues !== undefined) {
@@ -480,7 +479,7 @@ class FeatureToggles {
       this.__stateScopedValues = await Object.keys(this.__fallbackValues).reduce(async (stateScopedValues, key) => {
         if (!this._isKeyInactive(key)) {
           const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
-            const [validatedScopedValues, validationErrors] = await this._validateScopedValues(scopedValues, key);
+            const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
             if (Array.isArray(validationErrors) && validationErrors.length > 0) {
               logger.warning(
                 new VError(
