@@ -110,20 +110,7 @@ describe("local integration test", () => {
 
     expect(featureStatesResult).toMatchSnapshot();
 
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
-      [
-        [
-          "%s | %O",
-          "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-          {
-            "clientName": "main",
-          },
-        ],
-      ]
-    `);
     expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
-
     expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
       [
         [
@@ -142,6 +129,18 @@ describe("local integration test", () => {
       ]
     `);
     expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "%s | %O",
+          "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+          {
+            "clientName": "main",
+          },
+        ],
+      ]
+    `);
   });
 
   it("getFeatureValue, changeFeatureValue without scopes", async () => {
@@ -161,9 +160,6 @@ describe("local integration test", () => {
     `);
     expect(getFeatureValue(FEATURE.E)).toEqual(newValue);
 
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
     expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
       [
         [
@@ -185,6 +181,9 @@ describe("local integration test", () => {
       ]
     `);
     expect(featureTogglesLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
+    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
   });
 
   it("getFeatureValue, changeFeatureValue with scopes", async () => {
@@ -257,9 +256,6 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
     expect(getFeatureValue(FEATURE.E)).toEqual(rootNewValue);
 
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
     expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
       [
         [
@@ -272,6 +268,9 @@ describe("local integration test", () => {
     `);
     expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchSnapshot();
     expect(featureTogglesLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
+    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
   });
 
   it("getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue", async () => {
@@ -322,9 +321,6 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);
     expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
     expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
       [
         [
@@ -337,6 +333,9 @@ describe("local integration test", () => {
     `);
     expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchSnapshot();
     expect(featureTogglesLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
+    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
   });
 
   it("registerFeatureValueValidation, validateFeatureValue", async () => {
