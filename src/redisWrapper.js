@@ -442,6 +442,7 @@ module.exports = {
   setObject,
   watchedGetSet,
   watchedGetSetObject,
+  watchedHashGetSetObject,
   publishMessage,
   subscribe,
   unsubscribe,

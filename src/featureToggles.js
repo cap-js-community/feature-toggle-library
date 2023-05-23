@@ -22,7 +22,7 @@ const yaml = require("yaml");
 const {
   getIntegrationMode: getRedisIntegrationMode,
   getObject: redisGetObject,
-  watchedHashGetGetSetObject: redisWatchedHashGetSetObject,
+  watchedHashGetSetObject: redisWatchedHashGetSetObject,
   publishMessage,
   subscribe: redisSubscribe,
   registerMessageHandler,
