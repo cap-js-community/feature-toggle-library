@@ -614,6 +614,9 @@ class FeatureToggles {
     const scopeMapKeys = Object.keys(scopeMap);
 
     const n = scopeMapKeys.length - 1;
+    if (n === -1) {
+      return [];
+    }
     if (n > SCOPE_PREFERENCE_ORDER_MASKS.length) {
       logger.error(
         new VError(
