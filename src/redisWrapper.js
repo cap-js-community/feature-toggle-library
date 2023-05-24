@@ -437,12 +437,15 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
  */
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
-const getIntegrationMode = () => {
+const getIntegrationMode = async () => {
   if (redisIsOnCF) {
     return INTEGRATION_MODE.CF_REDIS;
   }
-  if (mainClient) {
+  try {
+    await getMainClient();
     return INTEGRATION_MODE.LOCAL_REDIS;
+  } catch (err) {
+    // eslint-ignore-line no-empty
   }
   return INTEGRATION_MODE.NO_REDIS;
 };

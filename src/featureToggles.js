@@ -475,14 +475,7 @@ class FeatureToggles {
       );
     }
 
-    // TODO polish, this is bad
-    try {
-      await redisGetMainClient();
-    } catch (err) {
-      // eslint-ignore-line no-empty
-    }
-    const redisIntegrationMode = getRedisIntegrationMode();
-
+    const redisIntegrationMode = await getRedisIntegrationMode();
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {
         // NOTE in our legacy code the key was a string
