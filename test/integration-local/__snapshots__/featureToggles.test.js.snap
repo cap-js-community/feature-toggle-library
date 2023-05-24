@@ -17,9 +17,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 exports[`local integration test getFeatureValue, changeFeatureValue with scopes 8`] = `
 [
   [
-    "error during initialization, using fallback values",
-  ],
-  [
     "error during change remote feature values, switching to local update",
   ],
   [
@@ -30,6 +27,46 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
   ],
   [
     "error during change remote feature values, switching to local update",
+  ],
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes 9`] = `
+[
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
   ],
 ]
 `;
@@ -77,9 +114,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
 [
   [
-    "error during initialization, using fallback values",
-  ],
-  [
     "error during change remote feature values, switching to local update",
   ],
   [
@@ -96,6 +130,60 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
   ],
   [
     "error during change remote feature values, switching to local update",
+  ],
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 6`] = `
+[
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
   ],
 ]
 `;
@@ -165,6 +253,25 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
     "key": "test/feature_e",
     "scopeKey": "//",
   },
+]
+`;
+
+exports[`local integration test getFeatureValue, changeFeatureValue without scopes 5`] = `
+[
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
+  [
+    "%s | %O",
+    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+    {
+      "clientName": "main",
+    },
+  ],
 ]
 `;
 

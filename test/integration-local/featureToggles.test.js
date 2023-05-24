@@ -121,15 +121,9 @@ describe("local integration test", () => {
         ],
       ]
     `);
-    expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
-      [
-        [
-          "error during initialization, using fallback values",
-        ],
-      ]
-    `);
+    expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
     expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
       [
         [
@@ -173,17 +167,14 @@ describe("local integration test", () => {
     expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
       [
         [
-          "error during initialization, using fallback values",
-        ],
-        [
           "error during change remote feature values, switching to local update",
         ],
       ]
     `);
-    expect(featureTogglesLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
   });
 
   it("getFeatureValue, changeFeatureValue with scopes", async () => {
@@ -267,10 +258,10 @@ describe("local integration test", () => {
       ]
     `);
     expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(featureTogglesLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
   });
 
   it("getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue", async () => {
@@ -332,10 +323,10 @@ describe("local integration test", () => {
       ]
     `);
     expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(featureTogglesLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
-    expect(redisWrapperLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
+    expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-    expect(redisWrapperLoggerSpy.error.mock.calls).toMatchInlineSnapshot(`[]`);
+    expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
   });
 
   it("registerFeatureValueValidation, validateFeatureValue", async () => {
