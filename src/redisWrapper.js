@@ -277,16 +277,19 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
         return oldValue;
       }
 
+      let validFirstReplies;
       const doDelete = newValueRaw === null;
       const clientMulti = mainClient.MULTI();
       if (doDelete) {
         useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
+        validFirstReplies = [0, 1];
       } else {
         useHash ? clientMulti.HSET(key, field, newValueRaw) : clientMulti.SET(key, newValueRaw);
+        validFirstReplies = useHash ? [0, 1] : ["OK"];
       }
       const replies = await clientMulti.EXEC();
       if (replies !== null) {
-        if (!Array.isArray(replies) || replies.length !== 1 || replies[0] !== (doDelete ? 1 : "OK")) {
+        if (!Array.isArray(replies) || replies.length !== 1 || !validFirstReplies.includes(replies[0])) {
           throw new VError(
             { name: VERROR_CLUSTER_NAME, info: { key, ...(field && { field }), attempt, attempts, replies } },
             "received unexpected replies from redis"
