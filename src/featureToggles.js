@@ -478,6 +478,7 @@ class FeatureToggles {
     try {
       // TODO double check behavior for inactive
       this.__stateScopedValues = await this.__keys.reduce(async (stateScopedValues, key) => {
+        stateScopedValues = await stateScopedValues;
         if (this._isKeyActive(key)) {
           const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
             const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
@@ -495,7 +496,6 @@ class FeatureToggles {
             return validatedScopedValues;
           });
           if (scopedValues) {
-            stateScopedValues = await stateScopedValues;
             stateScopedValues[key] = scopedValues;
           }
         }
