@@ -25,7 +25,6 @@ const {
   type: redisType,
   getObject: redisGetObject,
   del: redisDel,
-  getMainClient: redisGetMainClient,
   watchedHashGetSetObject: redisWatchedHashGetSetObject,
   publishMessage,
   subscribe: redisSubscribe,
