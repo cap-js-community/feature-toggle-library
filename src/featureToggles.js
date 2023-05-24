@@ -217,9 +217,9 @@ class FeatureToggles {
    *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
    *
    * @type object
-   * @property {string} key feature toggle
-   * @property {string} errorMessage user-readable error message
-   * @property {Array<string>} [errorMessageValues] optional parameters for error message, which are ignored for localization
+   * @property {string}        key                   feature toggle
+   * @property {string}        errorMessage          user-readable error message
+   * @property {Array<string>} [errorMessageValues]  optional parameters for error message, which are ignored for localization
    */
   /**
    * Validate the value of a given key, value pair. Allows passing an optional scopeKey that is added to
