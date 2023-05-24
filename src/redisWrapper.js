@@ -192,12 +192,20 @@ const _clientExec = async (functionName, argsObject) => {
 };
 
 /**
+ * Asynchronously get the type for a given key.
+ *
+ * @param key
+ * @returns {Promise<string|null>}
+ */
+const type = async (key) => await _clientExec("TYPE", { key });
+
+/**
  * Asynchronously get the value for a given key.
  *
  * @param key
  * @returns {Promise<string|null>}
  */
-const get = async (key) => _clientExec("GET", { key });
+const get = async (key) => await _clientExec("GET", { key });
 
 /**
  * Asynchronously get the value for a given key and parse it into an object.
@@ -216,9 +224,9 @@ const getObject = async (key) => {
  * @param key
  * @param value
  * @param options
- * @returns {Promise<*>}
+ * @returns {Promise<string|number>}
  */
-const set = async (key, value, options) => _clientExec("SET", { key, value, ...(options && { options }) });
+const set = async (key, value, options) => await _clientExec("SET", { key, value, ...(options && { options }) });
 
 /**
  * Asynchronously set a stringified object as value for a given key.
@@ -232,6 +240,14 @@ const setObject = async (key, value, options) => {
   const valueRaw = JSON.stringify(value);
   return set(key, valueRaw, options);
 };
+
+/**
+ * Asynchronously delete a given key.
+ *
+ * @param key
+ * @returns {Promise<*>}
+ */
+const del = async (key) => await _clientExec("DEL", { key });
 
 const _watchedGetSetExclusive = async (key, newValueCallback, options) => {
   await watchedGetSetSemaphore.acquire();
@@ -360,7 +376,7 @@ const watchedHashGetSetObject = async (key, field, newValueCallback, attempts = 
  * @param message to publish
  * @returns {Promise<void>}
  */
-const publishMessage = async (channel, message) => _clientExec("PUBLISH", { channel, message });
+const publishMessage = async (channel, message) => await _clientExec("PUBLISH", { channel, message });
 
 /**
  * Subscribe to a given channel. New messages will be processed on all registered message handlers for that channel.
@@ -436,9 +452,11 @@ module.exports = {
   getMainClient,
   getSubscriberClient,
   getIntegrationMode,
+  type,
   get,
   getObject,
   set,
+  del,
   setObject,
   watchedGetSet,
   watchedGetSetObject,

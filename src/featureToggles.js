@@ -20,8 +20,12 @@ const { readFile } = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
 const {
+  REDIS_INTEGRATION_MODE,
   getIntegrationMode: getRedisIntegrationMode,
+  type: redisType,
   getObject: redisGetObject,
+  del: redisDel,
+  getMainClient: redisGetMainClient,
   watchedHashGetSetObject: redisWatchedHashGetSetObject,
   publishMessage,
   subscribe: redisSubscribe,
@@ -384,13 +388,8 @@ class FeatureToggles {
       }
     };
 
-    // NOTE: this is the migration case
-    if (typeof scopedValues !== "object") {
-      await processEntry(key, scopedValues);
-    } else {
-      for (const [scopeKey, value] of Object.entries(scopedValues)) {
-        await processEntry(key, value, scopeKey);
-      }
+    for (const [scopeKey, value] of Object.entries(scopedValues)) {
+      await processEntry(key, value, scopeKey);
     }
 
     return [validatedScopedValues, validationErrors];
@@ -475,54 +474,75 @@ class FeatureToggles {
         )
       );
     }
-    try {
-      // TODO double check behavior for inactive
-      this.__stateScopedValues = await this.__keys.reduce(async (stateScopedValues, key) => {
-        stateScopedValues = await stateScopedValues;
-        if (this._isKeyActive(key)) {
-          const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
-            const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
-            if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-              logger.warning(
-                new VError(
-                  {
-                    name: VERROR_CLUSTER_NAME,
-                    info: { validationErrors: JSON.stringify(validationErrors) },
-                  },
-                  "removed invalid entries from redis during initialization"
-                )
-              );
-            }
-            return validatedScopedValues;
-          });
-          if (scopedValues) {
-            stateScopedValues[key] = scopedValues;
-          }
-        }
-        return stateScopedValues;
-      }, Promise.resolve({}));
 
-      registerMessageHandler(this.__featuresChannel, this.__messageHandler);
-      await redisSubscribe(this.__featuresChannel);
+    // TODO polish, this is bad
+    try {
+      await redisGetMainClient();
     } catch (err) {
-      logger.warning(
-        isOnCF
-          ? new VError(
-              {
-                name: VERROR_CLUSTER_NAME,
-                cause: err,
-              },
-              "error during initialization, using fallback values"
-            )
-          : "error during initialization, using fallback values"
-      );
+      // eslint-ignore-line no-empty
+    }
+    const redisIntegrationMode = getRedisIntegrationMode();
+
+    if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
+      try {
+        // NOTE in our legacy code the key was a string
+        const featureKeyType = await redisType(this.__featuresKey);
+        if (featureKeyType === "string") {
+          await redisDel(this.__featuresKey);
+          logger.warning("removed legacy redis feature key of type string");
+        }
+
+        // TODO double check behavior for inactive
+        this.__stateScopedValues = await this.__keys.reduce(async (stateScopedValues, key) => {
+          stateScopedValues = await stateScopedValues;
+          if (this._isKeyActive(key)) {
+            const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
+              if (isNull(scopedValues) || typeof scopedValues !== "object") {
+                return null;
+              }
+              const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
+              if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+                logger.warning(
+                  new VError(
+                    {
+                      name: VERROR_CLUSTER_NAME,
+                      info: { validationErrors: JSON.stringify(validationErrors) },
+                    },
+                    "removed invalid entries from redis during initialization"
+                  )
+                );
+              }
+              return validatedScopedValues;
+            });
+            if (scopedValues) {
+              stateScopedValues[key] = scopedValues;
+            }
+          }
+          return stateScopedValues;
+        }, Promise.resolve({}));
+
+        registerMessageHandler(this.__featuresChannel, this.__messageHandler);
+        await redisSubscribe(this.__featuresChannel);
+      } catch (err) {
+        logger.warning(
+          isOnCF
+            ? new VError(
+                {
+                  name: VERROR_CLUSTER_NAME,
+                  cause: err,
+                },
+                "error during initialization, using fallback values"
+              )
+            : "error during initialization, using fallback values"
+        );
+      }
     }
 
     logger.info(
       "finished initialization with %i feature toggle%s with %s",
       toggleCount,
       toggleCount === 1 ? "" : "s",
-      getRedisIntegrationMode()
+      redisIntegrationMode
     );
     this.__isInitialized = true;
     return this;
