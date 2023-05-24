@@ -429,7 +429,7 @@ class FeatureToggles {
   // START OF INITIALIZE SECTION
   // ========================================
 
-  _isKeyInactive(key) {
+  _isKeyActive(key) {
     return (
       this.__config[key][CONFIG_CACHE_KEY.ACTIVE] !== false &&
       this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
@@ -478,7 +478,7 @@ class FeatureToggles {
     try {
       // TODO double check behavior for inactive
       this.__stateScopedValues = await this.__keys.reduce(async (stateScopedValues, key) => {
-        if (!this._isKeyInactive(key)) {
+        if (this._isKeyActive(key)) {
           const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
             const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
             if (Array.isArray(validationErrors) && validationErrors.length > 0) {
