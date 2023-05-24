@@ -586,9 +586,14 @@ class FeatureToggles {
   // ========================================
 
   static getScopeKey(scopeMap) {
-    return typeof scopeMap !== "object" || scopeMap === null
-      ? SCOPE_ROOT_KEY
-      : FeatureToggles._getNonRootScopeKey(scopeMap, Object.keys(scopeMap).sort());
+    if (typeof scopeMap !== "object" || scopeMap === null) {
+      return SCOPE_ROOT_KEY;
+    }
+    const scopeMapKeys = Object.keys(scopeMap);
+    if (scopeMapKeys.length === 0) {
+      return SCOPE_ROOT_KEY;
+    }
+    return FeatureToggles._getNonRootScopeKey(scopeMap, scopeMapKeys.sort());
   }
 
   static _getNonRootScopeKey(scopeMap, sortedKeys) {
