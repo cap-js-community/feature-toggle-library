@@ -120,6 +120,7 @@ class FeatureToggles {
 
     const configEntries = Object.entries(config);
     for (const [key, { type, active, appUrl, validation, fallbackValue }] of configEntries) {
+      this.__keys.push(key);
       this.__fallbackValues[key] = fallbackValue;
       this.__config[key] = {};
 
@@ -179,6 +180,7 @@ class FeatureToggles {
     this.__superScopeCache = new LimitedLazyCache({ sizeLimit: SUPER_SCOPE_CACHE_SIZE_LIMIT });
 
     this.__config = {};
+    this.__keys = [];
     this.__fallbackValues = {};
     this.__stateScopedValues = {};
     this.__isInitialized = false;
@@ -475,7 +477,7 @@ class FeatureToggles {
     }
     try {
       // TODO double check behavior for inactive
-      this.__stateScopedValues = await Object.keys(this.__fallbackValues).reduce(async (stateScopedValues, key) => {
+      this.__stateScopedValues = await this.__keys.reduce(async (stateScopedValues, key) => {
         if (!this._isKeyInactive(key)) {
           const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
             const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
@@ -558,8 +560,7 @@ class FeatureToggles {
   getFeatureStates() {
     this._ensureInitialized();
     const result = {};
-    // TODO should we really use in or just have an array that gets initialized normally
-    for (const key in this.__fallbackValues) {
+    for (const key of this.__keys) {
       result[key] = this._getFeatureState(key);
     }
     return result;
