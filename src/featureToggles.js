@@ -479,7 +479,7 @@ class FeatureToggles {
       try {
         // NOTE in our legacy code the key was a string
         const featureKeyType = await redisType(this.__featuresKey);
-        if (featureKeyType === "string") {
+        if (featureKeyType !== "hash") {
           await redisDel(this.__featuresKey);
           logger.warning("removed legacy redis feature key of type string");
         }
