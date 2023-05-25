@@ -434,6 +434,30 @@ class FeatureToggles {
     );
   }
 
+  async _freshStateScopedValues() {
+    return await this.__keys.reduce(async (acc, key) => {
+      let [validatedStateScopedValues, validationErrors] = await acc;
+      if (this._isKeyActive(key)) {
+        const validatedScopedValues = await redisWatchedHashGetSetObject(
+          this.__featuresKey,
+          key,
+          async (scopedValues) => {
+            if (typeof scopedValues !== "object" || scopedValues === null) {
+              return null;
+            }
+            const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(key, scopedValues);
+            validationErrors = validationErrors.concat(scopedValidationErrors);
+            return validatedScopedValues;
+          }
+        );
+        if (validatedScopedValues) {
+          validatedStateScopedValues[key] = validatedScopedValues;
+        }
+      }
+      return [validatedStateScopedValues, validationErrors];
+    }, Promise.resolve([{}, []]));
+  }
+
   async initializeFeatureValues({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
     if (this.__isInitialized) {
       return;
@@ -484,34 +508,19 @@ class FeatureToggles {
           logger.warning("removed legacy redis feature key of type string");
         }
 
-        // TODO double check behavior for inactive
-        this.__stateScopedValues = await this.__keys.reduce(async (stateScopedValues, key) => {
-          stateScopedValues = await stateScopedValues;
-          if (this._isKeyActive(key)) {
-            const scopedValues = await redisWatchedHashGetSetObject(this.__featuresKey, key, async (scopedValues) => {
-              if (isNull(scopedValues) || typeof scopedValues !== "object") {
-                return null;
-              }
-              const [validatedScopedValues, validationErrors] = await this._validateScopedValues(key, scopedValues);
-              if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-                logger.warning(
-                  new VError(
-                    {
-                      name: VERROR_CLUSTER_NAME,
-                      info: { validationErrors: JSON.stringify(validationErrors) },
-                    },
-                    "removed invalid entries from redis during initialization"
-                  )
-                );
-              }
-              return validatedScopedValues;
-            });
-            if (scopedValues) {
-              stateScopedValues[key] = scopedValues;
-            }
-          }
-          return stateScopedValues;
-        }, Promise.resolve({}));
+        const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
+        if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+          logger.warning(
+            new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                info: { validationErrors: JSON.stringify(validationErrors) },
+              },
+              "removed invalid entries from redis during initialization"
+            )
+          );
+        }
+        this.__stateScopedValues = validatedStateScopedValues;
 
         registerMessageHandler(this.__featuresChannel, this.__messageHandler);
         await redisSubscribe(this.__featuresChannel);
@@ -812,15 +821,12 @@ class FeatureToggles {
   // From the state difference, there is no good way to infer the actual scopeMap and options that were used. You would
   // also have to trigger changes for any small scope-level change leading to lots of callbacks.
   // TODO code on
+  // TODO is this still needed _validateStateScopedValues?
+  // TODO double check behavior for inactive
   async refreshFeatureValues() {
     this._ensureInitialized();
     try {
-      const newStateScopedValues = await redisGetObject(this.__featuresKey);
-      if (!newStateScopedValues) {
-        return;
-      }
-
-      const [validatedNewStateRaw, validationErrors] = await this._validateStateScopedValues(newStateScopedValues);
+      const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
         logger.warning(
           new VError(
@@ -828,12 +834,11 @@ class FeatureToggles {
               name: VERROR_CLUSTER_NAME,
               info: { validationErrors: JSON.stringify(validationErrors) },
             },
-            "received and removed invalid values from redis"
+            "removed invalid entries from redis during refresh"
           )
         );
       }
-      const validatedNewStateScopedValues = validatedNewStateRaw ?? {};
-      this.__stateScopedValues = validatedNewStateScopedValues;
+      this.__stateScopedValues = validatedStateScopedValues;
     } catch (err) {
       logger.error(new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during refresh feature values"));
     }
