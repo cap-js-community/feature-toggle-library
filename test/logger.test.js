@@ -66,7 +66,7 @@ describe("logger test", () => {
     expect(consoleSpy.info.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
       [
         [
-          "88:88:88.888 | info | Testing | finished initialization with 8 feature toggles with NO_REDIS",
+          "88:88:88.888 | info | Testing | finished initialization with 8 feature toggles with CF_REDIS",
         ],
       ]
     `);
@@ -108,7 +108,7 @@ describe("logger test", () => {
           "{"logger":"nodejs-logger","type":"log","msg":"","level":"warn","stacktrace":["FeatureTogglesError: found invalid fallback values during initialization"],"layer":"Testing","errInfo":"{\\"validationErrors\\":\\"[{\\\\\\"key\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}"}",
         ],
         [
-          "{"logger":"nodejs-logger","type":"log","msg":"finished initialization with 8 feature toggles with NO_REDIS","level":"info","layer":"Testing"}",
+          "{"logger":"nodejs-logger","type":"log","msg":"finished initialization with 8 feature toggles with CF_REDIS","level":"info","layer":"Testing"}",
         ],
       ]
     `);
