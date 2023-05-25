@@ -811,6 +811,7 @@ class FeatureToggles {
   // NOTE: refresh used to trigger the change handlers, but with scoping keeping this feature would become really messy.
   // From the state difference, there is no good way to infer the actual scopeMap and options that were used. You would
   // also have to trigger changes for any small scope-level change leading to lots of callbacks.
+  // TODO code on
   async refreshFeatureValues() {
     this._ensureInitialized();
     try {

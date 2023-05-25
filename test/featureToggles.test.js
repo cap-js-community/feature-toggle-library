@@ -19,6 +19,9 @@ jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
 const mockFallbackValues = Object.fromEntries(
   Object.entries(mockConfig).map(([key, { fallbackValue }]) => [key, fallbackValue])
 );
+const mockActiveKeys = Object.entries(mockConfig)
+  .filter(([, value]) => value.active !== false)
+  .map(([key]) => key);
 
 let featureToggles = null;
 const loggerSpy = {
@@ -198,21 +201,16 @@ describe("feature toggles test", () => {
     it("initializeFeatureToggles", async () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
 
-      const mockActiveKeys = Object.entries(mockConfig)
-        .filter(([, value]) => value.active !== false)
-        .map(([key]) => key);
       expect(featureToggles.__isInitialized).toBe(true);
       expect(featureToggles.__fallbackValues).toStrictEqual(mockFallbackValues);
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
       expect(featureToggles.__config).toMatchSnapshot();
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(mockActiveKeys.length);
-      let fieldIndex = 0;
-      for (const field of mockActiveKeys) {
-        fieldIndex++;
+      for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
-          fieldIndex,
+          fieldIndex + 1,
           featuresKey,
-          field,
+          mockActiveKeys[fieldIndex],
           expect.any(Function)
         );
       }
@@ -464,9 +462,9 @@ describe("feature toggles test", () => {
         ["e", "bvalue"],
         ["f", "cvalue"],
       ];
-      redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
-      redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
-      redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
+      for (let i = 0; i < 3; i++) {
+        redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
+      }
       await featureToggles.initializeFeatureValues({ config: mockConfig });
 
       expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
@@ -481,13 +479,19 @@ describe("feature toggles test", () => {
     });
 
     it("changeFeatureValue", async () => {
-      redisWrapperMock.watchedGetSetObject.mockReturnValueOnce({});
+      for (let i = 0; i < mockActiveKeys.length; i++) {
+        redisWrapperMock.watchedHashGetSetObject.mockReturnValueOnce();
+      }
       await featureToggles.initializeFeatureValues({ config: mockConfig });
-      redisWrapperMock.watchedGetSetObject.mockClear();
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       expect(await featureToggles.changeFeatureValue(FEATURE.C, "newa")).toBeUndefined();
-      expect(redisWrapperMock.watchedGetSetObject).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.watchedGetSetObject).toHaveBeenCalledWith(featuresKey, expect.any(Function));
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(1);
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledWith(
+        featuresKey,
+        FEATURE.C,
+        expect.any(Function)
+      );
       expect(redisWrapperMock.publishMessage).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.publishMessage.mock.calls).toMatchInlineSnapshot(`
         [
@@ -505,7 +509,7 @@ describe("feature toggles test", () => {
 
     it("changeFeatureValue failing", async () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
-      redisWrapperMock.watchedGetSetObject.mockClear();
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       const validationErrorsInvalidKey = await featureToggles.changeFeatureValue("invalid", 1);
       expect(validationErrorsInvalidKey).toMatchInlineSnapshot(`
@@ -516,7 +520,7 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(redisWrapperMock.watchedGetSetObject).not.toHaveBeenCalled();
+      expect(redisWrapperMock.watchedHashGetSetObject).not.toHaveBeenCalled();
       expect(redisWrapperMock.publishMessage).not.toHaveBeenCalled();
       expect(redisWrapperMock.getObject).not.toHaveBeenCalled();
 
