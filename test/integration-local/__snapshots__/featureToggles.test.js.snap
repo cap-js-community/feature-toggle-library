@@ -71,46 +71,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes 11`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
-
 exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
 [
   [
@@ -188,60 +148,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 8`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
-
 exports[`local integration test getFeatureValue, changeFeatureValue without scopes 1`] = `
 [
   {
@@ -257,25 +163,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
 `;
 
 exports[`local integration test getFeatureValue, changeFeatureValue without scopes 5`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
-
-exports[`local integration test getFeatureValue, changeFeatureValue without scopes 7`] = `
 [
   [
     "%s | %O",
