@@ -424,9 +424,7 @@ class FeatureToggles {
             return validatedScopedValues;
           }
         );
-        if (validatedScopedValues) {
-          validatedStateScopedValues[key] = validatedScopedValues;
-        }
+        FeatureToggles._updateStateScopedValuesInPlace(validatedStateScopedValues, key, validatedScopedValues);
       }
       return [validatedStateScopedValues, validationErrors];
     }, Promise.resolve([{}, []]));
@@ -738,8 +736,7 @@ class FeatureToggles {
   }
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
-  static _updateStateScopedValuesInPlace(stateScopedValues, key, newValue, scopeKey, options) {
-    const scopedValues = this._updateScopedValues(stateScopedValues[key], newValue, scopeKey, options);
+  static _updateStateScopedValuesInPlace(stateScopedValues, key, scopedValues) {
     if (scopedValues !== null) {
       stateScopedValues[key] = scopedValues;
     } else {
@@ -886,7 +883,14 @@ class FeatureToggles {
           }
 
           await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
-          FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newValue, scopeKey, options);
+
+          const newScopedValues = FeatureToggles._updateScopedValues(
+            this.__stateScopedValues[key],
+            newValue,
+            scopeKey,
+            options
+          );
+          FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newScopedValues);
         })
       );
     } catch (err) {
@@ -951,7 +955,14 @@ class FeatureToggles {
 
       // NOTE: in local mode, it makes no sense to validate newValue again
       await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
-      FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newValue, scopeKey, options);
+
+      const newScopedValues = FeatureToggles._updateScopedValues(
+        this.__stateScopedValues[key],
+        newValue,
+        scopeKey,
+        options
+      );
+      FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newScopedValues);
     }
   }
 
