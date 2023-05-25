@@ -377,18 +377,16 @@ class FeatureToggles {
   // TODO can this mechanism of using [result, errors] per key inside a loop be generalized?
   async _validateScopedValues(key, scopedValues) {
     let validationErrors = [];
-    const validatedScopedValues = {};
-    const processEntry = async (key, value, scopeKey) => {
-      const entryValidationErrors = await this.validateFeatureValue(key, value, scopeKey);
-      if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
-        validationErrors = validationErrors.concat(entryValidationErrors);
-      } else {
-        FeatureToggles._updateScopedValues(validatedScopedValues, value, scopeKey);
-      }
-    };
+    let validatedScopedValues = {};
 
     for (const [scopeKey, value] of Object.entries(scopedValues)) {
-      await processEntry(key, value, scopeKey);
+      const entryValidationErrors = await this.validateFeatureValue(key, value, scopeKey);
+      let updateValue = value;
+      if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
+        validationErrors = validationErrors.concat(entryValidationErrors);
+        updateValue = null;
+      }
+      validatedScopedValues = FeatureToggles._updateScopedValues(validatedScopedValues, updateValue, scopeKey);
     }
 
     return [validatedScopedValues, validationErrors];

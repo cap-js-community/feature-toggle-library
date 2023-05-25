@@ -533,10 +533,18 @@ describe("feature toggles test", () => {
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
       const remoteState = { [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } };
       redisWrapperMock._setValue(FEATURE.B, { [SCOPE_ROOT_KEY]: 42 });
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       await featureToggles.refreshFeatureValues();
-      expect(redisWrapperMock.getObject).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.getObject).toHaveBeenCalledWith(featuresKey);
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(mockActiveKeys.length);
+      for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
+        expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
+          fieldIndex + 1,
+          featuresKey,
+          mockActiveKeys[fieldIndex],
+          expect.any(Function)
+        );
+      }
       expect(featureToggles.__stateScopedValues).toStrictEqual(remoteState);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
@@ -546,18 +554,27 @@ describe("feature toggles test", () => {
     it("refreshFeatureValues with invalid state", async () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       redisWrapperMock._setValue(FEATURE.B, { [SCOPE_ROOT_KEY]: 42 }); // valid state
-      redisWrapperMock._setValue(FEATURE.E, 10); // invalid state
+      redisWrapperMock._setValue(FEATURE.E, { [SCOPE_ROOT_KEY]: 10 }); // invalid state
       await featureToggles.refreshFeatureValues();
-      expect(redisWrapperMock.getObject).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.getObject).toHaveBeenCalledWith(featuresKey);
+
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(mockActiveKeys.length);
+      for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
+        expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
+          fieldIndex + 1,
+          featuresKey,
+          mockActiveKeys[fieldIndex],
+          expect.any(Function)
+        );
+      }
       expect(featureToggles.__stateScopedValues).toStrictEqual({ [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } });
 
       expect(loggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            [FeatureTogglesError: received and removed invalid values from redis],
+            [FeatureTogglesError: removed invalid entries from redis during refresh],
           ],
         ]
       `);
