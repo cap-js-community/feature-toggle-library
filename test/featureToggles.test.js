@@ -818,7 +818,7 @@ describe("feature toggles test", () => {
     });
 
     it("refreshFeatureValues and central state is invalid", async () => {
-      const remoteStateA = { [FEATURE.A]: "central" };
+      const remoteStateA = { [FEATURE.A]: { [SCOPE_ROOT_KEY]: "central" } };
       redisWrapperMock._setValues(remoteStateA);
       await featureToggles.refreshFeatureValues();
 
@@ -829,7 +829,7 @@ describe("feature toggles test", () => {
       expect(loggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            [FeatureTogglesError: received and removed invalid values from redis],
+            [FeatureTogglesError: removed invalid entries from redis during refresh],
           ],
         ]
       `);
@@ -837,7 +837,7 @@ describe("feature toggles test", () => {
     });
 
     it("refreshFeatureValues and central state is invalid and fallback value is invalid", async () => {
-      const remoteStateB = { [FEATURE.B]: "central" };
+      const remoteStateB = { [FEATURE.B]: { [SCOPE_ROOT_KEY]: "central" } };
       redisWrapperMock._setValues(remoteStateB);
       await featureToggles.refreshFeatureValues();
 
@@ -848,7 +848,7 @@ describe("feature toggles test", () => {
       expect(loggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            [FeatureTogglesError: received and removed invalid values from redis],
+            [FeatureTogglesError: removed invalid entries from redis during refresh],
           ],
         ]
       `);
