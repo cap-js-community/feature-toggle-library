@@ -479,9 +479,6 @@ describe("feature toggles test", () => {
     });
 
     it("changeFeatureValue", async () => {
-      for (let i = 0; i < mockActiveKeys.length; i++) {
-        redisWrapperMock.watchedHashGetSetObject.mockReturnValueOnce();
-      }
       await featureToggles.initializeFeatureValues({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
@@ -584,7 +581,6 @@ describe("feature toggles test", () => {
     it("FeatureValueChangeHandler and changeFeatureValue", async () => {
       const newValue = "newValue";
       const newNewValue = "newNewValue";
-      redisWrapperMock.watchedGetSetObject.mockReturnValueOnce({});
       await featureToggles.initializeFeatureValues({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.C);
       const handler = jest.fn();
@@ -725,7 +721,6 @@ describe("feature toggles test", () => {
 
     it("FeatureValueValidation and inactive", async () => {
       const newValue = "newValue";
-      redisWrapperMock.watchedGetSetObject.mockReturnValueOnce(mockFallbackValues);
       await featureToggles.initializeFeatureValues({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.G);
       const featureConfig = featureToggles.getFeatureState(FEATURE.G).config;
