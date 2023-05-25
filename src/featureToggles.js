@@ -394,32 +394,6 @@ class FeatureToggles {
     return [validatedScopedValues, validationErrors];
   }
 
-  /**
-   * Validate the remote state scoped values. This will return a pair [result, validationErrors], where
-   * validationErrors is a list of {@link ValidationError} objects and result are all inputs that passed validated or
-   * null for illegal or empty input.
-   *
-   * @param stateScopedValues
-   * @returns {Promise<[null|*, Array<ValidationError>]>}
-   */
-  async _validateStateScopedValues(stateScopedValues) {
-    let validationErrors = [];
-    const validatedStateScopedValues = {};
-    if (isNull(stateScopedValues) || typeof stateScopedValues !== "object") {
-      return [null, validationErrors];
-    }
-
-    for (const [key, scopedValues] of Object.entries(stateScopedValues)) {
-      const [validatedScopedValues, validationErrorsScopedValues] = this._validateScopedValues(key, scopedValues);
-      validationErrors = validationErrors.concat(validationErrorsScopedValues);
-      // TODO can this be undefined?
-      if (validatedScopedValues !== null && validatedScopedValues !== undefined) {
-        validatedStateScopedValues[key] = validatedScopedValues;
-      }
-    }
-    return [validatedStateScopedValues, validationErrors];
-  }
-
   // ========================================
   // END OF VALIDATION SECTION
   // ========================================
@@ -820,8 +794,6 @@ class FeatureToggles {
   // NOTE: refresh used to trigger the change handlers, but with scoping keeping this feature would become really messy.
   // From the state difference, there is no good way to infer the actual scopeMap and options that were used. You would
   // also have to trigger changes for any small scope-level change leading to lots of callbacks.
-  // TODO code on
-  // TODO is this still needed _validateStateScopedValues?
   // TODO double check behavior for inactive
   async refreshFeatureValues() {
     this._ensureInitialized();
