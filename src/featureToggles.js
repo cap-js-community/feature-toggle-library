@@ -383,7 +383,7 @@ class FeatureToggles {
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
       } else {
-        FeatureToggles._updateScopedValues(validatedScopedValues, key, value, scopeKey);
+        FeatureToggles._updateScopedValues(validatedScopedValues, value, scopeKey);
       }
     };
 
