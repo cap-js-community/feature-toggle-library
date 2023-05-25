@@ -266,7 +266,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await mainClient.watch(key);
+      await mainClient.WATCH(key);
 
       const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
       const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
