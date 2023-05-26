@@ -19,10 +19,11 @@ const mockMultiClient = {
 };
 const mockClient = {
   on: jest.fn(),
-  connect: jest.fn(async () => "connect_return"),
+  connect: jest.fn(),
   TYPE: jest.fn(async () => "TYPE_return"),
   GET: jest.fn(async () => "GET_return"),
   SET: jest.fn(async () => "SET_return"),
+  DEL: jest.fn(async () => "DEL_return"),
   HGET: jest.fn(async () => "HGET_return"),
   WATCH: jest.fn(async () => "WATCH_return"),
   PUBLISH: jest.fn(async () => "PUBLISH_return"),
@@ -178,6 +179,14 @@ describe("redis wrapper test", () => {
     expect(mockClient.SET).toHaveBeenCalledTimes(1);
     expect(mockClient.SET).toHaveBeenCalledWith("key", JSON.stringify(inputObj));
     expect(result).toBe("SET_return");
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
+
+  it("del key", async () => {
+    const result = await redisWrapper.del("key");
+    expect(mockClient.DEL).toHaveBeenCalledTimes(1);
+    expect(mockClient.DEL).toHaveBeenCalledWith("key");
+    expect(result).toBe("DEL_return");
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
