@@ -196,7 +196,6 @@ describe("feature toggles test", () => {
     });
   });
 
-  // TODO code on
   describe("basic apis", () => {
     it("initializeFeatureToggles", async () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
