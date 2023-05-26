@@ -14,6 +14,7 @@
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO the naming for keys is confusing featureKey is really the key used in redis, keys are the keys distinguishing
 //    features, and finally scopeKeys are also keys. A total of three layers of keys.
+// TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
 
 const { promisify } = require("util");
