@@ -10,7 +10,7 @@ const getObject = jest.fn(async (key) => {
   return mockRedisState.values[key];
 });
 
-const type = jest.fn(async (key) => "hash");
+const type = jest.fn(async () => "hash");
 
 const watchedHashGetSetObject = jest.fn(async (key, field, newValueCallback) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};

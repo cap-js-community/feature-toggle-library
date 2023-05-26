@@ -23,7 +23,6 @@ const {
   REDIS_INTEGRATION_MODE,
   getIntegrationMode: getRedisIntegrationMode,
   type: redisType,
-  getObject: redisGetObject,
   del: redisDel,
   watchedHashGetSetObject: redisWatchedHashGetSetObject,
   publishMessage,
