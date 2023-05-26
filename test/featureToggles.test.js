@@ -904,40 +904,64 @@ describe("feature toggles test", () => {
   });
 
   describe("active to inactive to active again", () => {
-    // TODO write tests
     it("setting a toggle inactive does not change it in redis on init", async () => {
       await featureToggles.initializeFeatureValues({
         config: {
           [FEATURE.B]: {
-            fallbackValue: 10,
+            fallbackValue: 1,
             type: "number",
           },
         },
       });
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(1);
+      // change is propagated to mock redis
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 10)).toBeUndefined();
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(10);
+
       featureToggles._reset({ featuresKey, featuresChannel });
       await featureToggles.initializeFeatureValues({
         config: {
           [FEATURE.B]: {
             active: false,
-            fallbackValue: 10,
+            fallbackValue: 2,
             type: "number",
           },
         },
       });
+      // remote value is ignored because key is inactive
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
+      // change is blocked because key is inactive
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 20)).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "key is not active",
+            "key": "test/feature_b",
+          },
+        ]
+      `);
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
+
       featureToggles._reset({ featuresKey, featuresChannel });
       await featureToggles.initializeFeatureValues({
         config: {
           [FEATURE.B]: {
-            fallbackValue: 10,
+            fallbackValue: 3,
             type: "number",
           },
         },
       });
+      // after re-activation we get the remote state
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(10);
+      // after re-activation we can change again
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 30)).toBeUndefined();
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(30);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
+    // TODO write test
+    // eslint-disable-next-line jest/expect-expect
     it("setting a toggle inactive does not change it in redis on refresh", async () => {});
   });
 });
