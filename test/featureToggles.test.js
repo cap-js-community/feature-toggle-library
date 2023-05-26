@@ -5,7 +5,7 @@ const yaml = require("yaml");
 const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
 
-const { FEATURE, mockConfig, featuresKey, featuresChannel, refreshMessage } = require("./mockdata");
+const { FEATURE, mockConfig, featuresKey, featuresChannel } = require("./mockdata");
 
 const { readFile: readFileSpy } = require("fs");
 jest.mock("fs", () => ({
@@ -39,7 +39,7 @@ const scopedValuesFromStates = (featureStates) =>
 describe("feature toggles test", () => {
   beforeEach(async () => {
     redisWrapperMock._reset();
-    featureToggles = new FeatureToggles({ featuresKey, featuresChannel, refreshMessage });
+    featureToggles = new FeatureToggles({ featuresKey, featuresChannel });
   });
 
   afterEach(() => {
@@ -903,7 +903,41 @@ describe("feature toggles test", () => {
     });
   });
 
-  // TODO write tests
-  it("setting a toggle inactive does not change it in redis on init", async () => {});
-  it("setting a toggle inactive does not change it in redis on refresh", async () => {});
+  describe("active to inactive to active again", () => {
+    // TODO write tests
+    it("setting a toggle inactive does not change it in redis on init", async () => {
+      await featureToggles.initializeFeatureValues({
+        config: {
+          [FEATURE.B]: {
+            fallbackValue: 10,
+            type: "number",
+          },
+        },
+      });
+      featureToggles._reset({ featuresKey, featuresChannel });
+      await featureToggles.initializeFeatureValues({
+        config: {
+          [FEATURE.B]: {
+            active: false,
+            fallbackValue: 10,
+            type: "number",
+          },
+        },
+      });
+      featureToggles._reset({ featuresKey, featuresChannel });
+      await featureToggles.initializeFeatureValues({
+        config: {
+          [FEATURE.B]: {
+            fallbackValue: 10,
+            type: "number",
+          },
+        },
+      });
+
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
+    it("setting a toggle inactive does not change it in redis on refresh", async () => {});
+  });
 });

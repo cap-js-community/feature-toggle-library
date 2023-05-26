@@ -165,16 +165,7 @@ class FeatureToggles {
     );
   }
 
-  /**
-   * Call this with
-   * - your configuration object or
-   * - local filepath to a yaml file with your configuration object (recommended)
-   * to initialize the feature toggles. For example during service loading.
-   *
-   * For syntax and details regarding the configuration object refer to README.md.
-   */
-  // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-  constructor({ uniqueName, featuresChannel = DEFAULT_FEATURES_CHANNEL, featuresKey = DEFAULT_FEATURES_KEY } = {}) {
+  _reset({ uniqueName, featuresChannel, featuresKey }) {
     this.__featuresChannel = uniqueName ? featuresChannel + "-" + uniqueName : featuresChannel;
     this.__featuresKey = uniqueName ? featuresKey + "-" + uniqueName : featuresKey;
 
@@ -189,6 +180,19 @@ class FeatureToggles {
     this.__stateScopedValues = {};
     this.__isInitialized = false;
     this.__isConfigProcessed = false;
+  }
+
+  /**
+   * Call this with
+   * - your configuration object or
+   * - local filepath to a yaml file with your configuration object (recommended)
+   * to initialize the feature toggles. For example during service loading.
+   *
+   * For syntax and details regarding the configuration object refer to README.md.
+   */
+  // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
+  constructor({ uniqueName, featuresChannel = DEFAULT_FEATURES_CHANNEL, featuresKey = DEFAULT_FEATURES_KEY } = {}) {
+    this._reset({ uniqueName, featuresChannel, featuresKey });
   }
 
   // ========================================

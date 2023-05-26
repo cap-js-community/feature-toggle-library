@@ -2,7 +2,6 @@
 
 const featuresKey = "feature-key";
 const featuresChannel = "feature-channel";
-const refreshMessage = "refresh-message";
 
 const FEATURE = {
   A: "test/feature_a",
@@ -60,5 +59,4 @@ module.exports = {
   mockConfig,
   featuresKey,
   featuresChannel,
-  refreshMessage,
 };
