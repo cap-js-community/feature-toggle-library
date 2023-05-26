@@ -11,18 +11,19 @@ jest.mock("../src/env", () => ({
 const mockMessageHandler = jest.fn();
 const mockMessageHandlerTwo = jest.fn();
 const mockMultiClient = {
-  DEL: jest.fn(() => mockMultiClient),
-  SET: jest.fn(() => mockMultiClient),
-  HDEL: jest.fn(() => mockMultiClient),
-  HSET: jest.fn(() => mockMultiClient),
-  EXEC: jest.fn(async () => "EXEC_return"),
+  DEL: jest.fn(),
+  SET: jest.fn(),
+  HDEL: jest.fn(),
+  HSET: jest.fn(),
+  EXEC: jest.fn(),
 };
 const mockClient = {
   on: jest.fn(),
-  connect: jest.fn(async () => "connectreturn"),
+  connect: jest.fn(async () => "connect_return"),
   TYPE: jest.fn(async () => "TYPE_return"),
   GET: jest.fn(async () => "GET_return"),
   SET: jest.fn(async () => "SET_return"),
+  HGET: jest.fn(async () => "HGET_return"),
   WATCH: jest.fn(async () => "WATCH_return"),
   PUBLISH: jest.fn(async () => "PUBLISH_return"),
   SUBSCRIBE: jest.fn(),
@@ -137,7 +138,13 @@ describe("redis wrapper test", () => {
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  // TODO add type key test
+  it("type key", async () => {
+    const result = await redisWrapper.type("key");
+    expect(mockClient.TYPE).toHaveBeenCalledTimes(1);
+    expect(mockClient.TYPE).toHaveBeenCalledWith("key");
+    expect(result).toBe("TYPE_return");
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
 
   it("get key", async () => {
     const result = await redisWrapper.get("key");
@@ -289,6 +296,28 @@ describe("redis wrapper test", () => {
     expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(1);
     expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(2);
     expect(result).toBe(newValue2);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
+
+  it("watchedHashGetSetObject", async () => {
+    const oldValue = { oldValue: "oldValue" };
+    mockClient.HGET.mockImplementationOnce(async () => JSON.stringify(oldValue));
+    mockMultiClient.EXEC.mockImplementationOnce(async () => [1]);
+    const newValue = { newValue: "newValue" };
+    const newValueCallback = jest.fn(() => newValue);
+    const result = await redisWrapper.watchedHashGetSetObject("key", "field", newValueCallback);
+
+    expect(mockClient.WATCH).toHaveBeenCalledTimes(1);
+    expect(mockClient.WATCH).toHaveBeenCalledWith("key");
+    expect(mockClient.HGET).toHaveBeenCalledTimes(1);
+    expect(mockClient.HGET).toHaveBeenCalledWith("key", "field");
+    expect(newValueCallback).toHaveBeenCalledTimes(1);
+    expect(newValueCallback).toHaveBeenCalledWith(oldValue);
+    expect(mockMultiClient.HSET).toHaveBeenCalledTimes(1);
+    expect(mockMultiClient.HSET).toHaveBeenCalledWith("key", "field", JSON.stringify(newValue));
+    expect(mockMultiClient.EXEC).toHaveBeenCalledTimes(1);
+    expect(mockMultiClient.EXEC).toHaveBeenCalledWith();
+    expect(result).toBe(newValue);
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
