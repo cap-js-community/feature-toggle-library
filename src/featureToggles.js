@@ -11,6 +11,9 @@
 
 "use strict";
 
+// TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
+// TODO the naming for keys is confusing featureKey is really the key used in redis, keys are the keys distinguishing
+//    features, and finally scopeKeys are also keys. A total of three layers of keys.
 // TODO setting toggles to inactive should not delete remote state
 // TODO locale for validation messages
 
@@ -376,7 +379,7 @@ class FeatureToggles {
   // TODO can this mechanism of using [result, errors] per key inside a loop be generalized?
   async _validateScopedValues(key, scopedValues) {
     let validationErrors = [];
-    let validatedScopedValues = {};
+    let validatedStateScopedValues = {};
 
     for (const [scopeKey, value] of Object.entries(scopedValues)) {
       const entryValidationErrors = await this.validateFeatureValue(key, value, scopeKey);
@@ -385,9 +388,12 @@ class FeatureToggles {
         validationErrors = validationErrors.concat(entryValidationErrors);
         updateValue = null;
       }
-      validatedScopedValues = FeatureToggles._updateScopedValues(validatedScopedValues, updateValue, scopeKey);
+      FeatureToggles._updateStateScopedValuesOneScopeInPlace(validatedStateScopedValues, key, updateValue, scopeKey);
     }
 
+    const validatedScopedValues = Object.prototype.hasOwnProperty.call(validatedStateScopedValues, key)
+      ? validatedStateScopedValues[key]
+      : null;
     return [validatedScopedValues, validationErrors];
   }
 
@@ -421,7 +427,7 @@ class FeatureToggles {
             return validatedScopedValues;
           }
         );
-        FeatureToggles._updateStateScopedValuesInPlace(validatedStateScopedValues, key, validatedScopedValues);
+        FeatureToggles._updateStateScopedValuesAllScopesInPlace(validatedStateScopedValues, key, validatedScopedValues);
       }
       return [validatedStateScopedValues, validationErrors];
     }, Promise.resolve([{}, []]));
@@ -693,10 +699,14 @@ class FeatureToggles {
   // START OF CHANGE_FEATURE_VALUE SECTION
   // ========================================
 
-  // TODO this naming is horrific stateScopedValues are scopedValues for all Keys but they sound like the same thing
-  // TODO this function is also horrific by modifying in place and still needing the user to use the return value,
-  //  because it needs to communicate the delete case
-  static _updateScopedValues(scopedValues, newValue, scopeKey = SCOPE_ROOT_KEY, { clearSubScopes = false } = {}) {
+  // NOTE: this function is modifying in place and also needs the caller to assign the return value to cover the
+  //   deletion case. should be used sparingly, prefer _updateStateScopedValues*
+  static _updateScopedValuesInPlace(
+    scopedValues,
+    newValue,
+    scopeKey = SCOPE_ROOT_KEY,
+    { clearSubScopes = false } = {}
+  ) {
     // NOTE: this first check is just an optimization
     if (clearSubScopes && scopeKey === SCOPE_ROOT_KEY) {
       return null;
@@ -733,12 +743,18 @@ class FeatureToggles {
   }
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
-  static _updateStateScopedValuesInPlace(stateScopedValues, key, scopedValues) {
+  static _updateStateScopedValuesAllScopesInPlace(stateScopedValues, key, scopedValues) {
     if (scopedValues !== null) {
       stateScopedValues[key] = scopedValues;
     } else {
       Reflect.deleteProperty(stateScopedValues, key);
     }
+  }
+
+  // NOTE: stateScopedValues needs to be at least an empty object {}
+  static _updateStateScopedValuesOneScopeInPlace(stateScopedValues, key, newValue, scopeKey, options) {
+    const scopedValues = FeatureToggles._updateScopedValuesInPlace(stateScopedValues[key], newValue, scopeKey, options);
+    FeatureToggles._updateStateScopedValuesAllScopesInPlace(stateScopedValues, key, scopedValues);
   }
 
   /**
@@ -880,14 +896,13 @@ class FeatureToggles {
           }
 
           await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
-
-          const newScopedValues = FeatureToggles._updateScopedValues(
-            this.__stateScopedValues[key],
+          FeatureToggles._updateStateScopedValuesOneScopeInPlace(
+            this.__stateScopedValues,
+            key,
             newValue,
             scopeKey,
             options
           );
-          FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newScopedValues);
         })
       );
     } catch (err) {
@@ -917,7 +932,7 @@ class FeatureToggles {
     }
 
     const newRedisStateCallback = (scopedValues) =>
-      FeatureToggles._updateScopedValues(scopedValues, newValue, scopeKey, options);
+      FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
       await redisWatchedHashGetSetObject(this.__featuresKey, key, newRedisStateCallback);
       // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
@@ -952,14 +967,13 @@ class FeatureToggles {
 
       // NOTE: in local mode, it makes no sense to validate newValue again
       await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
-
-      const newScopedValues = FeatureToggles._updateScopedValues(
-        this.__stateScopedValues[key],
+      FeatureToggles._updateStateScopedValuesOneScopeInPlace(
+        this.__stateScopedValues,
+        key,
         newValue,
         scopeKey,
         options
       );
-      FeatureToggles._updateStateScopedValuesInPlace(this.__stateScopedValues, key, newScopedValues);
     }
   }
 
