@@ -904,7 +904,7 @@ describe("feature toggles test", () => {
   });
 
   describe("active to inactive to active again", () => {
-    it("setting a toggle inactive does not change it in redis on init", async () => {
+    it("setting a toggle inactive does not change it in redis on init or refresh", async () => {
       await featureToggles.initializeFeatureValues({
         config: {
           [FEATURE.B]: {
@@ -913,11 +913,16 @@ describe("feature toggles test", () => {
           },
         },
       });
+      expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(1);
       expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(1);
+
       // change is propagated to mock redis
       expect(await featureToggles.changeFeatureValue(FEATURE.B, 10)).toBeUndefined();
       expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(10);
+      expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(2);
 
+      // !! first reset
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
       featureToggles._reset({ featuresKey, featuresChannel });
       await featureToggles.initializeFeatureValues({
         config: {
@@ -941,6 +946,13 @@ describe("feature toggles test", () => {
       `);
       expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
 
+      // remote value is also ignored during refresh because key is inactive
+      await featureToggles.refreshFeatureValues();
+      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
+      expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(0);
+
+      // !! second reset
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
       featureToggles._reset({ featuresKey, featuresChannel });
       await featureToggles.initializeFeatureValues({
         config: {
@@ -950,18 +962,16 @@ describe("feature toggles test", () => {
           },
         },
       });
+      expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(1);
       // after re-activation we get the remote state
       expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(10);
       // after re-activation we can change again
       expect(await featureToggles.changeFeatureValue(FEATURE.B, 30)).toBeUndefined();
       expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(30);
+      expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(2);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
-
-    // TODO write test
-    // eslint-disable-next-line jest/expect-expect
-    it("setting a toggle inactive does not change it in redis on refresh", async () => {});
   });
 });
