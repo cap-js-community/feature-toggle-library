@@ -296,7 +296,7 @@ describe("redis wrapper test", () => {
     const result = await redisWrapper.publishMessage(channel, message);
     expect(mockClient.PUBLISH).toHaveBeenCalledTimes(1);
     expect(mockClient.PUBLISH).toHaveBeenCalledWith(channel, message);
-    expect(result).toBe("publishreturn");
+    expect(result).toBe("PUBLISH_return");
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
@@ -329,8 +329,8 @@ describe("redis wrapper test", () => {
     expect(redis.createClient).toHaveReturnedWith(subscriber);
     expect(subscriber.on).toHaveBeenCalledTimes(1);
     expect(subscriber.on).toHaveBeenCalledWith("error", expect.any(Function));
-    expect(subscriber.subscribe).toHaveBeenCalledTimes(1);
-    expect(subscriber.subscribe).toHaveBeenCalledWith(channel, redisWrapper._._subscribedMessageHandler);
+    expect(subscriber.SUBSCRIBE).toHaveBeenCalledTimes(1);
+    expect(subscriber.SUBSCRIBE).toHaveBeenCalledWith(channel, redisWrapper._._subscribedMessageHandler);
     expect(mockClient.PUBLISH).not.toHaveBeenCalled();
 
     redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
@@ -355,8 +355,8 @@ describe("redis wrapper test", () => {
     const subscriber = redisWrapper._._getSubscriberClient();
     await redisWrapper._._subscribedMessageHandler(message, channel);
 
-    expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
-    expect(subscriber.unsubscribe).toHaveBeenCalledWith(channel);
+    expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledTimes(1);
+    expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledWith(channel);
     expect(mockMessageHandler).not.toHaveBeenCalled();
     expect(mockMessageHandlerTwo).not.toHaveBeenCalled();
 
@@ -374,8 +374,8 @@ describe("redis wrapper test", () => {
     const subscriber = redisWrapper._._getSubscriberClient();
     await redisWrapper._._subscribedMessageHandler(message, channel);
 
-    expect(subscriber.unsubscribe).toHaveBeenCalledTimes(1);
-    expect(subscriber.unsubscribe).toHaveBeenCalledWith(channel);
+    expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledTimes(1);
+    expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledWith(channel);
     expect(mockMessageHandler).not.toHaveBeenCalled();
     expect(mockMessageHandlerTwo).not.toHaveBeenCalled();
     expect(loggerSpy.error).not.toHaveBeenCalled();
