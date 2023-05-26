@@ -14,7 +14,6 @@
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO the naming for keys is confusing featureKey is really the key used in redis, keys are the keys distinguishing
 //    features, and finally scopeKeys are also keys. A total of three layers of keys.
-// TODO setting toggles to inactive should not delete remote state
 // TODO locale for validation messages
 
 const { promisify } = require("util");
@@ -804,7 +803,6 @@ class FeatureToggles {
   // NOTE: refresh used to trigger the change handlers, but with scoping keeping this feature would become really messy.
   // From the state difference, there is no good way to infer the actual scopeMap and options that were used. You would
   // also have to trigger changes for any small scope-level change leading to lots of callbacks.
-  // TODO double check behavior for inactive
   async refreshFeatureValues() {
     this._ensureInitialized();
     try {

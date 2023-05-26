@@ -902,4 +902,8 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
   });
+
+  // TODO write tests
+  it("setting a toggle inactive does not change it in redis on init", async () => {});
+  it("setting a toggle inactive does not change it in redis on refresh", async () => {});
 });
