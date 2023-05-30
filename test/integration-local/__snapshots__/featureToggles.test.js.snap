@@ -181,7 +181,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeatureStates 1`] = `
+exports[`local integration test getFeatureValues, getFeatureInfos 1`] = `
 {
   "test/feature_a": {
     "config": {

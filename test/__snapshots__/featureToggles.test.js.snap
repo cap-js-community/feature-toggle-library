@@ -28,7 +28,7 @@ exports[`feature toggles test basic apis _changeRemoteFeatureValues 3`] = `
 }
 `;
 
-exports[`feature toggles test basic apis getFeatureStates 1`] = `
+exports[`feature toggles test basic apis getFeatureInfos 1`] = `
 {
   "test/feature_a": {
     "config": {

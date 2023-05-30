@@ -19,8 +19,8 @@ const instance = new FeatureToggles({ uniqueName: _uniqueNameFromEnv || _uniqueN
 module.exports = {
   validateFeatureValue: instance.validateFeatureValue.bind(instance),
   initializeFeatureValues: instance.initializeFeatureValues.bind(instance),
-  getFeatureState: instance.getFeatureState.bind(instance),
-  getFeatureStates: instance.getFeatureStates.bind(instance),
+  getFeatureInfo: instance.getFeatureInfo.bind(instance),
+  getFeatureInfos: instance.getFeatureInfos.bind(instance),
   getFeatureValue: instance.getFeatureValue.bind(instance),
   refreshFeatureValues: instance.refreshFeatureValues.bind(instance),
   changeFeatureValue: instance.changeFeatureValue.bind(instance),

@@ -542,10 +542,10 @@ class FeatureToggles {
   // END OF INITIALIZE SECTION
   // ========================================
   // ========================================
-  // START OF GET_FEATURE_STATES SECTION
+  // START OF GET_FEATURE_INFOS SECTION
   // ========================================
 
-  _getFeatureState(featureKey) {
+  _getFeatureInfo(featureKey) {
     return {
       fallbackValue: this.__fallbackValues[featureKey],
       stateScopedValues: this.__stateScopedValues[featureKey],
@@ -554,30 +554,29 @@ class FeatureToggles {
   }
 
   /**
-   * Get feature state for specific featureKey.
+   * Get feature info for specific featureKey.
    */
-  getFeatureState(featureKey) {
+  getFeatureInfo(featureKey) {
     this._ensureInitialized();
-    if (!Object.prototype.hasOwnProperty.call(this.__fallbackValues, featureKey)) {
+    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
       return null;
     }
-    return this._getFeatureState(featureKey);
+    return this._getFeatureInfo(featureKey);
   }
 
   /**
-   * Get feature configurations for all keys.
+   * Get feature infos for all featureKeys.
    */
-  getFeatureStates() {
+  getFeatureInfos() {
     this._ensureInitialized();
-    const result = {};
-    for (const featureKey of this.__featureKeys) {
-      result[featureKey] = this._getFeatureState(featureKey);
-    }
-    return result;
+    return this.__featureKeys.reduce((acc, featureKey) => {
+      acc[featureKey] = this._getFeatureInfo(featureKey);
+      return acc;
+    }, {});
   }
 
   // ========================================
-  // END OF GET_FEATURE_STATES SECTION
+  // END OF GET_FEATURE_INFOS SECTION
   // ========================================
   // ========================================
   // START OF GET_FEATURE_VALUE SECTION

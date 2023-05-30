@@ -30,11 +30,11 @@ const loggerSpy = {
   error: jest.spyOn(featureTogglesModule._._getLogger(), "error"),
 };
 
-const fallbackValuesFromStates = (featureStates) =>
-  Object.fromEntries(Object.entries(featureStates).map(([key, value]) => [key, value.fallbackValue]));
+const fallbackValuesFromInfos = (featureInfos) =>
+  Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.fallbackValue]));
 
-const scopedValuesFromStates = (featureStates) =>
-  Object.fromEntries(Object.entries(featureStates).map(([key, value]) => [key, value.stateScopedValues]));
+const scopedValuesFromInfos = (featureInfos) =>
+  Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.stateScopedValues]));
 
 describe("feature toggles test", () => {
   beforeEach(async () => {
@@ -229,10 +229,10 @@ describe("feature toggles test", () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      const beforeValues = scopedValuesFromStates(await featureToggles.getFeatureStates());
+      const beforeValues = scopedValuesFromInfos(await featureToggles.getFeatureInfos());
       await featureToggles._changeRemoteFeatureValue(FEATURE.B, null);
       await featureToggles._changeRemoteFeatureValue(FEATURE.C, "new_a");
-      const afterValues = scopedValuesFromStates(await featureToggles.getFeatureStates());
+      const afterValues = scopedValuesFromInfos(await featureToggles.getFeatureInfos());
 
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(2);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -413,9 +413,9 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("getFeatureState", async () => {
+    it("getFeatureInfo", async () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
-      expect(featureToggles.getFeatureState(FEATURE.A)).toMatchInlineSnapshot(`
+      expect(featureToggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
         {
           "config": {
             "TYPE": "boolean",
@@ -424,7 +424,7 @@ describe("feature toggles test", () => {
           "stateScopedValues": undefined,
         }
       `);
-      expect(featureToggles.getFeatureState(FEATURE.B)).toMatchInlineSnapshot(`
+      expect(featureToggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
         {
           "config": {
             "TYPE": "number",
@@ -433,7 +433,7 @@ describe("feature toggles test", () => {
           "stateScopedValues": undefined,
         }
       `);
-      expect(featureToggles.getFeatureState(FEATURE.C)).toMatchInlineSnapshot(`
+      expect(featureToggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
         {
           "config": {
             "TYPE": "string",
@@ -444,9 +444,9 @@ describe("feature toggles test", () => {
       `);
     });
 
-    it("getFeatureStates", async () => {
+    it("getFeatureInfos", async () => {
       await featureToggles.initializeFeatureValues({ config: mockConfig });
-      expect(featureToggles.getFeatureStates()).toMatchSnapshot();
+      expect(featureToggles.getFeatureInfos()).toMatchSnapshot();
     });
 
     it("getFeatureValue", async () => {
@@ -718,7 +718,7 @@ describe("feature toggles test", () => {
       const newValue = "newValue";
       await featureToggles.initializeFeatureValues({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.G);
-      const featureConfig = featureToggles.getFeatureState(FEATURE.G).config;
+      const featureConfig = featureToggles.getFeatureInfo(FEATURE.G).config;
 
       expect(featureConfig.ACTIVE).toBe(false);
       expect(await featureToggles.changeFeatureValue(FEATURE.G, newValue)).toMatchInlineSnapshot(`
@@ -809,7 +809,7 @@ describe("feature toggles test", () => {
       const oldValueB = featureToggles.getFeatureValue(FEATURE.B);
       expect(oldValueA).toBe(fallbackValue);
       expect(oldValueB).toBe(fallbackValue);
-      expect(fallbackValuesFromStates(featureToggles.getFeatureStates())).toStrictEqual(fallbackValues);
+      expect(fallbackValuesFromInfos(featureToggles.getFeatureInfos())).toStrictEqual(fallbackValues);
     });
 
     it("refreshFeatureValues and central state is invalid", async () => {
