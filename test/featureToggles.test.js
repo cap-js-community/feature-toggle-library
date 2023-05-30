@@ -198,7 +198,7 @@ describe("feature toggles test", () => {
 
   describe("basic apis", () => {
     it("initializeFeatureToggles", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       expect(featureToggles.__isInitialized).toBe(true);
       expect(featureToggles.__fallbackValues).toStrictEqual(mockFallbackValues);
@@ -226,7 +226,7 @@ describe("feature toggles test", () => {
     });
 
     it("_changeRemoteFeatureValues", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       const beforeValues = scopedValuesFromInfos(await featureToggles.getFeatureInfos());
@@ -269,7 +269,7 @@ describe("feature toggles test", () => {
     });
 
     it("validateFeatureValue", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
         [FEATURE.A, true],
@@ -338,7 +338,7 @@ describe("feature toggles test", () => {
     });
 
     it("validateFeatureValue with scopes", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
         [FEATURE.A, 1, { a: 1 }],
@@ -386,7 +386,7 @@ describe("feature toggles test", () => {
         ]
       `);
 
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       expect(await featureToggles.validateFeatureValue(FEATURE.E, 1)).toStrictEqual([]);
     });
 
@@ -398,7 +398,7 @@ describe("feature toggles test", () => {
     });
 
     it("isValidFeatureKey", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       const invalidKeys = [undefined, () => {}, [], {}, null, 0, "", true, "nonsense"];
       const validKeys = Object.keys(mockConfig);
@@ -414,7 +414,7 @@ describe("feature toggles test", () => {
     });
 
     it("getFeatureInfo", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       expect(featureToggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
         {
           "config": {
@@ -445,7 +445,7 @@ describe("feature toggles test", () => {
     });
 
     it("getFeatureInfos", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       expect(featureToggles.getFeatureInfos()).toMatchSnapshot();
     });
 
@@ -464,7 +464,7 @@ describe("feature toggles test", () => {
       for (let i = 0; i < 3; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
         mockFeatureValuesEntries.map(([, value]) => value[SCOPE_ROOT_KEY])
@@ -478,7 +478,7 @@ describe("feature toggles test", () => {
     });
 
     it("changeFeatureValue", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       expect(await featureToggles.changeFeatureValue(FEATURE.C, "newa")).toBeUndefined();
@@ -500,7 +500,7 @@ describe("feature toggles test", () => {
     });
 
     it("changeFeatureValue failing", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       const validationErrorsInvalidKey = await featureToggles.changeFeatureValue("invalid", 1);
@@ -521,7 +521,7 @@ describe("feature toggles test", () => {
     });
 
     it("refreshFeatureValues", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
       const remoteState = { [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } };
       redisWrapperMock._setValue(FEATURE.B, { [SCOPE_ROOT_KEY]: 42 });
@@ -544,7 +544,7 @@ describe("feature toggles test", () => {
     });
 
     it("refreshFeatureValues with invalid state", async () => {
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
@@ -576,7 +576,7 @@ describe("feature toggles test", () => {
     it("FeatureValueChangeHandler and changeFeatureValue", async () => {
       const newValue = "newValue";
       const newNewValue = "newNewValue";
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.C);
       const handler = jest.fn();
       featureToggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
@@ -612,7 +612,7 @@ describe("feature toggles test", () => {
 
     it("FeatureValueValidation", async () => {
       const newValue = "newValue";
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       const validator = jest.fn();
       featureToggles.registerFeatureValueValidation(FEATURE.C, validator);
@@ -716,7 +716,7 @@ describe("feature toggles test", () => {
 
     it("FeatureValueValidation and inactive", async () => {
       const newValue = "newValue";
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.G);
       const featureConfig = featureToggles.getFeatureInfo(FEATURE.G).config;
 
@@ -736,7 +736,7 @@ describe("feature toggles test", () => {
       const error = new Error("bad validator");
       const validator = jest.fn().mockRejectedValue(error);
 
-      await featureToggles.initializeFeatureValues({ config: mockConfig });
+      await featureToggles.initializeFeatures({ config: mockConfig });
 
       featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
 
@@ -798,7 +798,7 @@ describe("feature toggles test", () => {
     };
 
     beforeEach(async () => {
-      await featureToggles.initializeFeatureValues({
+      await featureToggles.initializeFeatures({
         config,
       });
       loggerSpy.warning.mockClear();
@@ -901,7 +901,7 @@ describe("feature toggles test", () => {
 
   describe("active to inactive to active again", () => {
     it("setting a toggle inactive does not change it in redis on init or refresh", async () => {
-      await featureToggles.initializeFeatureValues({
+      await featureToggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
             fallbackValue: 1,
@@ -920,7 +920,7 @@ describe("feature toggles test", () => {
       // !! first reset
       redisWrapperMock.watchedHashGetSetObject.mockClear();
       featureToggles._reset({ redisKey, redisChannel });
-      await featureToggles.initializeFeatureValues({
+      await featureToggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
             active: false,
@@ -950,7 +950,7 @@ describe("feature toggles test", () => {
       // !! second reset
       redisWrapperMock.watchedHashGetSetObject.mockClear();
       featureToggles._reset({ redisKey, redisChannel });
-      await featureToggles.initializeFeatureValues({
+      await featureToggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
             fallbackValue: 3,

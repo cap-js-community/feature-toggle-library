@@ -4,7 +4,7 @@
 // and test only the local mode here.
 
 let featureTogglesLoggerSpy, redisWrapperLoggerSpy;
-let initializeFeatureValues,
+let initializeFeatures,
   getFeatureInfo,
   getFeatureInfos,
   getFeatureValue,
@@ -69,7 +69,7 @@ describe("local integration test", () => {
     jest.resetModules();
     ({
       singleton: {
-        initializeFeatureValues,
+        initializeFeatures,
         getFeatureInfo,
         getFeatureInfos,
         getFeatureValue,
@@ -94,7 +94,7 @@ describe("local integration test", () => {
       error: jest.spyOn(redisWrapper._._getLogger(), "error"),
     };
 
-    await initializeFeatureValues({ config });
+    await initializeFeatures({ config });
   });
 
   afterEach(() => {

@@ -447,7 +447,7 @@ class FeatureToggles {
     }, Promise.resolve([{}, []]));
   }
 
-  async initializeFeatureValues({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
+  async initializeFeatures({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
     if (this.__isInitialized) {
       return;
     }

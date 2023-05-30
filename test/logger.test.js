@@ -61,7 +61,7 @@ describe("logger test", () => {
     const validator = jest.fn().mockRejectedValue(error);
 
     featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
-    await featureToggles.initializeFeatureValues({ config: mockConfig });
+    await featureToggles.initializeFeatures({ config: mockConfig });
 
     expect(consoleSpy.info.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
       [
@@ -101,7 +101,7 @@ describe("logger test", () => {
     const validator = jest.fn().mockRejectedValue(error);
 
     featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
-    await featureToggles.initializeFeatureValues({ config: mockConfig });
+    await featureToggles.initializeFeatures({ config: mockConfig });
 
     expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)).toMatchInlineSnapshot(`
       [

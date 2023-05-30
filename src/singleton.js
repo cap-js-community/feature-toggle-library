@@ -18,7 +18,7 @@ const _uniqueNameFromCfApp = () => {
 const instance = new FeatureToggles({ uniqueName: _uniqueNameFromEnv || _uniqueNameFromCfApp() });
 module.exports = {
   validateFeatureValue: instance.validateFeatureValue.bind(instance),
-  initializeFeatureValues: instance.initializeFeatureValues.bind(instance),
+  initializeFeatures: instance.initializeFeatures.bind(instance),
   getFeatureInfo: instance.getFeatureInfo.bind(instance),
   getFeatureInfos: instance.getFeatureInfos.bind(instance),
   getFeatureValue: instance.getFeatureValue.bind(instance),
