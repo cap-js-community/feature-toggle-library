@@ -12,8 +12,7 @@
 "use strict";
 
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
-// TODO the naming for keys is confusing redisKey is better, featureKey is better, and finally
-//  scopeKeys are also keys. A total of three layers of keys.
+// TODO the scopeKey inner keys are another key where naming could be better
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
 
@@ -596,7 +595,6 @@ class FeatureToggles {
     return FeatureToggles._getNonRootScopeKey(scopeMap, scopeMapKeys.sort());
   }
 
-  // TODO: the scopeKey inner keys are another key where naming could be better
   static _getNonRootScopeKey(scopeMap, sortedKeys) {
     return sortedKeys.map((key) => key + SCOPE_KEY_INNER_SEPARATOR + scopeMap[key]).join(SCOPE_KEY_OUTER_SEPARATOR);
   }
