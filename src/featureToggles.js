@@ -237,6 +237,8 @@ class FeatureToggles {
    * @param {string|undefined}            [scopeKey]  optional scopeKey for reference
    * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
    */
+  // TODO can we avoid making scopeKey external... it's really an internal format. This could be an internal function
+  //  with an external facade API that takes scopeMap instead.
   async validateFeatureValue(featureKey, value, scopeKey = undefined) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
