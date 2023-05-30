@@ -38,8 +38,8 @@ const { ENV, isNull } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
-const DEFAULT_REDIS_CHANNEL = process.env[ENV.CHANNEL] || "features";
-const DEFAULT_REDIS_KEY = process.env[ENV.KEY] || "features";
+const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
+const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
@@ -595,8 +595,11 @@ class FeatureToggles {
     return FeatureToggles._getNonRootScopeKey(scopeMap, scopeMapKeys.sort());
   }
 
+  // TODO the last keys without context
   static _getNonRootScopeKey(scopeMap, sortedKeys) {
-    return sortedKeys.map((key) => key + SCOPE_KEY_INNER_SEPARATOR + scopeMap[key]).join(SCOPE_KEY_OUTER_SEPARATOR);
+    return sortedKeys
+      .map((scopeInnerKey) => scopeInnerKey + SCOPE_KEY_INNER_SEPARATOR + scopeMap[scopeInnerKey])
+      .join(SCOPE_KEY_OUTER_SEPARATOR);
   }
 
   // NOTE: there are multiple scopeMaps for every scopeKey with more than one inner entry. This will return the unique
@@ -604,9 +607,9 @@ class FeatureToggles {
   static getScopeMap(scopeKey) {
     return typeof scopeKey !== "string" || scopeKey === SCOPE_ROOT_KEY
       ? {}
-      : scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR).reduce((acc, innerScopeEntry) => {
-          const [key, value] = innerScopeEntry.split(SCOPE_KEY_INNER_SEPARATOR);
-          acc[key] = value;
+      : scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR).reduce((acc, scopeInnerEntry) => {
+          const [scopeInnerKey, value] = scopeInnerEntry.split(SCOPE_KEY_INNER_SEPARATOR);
+          acc[scopeInnerKey] = value;
           return acc;
         }, {});
   }
