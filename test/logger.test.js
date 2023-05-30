@@ -75,7 +75,7 @@ describe("logger test", () => {
         [
           "88:88:88.888 | warn | Testing | FeatureTogglesError: found invalid fallback values during initialization
       error info: {
-        validationErrors: '[{"key":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
+        validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
       }",
         ],
       ]
@@ -85,7 +85,11 @@ describe("logger test", () => {
         [
           "88:88:88.888 | error | Testing | FeatureTogglesError: error during registered validator: bad validator
       caused by: Error: bad validator
-      error info: { validator: 'mockConstructor', key: 'test/feature_b', value: 1 }",
+      error info: {
+        validator: 'mockConstructor',
+        featureKey: 'test/feature_b',
+        value: 1
+      }",
         ],
       ]
     `);
@@ -102,10 +106,10 @@ describe("logger test", () => {
     expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)).toMatchInlineSnapshot(`
       [
         [
-          "{"logger":"nodejs-logger","type":"log","msg":"","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"layer":"Testing","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"key\\":\\"test/feature_b\\",\\"value\\":1}"}",
+          "{"logger":"nodejs-logger","type":"log","msg":"","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"layer":"Testing","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"featureKey\\":\\"test/feature_b\\",\\"value\\":1}"}",
         ],
         [
-          "{"logger":"nodejs-logger","type":"log","msg":"","level":"warn","stacktrace":["FeatureTogglesError: found invalid fallback values during initialization"],"layer":"Testing","errInfo":"{\\"validationErrors\\":\\"[{\\\\\\"key\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}"}",
+          "{"logger":"nodejs-logger","type":"log","msg":"","level":"warn","stacktrace":["FeatureTogglesError: found invalid fallback values during initialization"],"layer":"Testing","errInfo":"{\\"validationErrors\\":\\"[{\\\\\\"featureKey\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}"}",
         ],
         [
           "{"logger":"nodejs-logger","type":"log","msg":"finished initialization with 8 feature toggles with CF_REDIS","level":"info","layer":"Testing"}",

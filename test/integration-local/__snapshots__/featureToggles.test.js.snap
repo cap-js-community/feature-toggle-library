@@ -8,7 +8,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
       10,
       "^\\d{1}$",
     ],
-    "key": "test/feature_e",
+    "featureKey": "test/feature_e",
     "scopeKey": "component::c1##tenant::t1",
   },
 ]
@@ -156,7 +156,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
       10,
       "^\\d{1}$",
     ],
-    "key": "test/feature_e",
+    "featureKey": "test/feature_e",
     "scopeKey": "//",
   },
 ]

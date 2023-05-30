@@ -252,11 +252,11 @@ describe("feature toggles test", () => {
         [
           [
             "feature-channel",
-            "[{"key":"test/feature_b","newValue":null}]",
+            "[{"featureKey":"test/feature_b","newValue":null}]",
           ],
           [
             "feature-channel",
-            "[{"key":"test/feature_c","newValue":"new_a"}]",
+            "[{"featureKey":"test/feature_c","newValue":"new_a"}]",
           ],
         ]
       `);
@@ -284,8 +284,8 @@ describe("feature toggles test", () => {
       expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
-            "errorMessage": "key is not valid",
-            "key": "nonsense",
+            "errorMessage": "feature key is not valid",
+            "featureKey": "nonsense",
           },
         ]
       `);
@@ -302,7 +302,7 @@ describe("feature toggles test", () => {
                 "boolean",
               ],
             ],
-            "key": "test/feature_b",
+            "featureKey": "test/feature_b",
           },
         ]
       `);
@@ -315,7 +315,7 @@ describe("feature toggles test", () => {
               "boolean",
               "number",
             ],
-            "key": "test/feature_b",
+            "featureKey": "test/feature_b",
           },
         ]
       `);
@@ -327,7 +327,7 @@ describe("feature toggles test", () => {
               10,
               "^\\d{1}$",
             ],
-            "key": "test/feature_e",
+            "featureKey": "test/feature_e",
           },
         ]
       `);
@@ -350,7 +350,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "scopeKey is not valid",
-            "key": "test/feature_a",
+            "featureKey": "test/feature_a",
             "scopeKey": {
               "a": 1,
             },
@@ -366,7 +366,7 @@ describe("feature toggles test", () => {
               "number",
               "boolean",
             ],
-            "key": "test/feature_a",
+            "featureKey": "test/feature_a",
             "scopeKey": "a::1",
           },
         ]
@@ -489,7 +489,7 @@ describe("feature toggles test", () => {
         [
           [
             "feature-channel",
-            "[{"key":"test/feature_c","newValue":"newa"}]",
+            "[{"featureKey":"test/feature_c","newValue":"newa"}]",
           ],
         ]
       `);
@@ -507,8 +507,8 @@ describe("feature toggles test", () => {
       expect(validationErrorsInvalidKey).toMatchInlineSnapshot(`
         [
           {
-            "errorMessage": "key is not valid",
-            "key": "invalid",
+            "errorMessage": "feature key is not valid",
+            "featureKey": "invalid",
           },
         ]
       `);
@@ -640,7 +640,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "wrong input",
-            "key": "test/feature_c",
+            "featureKey": "test/feature_c",
             "scopeKey": "//",
           },
         ]
@@ -665,7 +665,7 @@ describe("feature toggles test", () => {
               "value1",
               2,
             ],
-            "key": "test/feature_c",
+            "featureKey": "test/feature_c",
             "scopeKey": "//",
           },
         ]
@@ -693,7 +693,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "wrong input",
-            "key": "test/feature_c",
+            "featureKey": "test/feature_c",
             "scopeKey": "//",
           },
           {
@@ -702,7 +702,7 @@ describe("feature toggles test", () => {
               "value1",
               2,
             ],
-            "key": "test/feature_c",
+            "featureKey": "test/feature_c",
             "scopeKey": "//",
           },
         ]
@@ -724,8 +724,8 @@ describe("feature toggles test", () => {
       expect(await featureToggles.changeFeatureValue(FEATURE.G, newValue)).toMatchInlineSnapshot(`
         [
           {
-            "errorMessage": "key is not active",
-            "key": "test/feature_g",
+            "errorMessage": "feature key is not active",
+            "featureKey": "test/feature_g",
           },
         ]
       `);
@@ -749,7 +749,7 @@ describe("feature toggles test", () => {
               100,
               "bad validator",
             ],
-            "key": "test/feature_b",
+            "featureKey": "test/feature_b",
             "scopeKey": "//",
           },
         ]
@@ -880,7 +880,7 @@ describe("feature toggles test", () => {
               "fallout",
               "^xxx",
             ],
-            "key": "test/feature_b",
+            "featureKey": "test/feature_b",
             "scopeKey": "//",
           },
         ]
@@ -935,8 +935,8 @@ describe("feature toggles test", () => {
       expect(await featureToggles.changeFeatureValue(FEATURE.B, 20)).toMatchInlineSnapshot(`
         [
           {
-            "errorMessage": "key is not active",
-            "key": "test/feature_b",
+            "errorMessage": "feature key is not active",
+            "featureKey": "test/feature_b",
           },
         ]
       `);

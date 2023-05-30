@@ -12,7 +12,7 @@
 "use strict";
 
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
-// TODO the naming for keys is confusing redisKey is better, keys are the keys distinguishing features, and finally
+// TODO the naming for keys is confusing redisKey is better, featureKey is better, and finally
 //  scopeKeys are also keys. A total of three layers of keys.
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
@@ -124,29 +124,29 @@ class FeatureToggles {
     const { uris: cfAppUris } = cfEnv.cfApp();
 
     const configEntries = Object.entries(config);
-    for (const [key, { type, active, appUrl, validation, fallbackValue }] of configEntries) {
-      this.__keys.push(key);
-      this.__fallbackValues[key] = fallbackValue;
-      this.__config[key] = {};
+    for (const [featureKey, { type, active, appUrl, validation, fallbackValue }] of configEntries) {
+      this.__keys.push(featureKey);
+      this.__fallbackValues[featureKey] = fallbackValue;
+      this.__config[featureKey] = {};
 
       if (type) {
-        this.__config[key][CONFIG_CACHE_KEY.TYPE] = type;
+        this.__config[featureKey][CONFIG_CACHE_KEY.TYPE] = type;
       }
 
       if (active !== undefined) {
-        this.__config[key][CONFIG_CACHE_KEY.ACTIVE] = active;
+        this.__config[featureKey][CONFIG_CACHE_KEY.ACTIVE] = active;
       }
 
       if (validation) {
-        this.__config[key][CONFIG_CACHE_KEY.VALIDATION] = validation;
-        this.__config[key][CONFIG_CACHE_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
+        this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION] = validation;
+        this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
       }
 
       if (appUrl) {
-        this.__config[key][CONFIG_CACHE_KEY.APP_URL] = appUrl;
+        this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL] = appUrl;
 
         const appUrlRegex = new RegExp(appUrl);
-        this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] =
+        this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL_ACTIVE] =
           !Array.isArray(cfAppUris) ||
           cfAppUris.reduce((accumulator, cfAppUri) => accumulator && appUrlRegex.test(cfAppUri), true);
       }
@@ -203,8 +203,8 @@ class FeatureToggles {
   // START OF VALIDATION SECTION
   // ========================================
 
-  static _isValidFeatureKey(fallbackValues, key) {
-    return typeof key === "string" && Object.prototype.hasOwnProperty.call(fallbackValues, key);
+  static _isValidFeatureKey(fallbackValues, featureKey) {
+    return typeof featureKey === "string" && Object.prototype.hasOwnProperty.call(fallbackValues, featureKey);
   }
 
   static _isValidFeatureValueType(value) {
@@ -226,49 +226,49 @@ class FeatureToggles {
    *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
    *
    * @type object
-   * @property {string}        key                   feature toggle
+   * @property {string}        featureKey            feature toggle
    * @property {string}        errorMessage          user-readable error message
    * @property {Array<string>} [errorMessageValues]  optional parameters for error message, which are ignored for localization
    */
   /**
-   * Validate the value of a given key, value pair. Allows passing an optional scopeKey that is added to
+   * Validate the value of a given featureKey, value pair. Allows passing an optional scopeKey that is added to
    * validationErrors for reference.
    *
-   * @param {string}                      key         feature key
+   * @param {string}                      featureKey  feature key
    * @param {string|number|boolean|null}  value       intended value
    * @param {string|undefined}            [scopeKey]  optional scopeKey for reference
    * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
    */
-  async validateFeatureValue(key, value, scopeKey = undefined) {
+  async validateFeatureValue(featureKey, value, scopeKey = undefined) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
 
-    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, key)) {
-      return [{ key, errorMessage: "key is not valid" }];
+    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
+      return [{ featureKey, errorMessage: "feature key is not valid" }];
     }
 
     if (!FeatureToggles._isValidScopeKey(scopeKey)) {
-      return [{ key, scopeKey, errorMessage: "scopeKey is not valid" }];
+      return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
     }
 
-    // NOTE: value === null is our way of encoding key resetting changes, so it is always allowed
+    // NOTE: value === null is our way of encoding featureKey resetting changes, so it is always allowed
     if (value === null) {
       return [];
     }
 
     // NOTE: skip validating active properties during initialization
     if (this.__isInitialized) {
-      if (this.__config[key][CONFIG_CACHE_KEY.ACTIVE] === false) {
-        return [{ key, errorMessage: "key is not active" }];
+      if (this.__config[featureKey][CONFIG_CACHE_KEY.ACTIVE] === false) {
+        return [{ featureKey, errorMessage: "feature key is not active" }];
       }
 
-      if (this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] === false) {
+      if (this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL_ACTIVE] === false) {
         return [
           {
-            key,
-            errorMessage: "key is not active because app url does not match regular expression {1}",
-            errorMessageValues: [this.__config[key][CONFIG_CACHE_KEY.APP_URL]],
+            featureKey,
+            errorMessage: "feature key is not active because app url does not match regular expression {1}",
+            errorMessageValues: [this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL]],
           },
         ];
       }
@@ -278,7 +278,7 @@ class FeatureToggles {
     if (!FeatureToggles._isValidFeatureValueType(value)) {
       return [
         {
-          key,
+          featureKey,
           ...(scopeKey && { scopeKey }),
           errorMessage: 'value "{0}" has invalid type {1}, must be in {2}',
           errorMessageValues: [value, valueType, FEATURE_VALID_TYPES],
@@ -286,30 +286,30 @@ class FeatureToggles {
       ];
     }
 
-    if (valueType !== this.__config[key][CONFIG_CACHE_KEY.TYPE]) {
+    if (valueType !== this.__config[featureKey][CONFIG_CACHE_KEY.TYPE]) {
       return [
         {
-          key,
+          featureKey,
           ...(scopeKey && { scopeKey }),
           errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
-          errorMessageValues: [value, valueType, this.__config[key][CONFIG_CACHE_KEY.TYPE]],
+          errorMessageValues: [value, valueType, this.__config[featureKey][CONFIG_CACHE_KEY.TYPE]],
         },
       ];
     }
 
-    const validationRegExp = this.__config[key][CONFIG_CACHE_KEY.VALIDATION_REG_EXP];
+    const validationRegExp = this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION_REG_EXP];
     if (validationRegExp && !validationRegExp.test(value)) {
       return [
         {
-          key,
+          featureKey,
           ...(scopeKey && { scopeKey }),
           errorMessage: 'value "{0}" does not match validation regular expression {1}',
-          errorMessageValues: [value, this.__config[key][CONFIG_CACHE_KEY.VALIDATION]],
+          errorMessageValues: [value, this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION]],
         },
       ];
     }
 
-    const validators = this.__featureValueValidators.getHandlers(key);
+    const validators = this.__featureValueValidators.getHandlers(featureKey);
     if (validators.length === 0) {
       return [];
     }
@@ -325,7 +325,7 @@ class FeatureToggles {
             ? validationErrors
                 .filter(({ errorMessage }) => errorMessage)
                 .map(({ errorMessage, errorMessageValues }) => ({
-                  key,
+                  featureKey,
                   ...(scopeKey && { scopeKey }),
                   errorMessage,
                   ...(errorMessageValues && { errorMessageValues }),
@@ -339,7 +339,7 @@ class FeatureToggles {
                 cause: err,
                 info: {
                   validator: validatorName,
-                  key,
+                  featureKey,
                   ...(scopeKey && { scopeKey }),
                   value,
                 },
@@ -349,7 +349,7 @@ class FeatureToggles {
           );
           return [
             {
-              key,
+              featureKey,
               ...(scopeKey && { scopeKey }),
               errorMessage: 'registered validator "{0}" failed for value "{1}" with error {2}',
               errorMessageValues: [validatorName, value, err.message],
@@ -371,8 +371,8 @@ class FeatureToggles {
       return validationErrors;
     }
 
-    for (const [key, value] of Object.entries(fallbackValues)) {
-      const entryValidationErrors = await this.validateFeatureValue(key, value);
+    for (const [featureKey, value] of Object.entries(fallbackValues)) {
+      const entryValidationErrors = await this.validateFeatureValue(featureKey, value);
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
       }
@@ -380,23 +380,28 @@ class FeatureToggles {
     return validationErrors;
   }
 
-  // TODO can this mechanism of using [result, errors] per key inside a loop be generalized?
-  async _validateScopedValues(key, scopedValues) {
+  // TODO can this mechanism of using [result, errors] per featureKey inside a loop be generalized?
+  async _validateScopedValues(featureKey, scopedValues) {
     let validationErrors = [];
     let validatedStateScopedValues = {};
 
     for (const [scopeKey, value] of Object.entries(scopedValues)) {
-      const entryValidationErrors = await this.validateFeatureValue(key, value, scopeKey);
+      const entryValidationErrors = await this.validateFeatureValue(featureKey, value, scopeKey);
       let updateValue = value;
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
         updateValue = null;
       }
-      FeatureToggles._updateStateScopedValuesOneScopeInPlace(validatedStateScopedValues, key, updateValue, scopeKey);
+      FeatureToggles._updateStateScopedValuesOneScopeInPlace(
+        validatedStateScopedValues,
+        featureKey,
+        updateValue,
+        scopeKey
+      );
     }
 
-    const validatedScopedValues = Object.prototype.hasOwnProperty.call(validatedStateScopedValues, key)
-      ? validatedStateScopedValues[key]
+    const validatedScopedValues = Object.prototype.hasOwnProperty.call(validatedStateScopedValues, featureKey)
+      ? validatedStateScopedValues[featureKey]
       : null;
     return [validatedScopedValues, validationErrors];
   }
@@ -408,26 +413,37 @@ class FeatureToggles {
   // START OF INITIALIZE SECTION
   // ========================================
 
-  _isKeyActive(key) {
+  _isKeyActive(featureKey) {
     return (
-      this.__config[key][CONFIG_CACHE_KEY.ACTIVE] !== false &&
-      this.__config[key][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
+      this.__config[featureKey][CONFIG_CACHE_KEY.ACTIVE] !== false &&
+      this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
     );
   }
 
   async _freshStateScopedValues() {
-    return await this.__keys.reduce(async (acc, key) => {
+    return await this.__keys.reduce(async (acc, featureKey) => {
       let [validatedStateScopedValues, validationErrors] = await acc;
-      if (this._isKeyActive(key)) {
-        const validatedScopedValues = await redisWatchedHashGetSetObject(this.__redisKey, key, async (scopedValues) => {
-          if (typeof scopedValues !== "object" || scopedValues === null) {
-            return null;
+      if (this._isKeyActive(featureKey)) {
+        const validatedScopedValues = await redisWatchedHashGetSetObject(
+          this.__redisKey,
+          featureKey,
+          async (scopedValues) => {
+            if (typeof scopedValues !== "object" || scopedValues === null) {
+              return null;
+            }
+            const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(
+              featureKey,
+              scopedValues
+            );
+            validationErrors = validationErrors.concat(scopedValidationErrors);
+            return validatedScopedValues;
           }
-          const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(key, scopedValues);
-          validationErrors = validationErrors.concat(scopedValidationErrors);
-          return validatedScopedValues;
-        });
-        FeatureToggles._updateStateScopedValuesAllScopesInPlace(validatedStateScopedValues, key, validatedScopedValues);
+        );
+        FeatureToggles._updateStateScopedValuesAllScopesInPlace(
+          validatedStateScopedValues,
+          featureKey,
+          validatedScopedValues
+        );
       }
       return [validatedStateScopedValues, validationErrors];
     }, Promise.resolve([{}, []]));
@@ -476,7 +492,7 @@ class FeatureToggles {
     const redisIntegrationMode = await getRedisIntegrationMode();
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {
-        // NOTE in our legacy code the key was a string
+        // NOTE in our legacy code the redisKey was a string
         const featureKeyType = await redisType(this.__redisKey);
         if (featureKeyType !== "hash" && featureKeyType !== "none") {
           await redisDel(this.__redisKey);
@@ -531,23 +547,23 @@ class FeatureToggles {
   // START OF GET_FEATURE_STATES SECTION
   // ========================================
 
-  _getFeatureState(key) {
+  _getFeatureState(featureKey) {
     return {
-      fallbackValue: this.__fallbackValues[key],
-      stateScopedValues: this.__stateScopedValues[key],
-      config: this.__config[key],
+      fallbackValue: this.__fallbackValues[featureKey],
+      stateScopedValues: this.__stateScopedValues[featureKey],
+      config: this.__config[featureKey],
     };
   }
 
   /**
-   * Get feature state for specific key.
+   * Get feature state for specific featureKey.
    */
-  getFeatureState(key) {
+  getFeatureState(featureKey) {
     this._ensureInitialized();
-    if (!Object.prototype.hasOwnProperty.call(this.__fallbackValues, key)) {
+    if (!Object.prototype.hasOwnProperty.call(this.__fallbackValues, featureKey)) {
       return null;
     }
-    return this._getFeatureState(key);
+    return this._getFeatureState(featureKey);
   }
 
   /**
@@ -556,8 +572,8 @@ class FeatureToggles {
   getFeatureStates() {
     this._ensureInitialized();
     const result = {};
-    for (const key of this.__keys) {
-      result[key] = this._getFeatureState(key);
+    for (const featureKey of this.__keys) {
+      result[featureKey] = this._getFeatureState(featureKey);
     }
     return result;
   }
@@ -580,6 +596,7 @@ class FeatureToggles {
     return FeatureToggles._getNonRootScopeKey(scopeMap, scopeMapKeys.sort());
   }
 
+  // TODO: the scopeKey inner keys are another key where naming could be better
   static _getNonRootScopeKey(scopeMap, sortedKeys) {
     return sortedKeys.map((key) => key + SCOPE_KEY_INNER_SEPARATOR + scopeMap[key]).join(SCOPE_KEY_OUTER_SEPARATOR);
   }
@@ -644,11 +661,11 @@ class FeatureToggles {
     superScopeCache,
     stateScopedValues,
     fallbackValues,
-    key,
+    featureKey,
     scopeMap = undefined
   ) {
-    const keyState = stateScopedValues[key];
-    const fallbackValue = fallbackValues[key] ?? null;
+    const keyState = stateScopedValues[featureKey];
+    const fallbackValue = fallbackValues[featureKey] ?? null;
 
     if (keyState === undefined) {
       return fallbackValue;
@@ -677,17 +694,17 @@ class FeatureToggles {
    *   const result = getFeatureValue(FEATURE_VALUE_KEY);
    *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenantId: "tenant123" });
    *
-   * @param key         valid feature key
+   * @param featureKey  valid feature key
    * @param [scopeMap]  object containing scope restrictions
    * @returns {string|number|boolean|null}
    */
-  getFeatureValue(key, scopeMap) {
+  getFeatureValue(featureKey, scopeMap) {
     this._ensureInitialized();
     return FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
       this.__superScopeCache,
       this.__stateScopedValues,
       this.__fallbackValues,
-      key,
+      featureKey,
       scopeMap
     );
   }
@@ -743,18 +760,23 @@ class FeatureToggles {
   }
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
-  static _updateStateScopedValuesAllScopesInPlace(stateScopedValues, key, scopedValues) {
+  static _updateStateScopedValuesAllScopesInPlace(stateScopedValues, featureKey, scopedValues) {
     if (scopedValues !== null) {
-      stateScopedValues[key] = scopedValues;
+      stateScopedValues[featureKey] = scopedValues;
     } else {
-      Reflect.deleteProperty(stateScopedValues, key);
+      Reflect.deleteProperty(stateScopedValues, featureKey);
     }
   }
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
-  static _updateStateScopedValuesOneScopeInPlace(stateScopedValues, key, newValue, scopeKey, options) {
-    const scopedValues = FeatureToggles._updateScopedValuesInPlace(stateScopedValues[key], newValue, scopeKey, options);
-    FeatureToggles._updateStateScopedValuesAllScopesInPlace(stateScopedValues, key, scopedValues);
+  static _updateStateScopedValuesOneScopeInPlace(stateScopedValues, featureKey, newValue, scopeKey, options) {
+    const scopedValues = FeatureToggles._updateScopedValuesInPlace(
+      stateScopedValues[featureKey],
+      newValue,
+      scopeKey,
+      options
+    );
+    FeatureToggles._updateStateScopedValuesAllScopesInPlace(stateScopedValues, featureKey, scopedValues);
   }
 
   /**
@@ -774,12 +796,12 @@ class FeatureToggles {
    *
    * Example:
    *   const FEATURE_VALUE_KEY = "/server/part_x/feature_y"
-   *   { key: FEATURE_VALUE_KEY, newValue: true },
-   *   { key: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } }
-   *   { key: FEATURE_VALUE_KEY, newValue: null, options: { clearSubScopes: true } }
+   *   { featureKey: FEATURE_VALUE_KEY, newValue: true },
+   *   { featureKey: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } }
+   *   { featureKey: FEATURE_VALUE_KEY, newValue: null, options: { clearSubScopes: true } }
    *
    * @type object
-   * @property {string}                      key               feature key
+   * @property {string}                      featureKey        feature key
    * @property {string|number|boolean|null}  newValue          feature value after change
    * @property {Map<string, string>}         [scopeMap]        optional scope tags to where the change applies
    * @property {ChangeOptions}               [options]         optional change options
@@ -825,12 +847,12 @@ class FeatureToggles {
     }
   }
 
-  async _triggerChangeHandlers(key, oldValue, newValue, scopeMap, options) {
+  async _triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options) {
     if (oldValue === newValue) {
       return;
     }
 
-    const changeHandlers = this.__featureValueChangeHandlers.getHandlers(key);
+    const changeHandlers = this.__featureValueChangeHandlers.getHandlers(featureKey);
     if (changeHandlers.length === 0) {
       return;
     }
@@ -847,7 +869,7 @@ class FeatureToggles {
                 cause: err,
                 info: {
                   changeHandler: changeHandler.name || "anonymous",
-                  key,
+                  featureKey,
                 },
               },
               "error during feature value change handler"
@@ -862,23 +884,23 @@ class FeatureToggles {
    * Handler for refresh message.
    */
   async _messageHandler(message) {
-    let key, newValue, scopeMap, options;
+    let featureKey, newValue, scopeMap, options;
     try {
       const changeEntries = FeatureToggles._deserializeChangesFromRefreshMessage(message);
       await promiseAllDone(
         changeEntries.map(async (changeEntry) => {
-          ({ key, newValue, scopeMap, options } = changeEntry);
+          ({ featureKey, newValue, scopeMap, options } = changeEntry);
 
           const scopeKey = FeatureToggles.getScopeKey(scopeMap);
           const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
             this.__superScopeCache,
             this.__stateScopedValues,
             this.__fallbackValues,
-            key,
+            featureKey,
             scopeMap
           );
 
-          const validationErrors = await this.validateFeatureValue(key, newValue, scopeKey);
+          const validationErrors = await this.validateFeatureValue(featureKey, newValue, scopeKey);
           if (Array.isArray(validationErrors) && validationErrors.length > 0) {
             logger.warning(
               new VError(
@@ -894,10 +916,10 @@ class FeatureToggles {
             return;
           }
 
-          await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
+          await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
           FeatureToggles._updateStateScopedValuesOneScopeInPlace(
             this.__stateScopedValues,
-            key,
+            featureKey,
             newValue,
             scopeKey,
             options
@@ -913,7 +935,7 @@ class FeatureToggles {
             info: {
               channel: this.__redisChannel,
               message,
-              ...(key && { key }),
+              ...(featureKey && { featureKey }),
               ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
             },
           },
@@ -923,9 +945,9 @@ class FeatureToggles {
     }
   }
 
-  async _changeRemoteFeatureValue(key, newValue, scopeMap, options) {
+  async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    const validationErrors = await this.validateFeatureValue(key, newValue, scopeKey);
+    const validationErrors = await this.validateFeatureValue(featureKey, newValue, scopeKey);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
     }
@@ -933,10 +955,10 @@ class FeatureToggles {
     const newRedisStateCallback = (scopedValues) =>
       FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
-      await redisWatchedHashGetSetObject(this.__redisKey, key, newRedisStateCallback);
+      await redisWatchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
       // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
       // from the scopeMap by the receiver, so we leave it out here.
-      const changeEntry = { key, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
+      const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
       await publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
     } catch (err) {
       logger.warning(
@@ -946,7 +968,7 @@ class FeatureToggles {
                 name: VERROR_CLUSTER_NAME,
                 cause: err,
                 info: {
-                  key,
+                  featureKey,
                   newValue,
                   ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
                   ...(options && { options: JSON.stringify(options) }),
@@ -960,15 +982,15 @@ class FeatureToggles {
         this.__superScopeCache,
         this.__stateScopedValues,
         this.__fallbackValues,
-        key,
+        featureKey,
         scopeMap
       );
 
       // NOTE: in local mode, it makes no sense to validate newValue again
-      await this._triggerChangeHandlers(key, oldValue, newValue, scopeMap, options);
+      await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
       FeatureToggles._updateStateScopedValuesOneScopeInPlace(
         this.__stateScopedValues,
-        key,
+        featureKey,
         newValue,
         scopeKey,
         options
@@ -979,7 +1001,7 @@ class FeatureToggles {
   /**
    * Remove or change a single feature value.
    *
-   * Validation errors are returned in the form [{key, errorMessage},...] if validation fails.
+   * Validation errors are returned in the form [{featureKey, errorMessage},...] if validation fails.
    *
    * Usage:
    *   const FEATURE_VALUE_KEY = "/server/part_x/feature_y"
@@ -987,20 +1009,20 @@ class FeatureToggles {
    *   await changeFeatureValue(FEATURE_VALUE_KEY, "newVal");
    *   await changeFeatureValue(FEATURE_VALUE_KEY, "newValForTenant", { tenantId: "tenant123"});
    *
-   * @param {string}                      key         valid feature key
+   * @param {string}                      featureKey  valid feature key
    * @param {string|number|boolean|null}  newValue    new value of valid type or null for deletion
    * @param {Map<string, string>}         [scopeMap]  optional object with scope restrictions
    * @param {ChangeOptions}               [options]   optional extra change options
    * @returns {Promise<Array<ValidationError> | void>}
    */
-  async changeFeatureValue(key, newValue, scopeMap = undefined, options = undefined) {
+  async changeFeatureValue(featureKey, newValue, scopeMap = undefined, options = undefined) {
     this._ensureInitialized();
-    return await this._changeRemoteFeatureValue(key, newValue, scopeMap, options);
+    return await this._changeRemoteFeatureValue(featureKey, newValue, scopeMap, options);
   }
 
-  async resetFeatureValue(key) {
+  async resetFeatureValue(featureKey) {
     this._ensureInitialized();
-    return await this._changeRemoteFeatureValue(key, null, undefined, { clearSubScopes: true });
+    return await this._changeRemoteFeatureValue(featureKey, null, undefined, { clearSubScopes: true });
   }
 
   // ========================================
@@ -1024,30 +1046,30 @@ class FeatureToggles {
    * Register given handler to receive changes of given feature value key.
    * Errors happening during handler execution will be caught and logged.
    *
-   * @param {string}         key
+   * @param {string}         featureKey
    * @param {ChangeHandler}  changeHandler
    */
-  registerFeatureValueChangeHandler(key, changeHandler) {
-    this.__featureValueChangeHandlers.registerHandler(key, changeHandler);
+  registerFeatureValueChangeHandler(featureKey, changeHandler) {
+    this.__featureValueChangeHandlers.registerHandler(featureKey, changeHandler);
   }
 
   /**
    * Stop given handler from receiving changes of given feature value key.
    *
-   * @param {string}         key
+   * @param {string}         featureKey
    * @param {ChangeHandler}  changeHandler
    */
-  removeFeatureValueChangeHandler(key, changeHandler) {
-    this.__featureValueChangeHandlers.removeHandler(key, changeHandler);
+  removeFeatureValueChangeHandler(featureKey, changeHandler) {
+    this.__featureValueChangeHandlers.removeHandler(featureKey, changeHandler);
   }
 
   /**
    * Stop all handlers from receiving changes of given feature value key.
    *
-   * @param {string} key
+   * @param {string} featureKey
    */
-  removeAllFeatureValueChangeHandlers(key) {
-    this.__featureValueChangeHandlers.removeAllHandlers(key);
+  removeAllFeatureValueChangeHandlers(featureKey) {
+    this.__featureValueChangeHandlers.removeAllHandlers(featureKey);
   }
 
   // ========================================
@@ -1075,7 +1097,7 @@ class FeatureToggles {
    * Errors happening during validation execution will be logged and communicated to user as generic problem.
    *
    * usage:
-   * registerFeatureValueValidation(key, (newValue) => {
+   * registerFeatureValueValidation(featureKey, (newValue) => {
    *   if (isBad(newValue)) {
    *     return { errorMessage: "got bad value" };
    *   }
@@ -1084,30 +1106,30 @@ class FeatureToggles {
    *   }
    * });
    *
-   * @param {string}     key
+   * @param {string}     featureKey
    * @param {Validator}  validator
    */
-  registerFeatureValueValidation(key, validator) {
-    this.__featureValueValidators.registerHandler(key, validator);
+  registerFeatureValueValidation(featureKey, validator) {
+    this.__featureValueValidators.registerHandler(featureKey, validator);
   }
 
   /**
    * Stop given validation for a given feature value key.
    *
-   * @param {string}     key
+   * @param {string}     featureKey
    * @param {Validator}  validator
    */
-  removeFeatureValueValidation(key, validator) {
-    this.__featureValueValidators.removeHandler(key, validator);
+  removeFeatureValueValidation(featureKey, validator) {
+    this.__featureValueValidators.removeHandler(featureKey, validator);
   }
 
   /**
    * Stop all validation for a given feature value key.
    *
-   * @param {string}  key
+   * @param {string}  featureKey
    */
-  removeAllFeatureValueValidation(key) {
-    this.__featureValueValidators.removeAllHandlers(key);
+  removeAllFeatureValueValidation(featureKey) {
+    this.__featureValueValidators.removeAllHandlers(featureKey);
   }
 
   // ========================================

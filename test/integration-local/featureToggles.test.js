@@ -350,7 +350,7 @@ describe("local integration test", () => {
             "",
             "bla1",
           ],
-          "key": "test/feature_c",
+          "featureKey": "test/feature_c",
         },
       ]
     `);
@@ -364,7 +364,7 @@ describe("local integration test", () => {
             "",
             "bla1",
           ],
-          "key": "test/feature_c",
+          "featureKey": "test/feature_c",
         },
         {
           "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
@@ -373,7 +373,7 @@ describe("local integration test", () => {
             "",
             "bla2",
           ],
-          "key": "test/feature_c",
+          "featureKey": "test/feature_c",
         },
       ]
     `);
