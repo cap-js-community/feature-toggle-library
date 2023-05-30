@@ -12,7 +12,6 @@
 "use strict";
 
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
-// TODO the scopeKey inner keys are another key where naming could be better
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
 
@@ -124,7 +123,7 @@ class FeatureToggles {
 
     const configEntries = Object.entries(config);
     for (const [featureKey, { type, active, appUrl, validation, fallbackValue }] of configEntries) {
-      this.__keys.push(featureKey);
+      this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
 
@@ -175,7 +174,7 @@ class FeatureToggles {
     this.__superScopeCache = new LimitedLazyCache({ sizeLimit: SUPER_SCOPE_CACHE_SIZE_LIMIT });
 
     this.__config = {};
-    this.__keys = [];
+    this.__featureKeys = [];
     this.__fallbackValues = {};
     this.__stateScopedValues = {};
     this.__isInitialized = false;
@@ -420,7 +419,7 @@ class FeatureToggles {
   }
 
   async _freshStateScopedValues() {
-    return await this.__keys.reduce(async (acc, featureKey) => {
+    return await this.__featureKeys.reduce(async (acc, featureKey) => {
       let [validatedStateScopedValues, validationErrors] = await acc;
       if (this._isKeyActive(featureKey)) {
         const validatedScopedValues = await redisWatchedHashGetSetObject(
@@ -571,7 +570,7 @@ class FeatureToggles {
   getFeatureStates() {
     this._ensureInitialized();
     const result = {};
-    for (const featureKey of this.__keys) {
+    for (const featureKey of this.__featureKeys) {
       result[featureKey] = this._getFeatureState(featureKey);
     }
     return result;
@@ -595,7 +594,6 @@ class FeatureToggles {
     return FeatureToggles._getNonRootScopeKey(scopeMap, scopeMapKeys.sort());
   }
 
-  // TODO the last keys without context
   static _getNonRootScopeKey(scopeMap, sortedKeys) {
     return sortedKeys
       .map((scopeInnerKey) => scopeInnerKey + SCOPE_KEY_INNER_SEPARATOR + scopeMap[scopeInnerKey])
@@ -665,20 +663,20 @@ class FeatureToggles {
     featureKey,
     scopeMap = undefined
   ) {
-    const keyState = stateScopedValues[featureKey];
+    const scopedValues = stateScopedValues[featureKey];
     const fallbackValue = fallbackValues[featureKey] ?? null;
 
-    if (keyState === undefined) {
+    if (scopedValues === undefined) {
       return fallbackValue;
     }
 
-    const scopeRootValue = keyState[SCOPE_ROOT_KEY] ?? fallbackValue;
+    const scopeRootValue = scopedValues[SCOPE_ROOT_KEY] ?? fallbackValue;
     if (scopeMap === undefined) {
       return scopeRootValue;
     }
 
     for (const superScopeKey of FeatureToggles._getNonRootSuperScopeKeys(superScopeCache, scopeMap)) {
-      const scopedValue = keyState[superScopeKey];
+      const scopedValue = scopedValues[superScopeKey];
       if (scopedValue) {
         return scopedValue;
       }
