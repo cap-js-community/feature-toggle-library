@@ -2,7 +2,7 @@
 
 const { REDIS_INTEGRATION_MODE } = jest.requireActual("../../src/redisWrapper");
 
-const featuresKey = "feature-key";
+const redisKey = "feature-key";
 let mockRedisState = {};
 
 const getObject = jest.fn(async (key) => {
@@ -41,13 +41,13 @@ const _reset = () => {
 
 const _setValues = async (values) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
-  mockRedisState.values[featuresKey] = values;
+  mockRedisState.values[redisKey] = values;
 };
 
 const _setValue = async (key, value) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
-  mockRedisState.values[featuresKey] = mockRedisState.values[featuresKey] ? mockRedisState.values[featuresKey] : {};
-  mockRedisState.values[featuresKey][key] = value;
+  mockRedisState.values[redisKey] = mockRedisState.values[redisKey] ? mockRedisState.values[redisKey] : {};
+  mockRedisState.values[redisKey][key] = value;
 };
 
 module.exports = {

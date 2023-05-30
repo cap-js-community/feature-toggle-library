@@ -5,7 +5,7 @@ const yaml = require("yaml");
 const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
 
-const { FEATURE, mockConfig, featuresKey, featuresChannel } = require("./mockdata");
+const { FEATURE, mockConfig, redisKey, redisChannel } = require("./mockdata");
 
 const { readFile: readFileSpy } = require("fs");
 jest.mock("fs", () => ({
@@ -39,7 +39,7 @@ const scopedValuesFromStates = (featureStates) =>
 describe("feature toggles test", () => {
   beforeEach(async () => {
     redisWrapperMock._reset();
-    featureToggles = new FeatureToggles({ featuresKey, featuresChannel });
+    featureToggles = new FeatureToggles({ redisKey, redisChannel });
   });
 
   afterEach(() => {
@@ -208,18 +208,18 @@ describe("feature toggles test", () => {
       for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
           fieldIndex + 1,
-          featuresKey,
+          redisKey,
           mockActiveKeys[fieldIndex],
           expect.any(Function)
         );
       }
       expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledWith(
-        featuresChannel,
+        redisChannel,
         featureToggles.__messageHandler
       );
       expect(redisWrapperMock.subscribe).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.subscribe).toHaveBeenCalledWith(featuresChannel);
+      expect(redisWrapperMock.subscribe).toHaveBeenCalledWith(redisChannel);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
@@ -237,13 +237,13 @@ describe("feature toggles test", () => {
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(2);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
         1,
-        featuresKey,
+        redisKey,
         FEATURE.B,
         expect.any(Function)
       );
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
         2,
-        featuresKey,
+        redisKey,
         FEATURE.C,
         expect.any(Function)
       );
@@ -483,11 +483,7 @@ describe("feature toggles test", () => {
 
       expect(await featureToggles.changeFeatureValue(FEATURE.C, "newa")).toBeUndefined();
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledWith(
-        featuresKey,
-        FEATURE.C,
-        expect.any(Function)
-      );
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledWith(redisKey, FEATURE.C, expect.any(Function));
       expect(redisWrapperMock.publishMessage).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.publishMessage.mock.calls).toMatchInlineSnapshot(`
         [
@@ -536,7 +532,7 @@ describe("feature toggles test", () => {
       for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
           fieldIndex + 1,
-          featuresKey,
+          redisKey,
           mockActiveKeys[fieldIndex],
           expect.any(Function)
         );
@@ -560,7 +556,7 @@ describe("feature toggles test", () => {
       for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
           fieldIndex + 1,
-          featuresKey,
+          redisKey,
           mockActiveKeys[fieldIndex],
           expect.any(Function)
         );
@@ -923,7 +919,7 @@ describe("feature toggles test", () => {
 
       // !! first reset
       redisWrapperMock.watchedHashGetSetObject.mockClear();
-      featureToggles._reset({ featuresKey, featuresChannel });
+      featureToggles._reset({ redisKey, redisChannel });
       await featureToggles.initializeFeatureValues({
         config: {
           [FEATURE.B]: {
@@ -953,7 +949,7 @@ describe("feature toggles test", () => {
 
       // !! second reset
       redisWrapperMock.watchedHashGetSetObject.mockClear();
-      featureToggles._reset({ featuresKey, featuresChannel });
+      featureToggles._reset({ redisKey, redisChannel });
       await featureToggles.initializeFeatureValues({
         config: {
           [FEATURE.B]: {

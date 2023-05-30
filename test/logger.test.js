@@ -7,7 +7,7 @@ const { Logger } = require("../src/logger");
 const redisWrapper = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
 
-const { FEATURE, mockConfig, featuresKey, featuresChannel, refreshMessage } = require("./mockdata");
+const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./mockdata");
 
 let featureToggles = null;
 
@@ -48,7 +48,7 @@ const cleanupJSONLogCalls = (args) =>
 describe("logger test", () => {
   beforeEach(() => {
     redisWrapper._reset();
-    featureToggles = new FeatureToggles({ featuresKey, featuresChannel, refreshMessage });
+    featureToggles = new FeatureToggles({ redisKey, redisChannel, refreshMessage });
   });
 
   afterEach(() => {

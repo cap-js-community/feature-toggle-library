@@ -12,8 +12,8 @@
 "use strict";
 
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
-// TODO the naming for keys is confusing featureKey is really the key used in redis, keys are the keys distinguishing
-//    features, and finally scopeKeys are also keys. A total of three layers of keys.
+// TODO the naming for keys is confusing redisKey is better, keys are the keys distinguishing features, and finally
+//  scopeKeys are also keys. A total of three layers of keys.
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
 
@@ -39,8 +39,8 @@ const { ENV, isNull } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
-const DEFAULT_FEATURES_CHANNEL = process.env[ENV.CHANNEL] || "features";
-const DEFAULT_FEATURES_KEY = process.env[ENV.KEY] || "features";
+const DEFAULT_REDIS_CHANNEL = process.env[ENV.CHANNEL] || "features";
+const DEFAULT_REDIS_KEY = process.env[ENV.KEY] || "features";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
@@ -166,9 +166,9 @@ class FeatureToggles {
     );
   }
 
-  _reset({ uniqueName, featuresChannel, featuresKey }) {
-    this.__featuresChannel = uniqueName ? featuresChannel + "-" + uniqueName : featuresChannel;
-    this.__featuresKey = uniqueName ? featuresKey + "-" + uniqueName : featuresKey;
+  _reset({ uniqueName, redisChannel, redisKey }) {
+    this.__redisChannel = uniqueName ? redisChannel + "-" + uniqueName : redisChannel;
+    this.__redisKey = uniqueName ? redisKey + "-" + uniqueName : redisKey;
 
     this.__featureValueChangeHandlers = new HandlerCollection();
     this.__featureValueValidators = new HandlerCollection();
@@ -192,8 +192,8 @@ class FeatureToggles {
    * For syntax and details regarding the configuration object refer to README.md.
    */
   // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-  constructor({ uniqueName, featuresChannel = DEFAULT_FEATURES_CHANNEL, featuresKey = DEFAULT_FEATURES_KEY } = {}) {
-    this._reset({ uniqueName, featuresChannel, featuresKey });
+  constructor({ uniqueName, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
+    this._reset({ uniqueName, redisChannel, redisKey });
   }
 
   // ========================================
@@ -419,18 +419,14 @@ class FeatureToggles {
     return await this.__keys.reduce(async (acc, key) => {
       let [validatedStateScopedValues, validationErrors] = await acc;
       if (this._isKeyActive(key)) {
-        const validatedScopedValues = await redisWatchedHashGetSetObject(
-          this.__featuresKey,
-          key,
-          async (scopedValues) => {
-            if (typeof scopedValues !== "object" || scopedValues === null) {
-              return null;
-            }
-            const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(key, scopedValues);
-            validationErrors = validationErrors.concat(scopedValidationErrors);
-            return validatedScopedValues;
+        const validatedScopedValues = await redisWatchedHashGetSetObject(this.__redisKey, key, async (scopedValues) => {
+          if (typeof scopedValues !== "object" || scopedValues === null) {
+            return null;
           }
-        );
+          const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(key, scopedValues);
+          validationErrors = validationErrors.concat(scopedValidationErrors);
+          return validatedScopedValues;
+        });
         FeatureToggles._updateStateScopedValuesAllScopesInPlace(validatedStateScopedValues, key, validatedScopedValues);
       }
       return [validatedStateScopedValues, validationErrors];
@@ -481,9 +477,9 @@ class FeatureToggles {
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {
         // NOTE in our legacy code the key was a string
-        const featureKeyType = await redisType(this.__featuresKey);
+        const featureKeyType = await redisType(this.__redisKey);
         if (featureKeyType !== "hash" && featureKeyType !== "none") {
-          await redisDel(this.__featuresKey);
+          await redisDel(this.__redisKey);
           logger.warning("removed legacy redis feature key of type string");
         }
 
@@ -501,8 +497,8 @@ class FeatureToggles {
         }
         this.__stateScopedValues = validatedStateScopedValues;
 
-        registerMessageHandler(this.__featuresChannel, this.__messageHandler);
-        await redisSubscribe(this.__featuresChannel);
+        registerMessageHandler(this.__redisChannel, this.__messageHandler);
+        await redisSubscribe(this.__redisChannel);
       } catch (err) {
         logger.warning(
           isOnCF
@@ -915,7 +911,7 @@ class FeatureToggles {
             name: VERROR_CLUSTER_NAME,
             cause: err,
             info: {
-              channel: this.__featuresChannel,
+              channel: this.__redisChannel,
               message,
               ...(key && { key }),
               ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
@@ -937,11 +933,11 @@ class FeatureToggles {
     const newRedisStateCallback = (scopedValues) =>
       FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
-      await redisWatchedHashGetSetObject(this.__featuresKey, key, newRedisStateCallback);
+      await redisWatchedHashGetSetObject(this.__redisKey, key, newRedisStateCallback);
       // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
       // from the scopeMap by the receiver, so we leave it out here.
       const changeEntry = { key, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
-      await publishMessage(this.__featuresChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
+      await publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
     } catch (err) {
       logger.warning(
         isOnCF
