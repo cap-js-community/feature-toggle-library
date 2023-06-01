@@ -351,7 +351,7 @@ class FeatureToggles {
    * @property {Array<string>} [errorMessageValues]  optional parameters for error message, which are ignored for localization
    */
   /**
-   * Validate the value of a given featureKey, value pair. Allows passing an optional scopeKey that is added to
+   * Validate the value of a given featureKey, value pair. Allows passing an optional scopeMap that is added to
    * validationErrors for reference.
    *
    * @param {string}                      featureKey  feature key
@@ -454,6 +454,10 @@ class FeatureToggles {
     }, Promise.resolve([{}, []]));
   }
 
+  /**
+   * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
+   * related internal state, and starts communication with redis.
+   */
   async initializeFeatures({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
     if (this.__isInitialized) {
       return;
@@ -1044,8 +1048,8 @@ class FeatureToggles {
    *
    * @param {boolean | number | string | null}  newValue
    * @param {boolean | number | string}         oldValue
-   * @param {Map<string, string>}               [scopeMap]        optional value in case a scopeMap
-   * @param {ChangeOptions}                     [options]  optional switch to clear all sub scopes
+   * @param {Map<string, string>}               [scopeMap]  optional value in case a scopeMap
+   * @param {ChangeOptions}                     [options]   optional switch to clear all sub scopes
    */
   /**
    * Register given handler to receive changes of given feature value key.
