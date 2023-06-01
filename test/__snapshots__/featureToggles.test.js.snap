@@ -98,6 +98,76 @@ exports[`feature toggles test basic apis getFeatureInfos 1`] = `
 }
 `;
 
+exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
+{
+  "test/feature_a": {
+    "config": {
+      "TYPE": "boolean",
+    },
+    "fallbackValue": false,
+    "stateScopedValues": undefined,
+  },
+  "test/feature_b": {
+    "config": {
+      "TYPE": "number",
+    },
+    "fallbackValue": 1,
+    "stateScopedValues": undefined,
+  },
+  "test/feature_c": {
+    "config": {
+      "TYPE": "string",
+    },
+    "fallbackValue": "best",
+    "stateScopedValues": undefined,
+  },
+  "test/feature_d": {
+    "config": {
+      "TYPE": "boolean",
+      "VALIDATION": "^(?:true)$",
+      "VALIDATION_REG_EXP": /\\^\\(\\?:true\\)\\$/,
+    },
+    "fallbackValue": true,
+    "stateScopedValues": undefined,
+  },
+  "test/feature_e": {
+    "config": {
+      "TYPE": "number",
+      "VALIDATION": "^\\d{1}$",
+      "VALIDATION_REG_EXP": /\\^\\\\d\\{1\\}\\$/,
+    },
+    "fallbackValue": 5,
+    "stateScopedValues": undefined,
+  },
+  "test/feature_f": {
+    "config": {
+      "TYPE": "string",
+      "VALIDATION": "^(?:best|worst)$",
+      "VALIDATION_REG_EXP": /\\^\\(\\?:best\\|worst\\)\\$/,
+    },
+    "fallbackValue": "best",
+    "stateScopedValues": undefined,
+  },
+  "test/feature_g": {
+    "config": {
+      "ACTIVE": false,
+      "TYPE": "string",
+    },
+    "fallbackValue": "activeTest",
+    "stateScopedValues": undefined,
+  },
+  "test/feature_h": {
+    "config": {
+      "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+      "APP_URL_ACTIVE": true,
+      "TYPE": "string",
+    },
+    "fallbackValue": "appUrlTest",
+    "stateScopedValues": undefined,
+  },
+}
+`;
+
 exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
 {
   "test/feature_a": {

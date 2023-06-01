@@ -549,7 +549,7 @@ class FeatureToggles {
   // END OF INITIALIZE SECTION
   // ========================================
   // ========================================
-  // START OF GET_FEATURE_INFOS SECTION
+  // START OF GET_FEATURES_INFOS SECTION
   // ========================================
 
   _getFeatureInfo(featureKey) {
@@ -574,7 +574,7 @@ class FeatureToggles {
   /**
    * Get feature infos for all featureKeys.
    */
-  getFeatureInfos() {
+  getFeaturesInfos() {
     this._ensureInitialized();
     return this.__featureKeys.reduce((acc, featureKey) => {
       acc[featureKey] = this._getFeatureInfo(featureKey);
@@ -583,7 +583,7 @@ class FeatureToggles {
   }
 
   // ========================================
-  // END OF GET_FEATURE_INFOS SECTION
+  // END OF GET_FEATURES_INFOS SECTION
   // ========================================
   // ========================================
   // START OF GET_FEATURE_VALUE SECTION

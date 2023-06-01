@@ -6,7 +6,7 @@
 let featureTogglesLoggerSpy, redisWrapperLoggerSpy;
 let initializeFeatures,
   getFeatureInfo,
-  getFeatureInfos,
+  getFeaturesInfos,
   getFeatureValue,
   changeFeatureValue,
   resetFeatureValue,
@@ -71,7 +71,7 @@ describe("local integration test", () => {
       singleton: {
         initializeFeatures,
         getFeatureInfo,
-        getFeatureInfos,
+        getFeaturesInfos,
         getFeatureValue,
         changeFeatureValue,
         resetFeatureValue,
@@ -101,8 +101,8 @@ describe("local integration test", () => {
     jest.clearAllMocks();
   });
 
-  it("getFeatureValues, getFeatureInfos", async () => {
-    const featureStatesResult = await getFeatureInfos();
+  it("getFeatureValues, getFeaturesInfos", async () => {
+    const featureStatesResult = await getFeaturesInfos();
 
     expect(Object.keys(featureStatesResult)).toEqual(Object.keys(config));
     Object.entries(featureStatesResult).forEach(([key, featureState]) => {

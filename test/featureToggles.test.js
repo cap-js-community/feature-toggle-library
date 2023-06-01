@@ -229,10 +229,10 @@ describe("feature toggles test", () => {
       await featureToggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      const beforeValues = scopedValuesFromInfos(await featureToggles.getFeatureInfos());
+      const beforeValues = scopedValuesFromInfos(await featureToggles.getFeaturesInfos());
       await featureToggles._changeRemoteFeatureValue(FEATURE.B, null);
       await featureToggles._changeRemoteFeatureValue(FEATURE.C, "new_a");
-      const afterValues = scopedValuesFromInfos(await featureToggles.getFeatureInfos());
+      const afterValues = scopedValuesFromInfos(await featureToggles.getFeaturesInfos());
 
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(2);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -447,9 +447,9 @@ describe("feature toggles test", () => {
       `);
     });
 
-    it("getFeatureInfos", async () => {
+    it("getFeaturesInfos", async () => {
       await featureToggles.initializeFeatures({ config: mockConfig });
-      expect(featureToggles.getFeatureInfos()).toMatchSnapshot();
+      expect(featureToggles.getFeaturesInfos()).toMatchSnapshot();
     });
 
     it("getFeatureValue", async () => {
@@ -812,7 +812,7 @@ describe("feature toggles test", () => {
       const oldValueB = featureToggles.getFeatureValue(FEATURE.B);
       expect(oldValueA).toBe(fallbackValue);
       expect(oldValueB).toBe(fallbackValue);
-      expect(fallbackValuesFromInfos(featureToggles.getFeatureInfos())).toStrictEqual(fallbackValues);
+      expect(fallbackValuesFromInfos(featureToggles.getFeaturesInfos())).toStrictEqual(fallbackValues);
     });
 
     it("refreshFeatureValues and central state is invalid", async () => {

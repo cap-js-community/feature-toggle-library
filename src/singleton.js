@@ -22,7 +22,7 @@ module.exports = {
   validateFeatureValue: instance.validateFeatureValue.bind(instance),
   initializeFeatures: instance.initializeFeatures.bind(instance),
   getFeatureInfo: instance.getFeatureInfo.bind(instance),
-  getFeatureInfos: instance.getFeatureInfos.bind(instance),
+  getFeaturesInfos: instance.getFeaturesInfos.bind(instance),
   getFeatureValue: instance.getFeatureValue.bind(instance),
   refreshFeatureValues: instance.refreshFeatureValues.bind(instance),
   changeFeatureValue: instance.changeFeatureValue.bind(instance),
