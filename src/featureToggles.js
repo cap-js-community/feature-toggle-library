@@ -214,32 +214,7 @@ class FeatureToggles {
   }
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  /**
-   * @typedef ValidationError
-   * ValidationError must have a user-readable errorMessage. The message can use errorMessageValues, i.e., parameters
-   * which are ignored for localization, but mixed in when the errorMessage is presented to the user.
-   *
-   * Example:
-   *   { errorMessage: "got bad value" },
-   *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
-   *
-   * @type object
-   * @property {string}        featureKey            feature toggle
-   * @property {string}        errorMessage          user-readable error message
-   * @property {Array<string>} [errorMessageValues]  optional parameters for error message, which are ignored for localization
-   */
-  /**
-   * Validate the value of a given featureKey, value pair. Allows passing an optional scopeKey that is added to
-   * validationErrors for reference.
-   *
-   * @param {string}                      featureKey  feature key
-   * @param {string|number|boolean|null}  value       intended value
-   * @param {string|undefined}            [scopeKey]  optional scopeKey for reference
-   * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
-   */
-  // TODO can we avoid making scopeKey external... it's really an internal format. This could be an internal function
-  //  with an external facade API that takes scopeMap instead.
-  async validateFeatureValue(featureKey, value, scopeKey = undefined) {
+  async _validateFeatureValue(featureKey, value, scopeKey) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
@@ -362,6 +337,33 @@ class FeatureToggles {
   }
 
   /**
+   * @typedef ValidationError
+   * ValidationError must have a user-readable errorMessage. The message can use errorMessageValues, i.e., parameters
+   * which are ignored for localization, but mixed in when the errorMessage is presented to the user.
+   *
+   * Example:
+   *   { errorMessage: "got bad value" },
+   *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
+   *
+   * @type object
+   * @property {string}        featureKey            feature toggle
+   * @property {string}        errorMessage          user-readable error message
+   * @property {Array<string>} [errorMessageValues]  optional parameters for error message, which are ignored for localization
+   */
+  /**
+   * Validate the value of a given featureKey, value pair. Allows passing an optional scopeKey that is added to
+   * validationErrors for reference.
+   *
+   * @param {string}                      featureKey  feature key
+   * @param {string|number|boolean|null}  value       intended value
+   * @param {Map<string, string>}         [scopeMap]  optional scope restrictions
+   * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
+   */
+  async validateFeatureValue(featureKey, value, scopeMap = undefined) {
+    return await this._validateFeatureValue(featureKey, value, FeatureToggles.getScopeKey(scopeMap));
+  }
+
+  /**
    * Validate the fallback values. This will only return an array of validation errors, but not an object with
    * validated values, because fallback values are used even when they are invalid.
    */
@@ -372,7 +374,7 @@ class FeatureToggles {
     }
 
     for (const [featureKey, value] of Object.entries(fallbackValues)) {
-      const entryValidationErrors = await this.validateFeatureValue(featureKey, value);
+      const entryValidationErrors = await this._validateFeatureValue(featureKey, value);
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
       }
@@ -386,7 +388,7 @@ class FeatureToggles {
     let validatedStateScopedValues = {};
 
     for (const [scopeKey, value] of Object.entries(scopedValues)) {
-      const entryValidationErrors = await this.validateFeatureValue(featureKey, value, scopeKey);
+      const entryValidationErrors = await this._validateFeatureValue(featureKey, value, scopeKey);
       let updateValue = value;
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
@@ -694,11 +696,11 @@ class FeatureToggles {
    *   const result = getFeatureValue(FEATURE_VALUE_KEY);
    *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenantId: "tenant123" });
    *
-   * @param featureKey  valid feature key
-   * @param [scopeMap]  object containing scope restrictions
+   * @param {string}               featureKey  valid feature key
+   * @param {Map<string, string>}  [scopeMap]  optional scope restrictions
    * @returns {string|number|boolean|null}
    */
-  getFeatureValue(featureKey, scopeMap) {
+  getFeatureValue(featureKey, scopeMap = undefined) {
     this._ensureInitialized();
     return FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
       this.__superScopeCache,
@@ -900,7 +902,7 @@ class FeatureToggles {
             scopeMap
           );
 
-          const validationErrors = await this.validateFeatureValue(featureKey, newValue, scopeKey);
+          const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeKey);
           if (Array.isArray(validationErrors) && validationErrors.length > 0) {
             logger.warning(
               new VError(
@@ -947,7 +949,7 @@ class FeatureToggles {
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    const validationErrors = await this.validateFeatureValue(featureKey, newValue, scopeKey);
+    const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeKey);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
     }

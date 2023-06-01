@@ -16,8 +16,9 @@ const _uniqueNameFromCfApp = () => {
 };
 
 const instance = new FeatureToggles({ uniqueName: _uniqueNameFromEnv || _uniqueNameFromCfApp() });
-// TODO should this re-export the external static getScopeKey, getScopeMap as well???
 module.exports = {
+  getScopeKey: FeatureToggles.getScopeKey,
+  getScopeMap: FeatureToggles.getScopeMap,
   validateFeatureValue: instance.validateFeatureValue.bind(instance),
   initializeFeatures: instance.initializeFeatures.bind(instance),
   getFeatureInfo: instance.getFeatureInfo.bind(instance),
