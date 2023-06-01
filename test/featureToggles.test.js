@@ -349,11 +349,14 @@ describe("feature toggles test", () => {
       expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
-            "errorMessage": "scopeKey is not valid",
+            "errorMessage": "value "{0}" has invalid type {1}, must be {2}",
+            "errorMessageValues": [
+              1,
+              "number",
+              "boolean",
+            ],
             "featureKey": "test/feature_a",
-            "scopeKey": {
-              "a": 1,
-            },
+            "scopeKey": "a::1",
           },
         ]
       `);
@@ -367,7 +370,7 @@ describe("feature toggles test", () => {
               "boolean",
             ],
             "featureKey": "test/feature_a",
-            "scopeKey": "a::1",
+            "scopeKey": "//",
           },
         ]
       `);

@@ -360,7 +360,11 @@ class FeatureToggles {
    * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
    */
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
-    return await this._validateFeatureValue(featureKey, value, FeatureToggles.getScopeKey(scopeMap));
+    return await this._validateFeatureValue(
+      featureKey,
+      value,
+      scopeMap !== undefined ? FeatureToggles.getScopeKey(scopeMap) : scopeMap
+    );
   }
 
   /**
