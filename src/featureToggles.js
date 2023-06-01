@@ -386,7 +386,6 @@ class FeatureToggles {
     return validationErrors;
   }
 
-  // TODO can this mechanism of using [result, errors] per featureKey inside a loop be generalized?
   async _validateScopedValues(featureKey, scopedValues) {
     let validationErrors = [];
     let validatedStateScopedValues = {};
