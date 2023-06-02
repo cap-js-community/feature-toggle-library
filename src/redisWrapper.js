@@ -211,7 +211,7 @@ const get = async (key) => await _clientExec("GET", { key });
  * Asynchronously get the value for a given key and parse it into an object.
  *
  * @param key
- * @returns {Promise<*>}
+ * @returns {Promise<object|null>}
  */
 const getObject = async (key) => {
   const result = await get(key);
@@ -234,7 +234,7 @@ const set = async (key, value, options) => await _clientExec("SET", { key, value
  * @param key
  * @param value
  * @param options
- * @returns {Promise<*>}
+ * @returns {Promise<object|null>}
  */
 const setObject = async (key, value, options) => {
   const valueRaw = JSON.stringify(value);
@@ -245,7 +245,7 @@ const setObject = async (key, value, options) => {
  * Asynchronously delete a given key.
  *
  * @param key
- * @returns {Promise<*>}
+ * @returns {Promise<number>}
  */
 const del = async (key) => await _clientExec("DEL", { key });
 
@@ -447,7 +447,7 @@ const getIntegrationMode = async () => {
   try {
     await getMainClient();
     return INTEGRATION_MODE.LOCAL_REDIS;
-  } catch (err) {
+  } catch {
     // eslint-ignore-line no-empty
   }
   return INTEGRATION_MODE.NO_REDIS;
