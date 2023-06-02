@@ -556,6 +556,8 @@ class FeatureToggles {
   // START OF GET_FEATURES_INFOS SECTION
   // ========================================
 
+  // TODO validation regexp show up twice
+  // TODO the stateScopeValues naming is very internal
   _getFeatureInfo(featureKey) {
     return {
       fallbackValue: this.__fallbackValues[featureKey],
