@@ -1,8 +1,7 @@
 "use strict";
 
-const featuresKey = "feature-key";
-const featuresChannel = "feature-channel";
-const refreshMessage = "refresh-message";
+const redisKey = "feature-key";
+const redisChannel = "feature-channel";
 
 const FEATURE = {
   A: "test/feature_a",
@@ -58,7 +57,6 @@ const mockConfig = {
 module.exports = {
   FEATURE,
   mockConfig,
-  featuresKey,
-  featuresChannel,
-  refreshMessage,
+  redisKey,
+  redisChannel,
 };

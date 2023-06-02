@@ -2,7 +2,7 @@
 
 const { REDIS_INTEGRATION_MODE } = jest.requireActual("../../src/redisWrapper");
 
-const featuresKey = "feature-key";
+const redisKey = "feature-key";
 let mockRedisState = {};
 
 const getObject = jest.fn(async (key) => {
@@ -10,10 +10,13 @@ const getObject = jest.fn(async (key) => {
   return mockRedisState.values[key];
 });
 
-const watchedGetSetObject = jest.fn(async (key, newValueCallback) => {
+const type = jest.fn(async () => "hash");
+
+const watchedHashGetSetObject = jest.fn(async (key, field, newValueCallback) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
-  mockRedisState.values[key] = await newValueCallback(mockRedisState.values[key]);
-  return mockRedisState.values[key];
+  mockRedisState.values[key] = mockRedisState.values[key] ? mockRedisState.values[key] : {};
+  mockRedisState.values[key][field] = await newValueCallback(mockRedisState.values[key][field]);
+  return mockRedisState.values[key][field];
 });
 
 const registerMessageHandler = jest.fn((channel, handler) => {
@@ -38,22 +41,24 @@ const _reset = () => {
 
 const _setValues = async (values) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
-  mockRedisState.values[featuresKey] = values;
+  mockRedisState.values[redisKey] = values;
 };
 
 const _setValue = async (key, value) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
-  mockRedisState.values[featuresKey] = mockRedisState.values[featuresKey] ? mockRedisState.values[featuresKey] : {};
-  mockRedisState.values[featuresKey][key] = value;
+  mockRedisState.values[redisKey] = mockRedisState.values[redisKey] ? mockRedisState.values[redisKey] : {};
+  mockRedisState.values[redisKey][key] = value;
 };
 
 module.exports = {
+  REDIS_INTEGRATION_MODE,
   registerMessageHandler,
   publishMessage,
+  type,
   getObject,
-  watchedGetSetObject,
+  watchedHashGetSetObject,
   subscribe: jest.fn(),
-  getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.NO_REDIS),
+  getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.CF_REDIS),
   _reset,
   _setValues,
   _setValue,

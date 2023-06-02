@@ -17,10 +17,12 @@ const _uniqueNameFromCfApp = () => {
 
 const instance = new FeatureToggles({ uniqueName: _uniqueNameFromEnv || _uniqueNameFromCfApp() });
 module.exports = {
+  getScopeKey: FeatureToggles.getScopeKey.bind(FeatureToggles),
+  getScopeMap: FeatureToggles.getScopeMap.bind(FeatureToggles),
   validateFeatureValue: instance.validateFeatureValue.bind(instance),
-  initializeFeatureValues: instance.initializeFeatureValues.bind(instance),
-  getFeatureState: instance.getFeatureState.bind(instance),
-  getFeatureStates: instance.getFeatureStates.bind(instance),
+  initializeFeatures: instance.initializeFeatures.bind(instance),
+  getFeatureInfo: instance.getFeatureInfo.bind(instance),
+  getFeaturesInfos: instance.getFeaturesInfos.bind(instance),
   getFeatureValue: instance.getFeatureValue.bind(instance),
   refreshFeatureValues: instance.refreshFeatureValues.bind(instance),
   changeFeatureValue: instance.changeFeatureValue.bind(instance),
