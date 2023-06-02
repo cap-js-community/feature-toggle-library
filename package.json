@@ -1,5 +1,5 @@
 {
-  "name": "@sap/btp-feature-toggles",
+  "name": "@cap-js-community/feature-toggle-library",
   "version": "0.6.0",
   "description": "SAP BTP feature toggle library enables Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.",
   "main": "src/index.js",
