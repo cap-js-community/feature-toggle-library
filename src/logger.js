@@ -93,7 +93,7 @@ class Logger {
         [CUSTOM_FIELD_LAYER]: this.__layer,
         [CUSTOM_FIELD_ERROR_INFO]: errInfo,
       });
-      this.__logger.logMessage(level, err);
+      this.__logger.logMessage(level, err.message, err);
       this._resetCustomFields();
     } else {
       this.__logger.logMessage(level, ...args);
