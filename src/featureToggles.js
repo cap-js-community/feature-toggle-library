@@ -13,8 +13,6 @@
 
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO update documentation regarding scoping and separate persistence => new PR
-// TODO double check logger calls are only happening for things that are not request bound. could we provide a
-//  completely custom logger interface? our module logger cannot handle request bound information.
 // TODO locale for validation messages
 
 const { promisify } = require("util");
