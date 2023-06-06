@@ -30,6 +30,7 @@ let redisIsOnCF = isOnCF;
 let mainClient = null;
 let subscriberClient = null;
 let messageHandlers = new HandlerCollection();
+let integrationMode = null;
 
 const watchedGetSetSemaphore = new Semaphore();
 
@@ -440,7 +441,7 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
  */
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
-const getIntegrationMode = async () => {
+const _getIntegrationMode = async () => {
   if (redisIsOnCF) {
     return INTEGRATION_MODE.CF_REDIS;
   }
@@ -451,6 +452,13 @@ const getIntegrationMode = async () => {
     // eslint-ignore-line no-empty
   }
   return INTEGRATION_MODE.NO_REDIS;
+};
+
+const getIntegrationMode = async () => {
+  if (integrationMode === null) {
+    integrationMode = await _getIntegrationMode();
+  }
+  return integrationMode;
 };
 
 module.exports = {
