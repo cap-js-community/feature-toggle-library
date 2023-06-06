@@ -17,51 +17,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 exports[`local integration test getFeatureValue, changeFeatureValue with scopes 8`] = `
 [
   [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-]
-`;
-
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes 9`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
     "%s | %O",
     "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
     {
@@ -73,71 +28,6 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 
 exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
 [
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-  [
-    "error during change remote feature values, switching to local update",
-  ],
-]
-`;
-
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 6`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
   [
     "%s | %O",
     "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
@@ -162,15 +52,8 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue without scopes 5`] = `
+exports[`local integration test getFeatureValue, changeFeatureValue without scopes 4`] = `
 [
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
   [
     "%s | %O",
     "caught error event: connect ECONNREFUSED 127.0.0.1:6379",

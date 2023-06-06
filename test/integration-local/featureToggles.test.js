@@ -166,13 +166,7 @@ describe("local integration test", () => {
         ],
       ]
     `);
-    expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
-      [
-        [
-          "error during change remote feature values, switching to local update",
-        ],
-      ]
-    `);
+    expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
     expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
@@ -259,7 +253,7 @@ describe("local integration test", () => {
         ],
       ]
     `);
-    expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchSnapshot();
+    expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
     expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
@@ -324,7 +318,7 @@ describe("local integration test", () => {
         ],
       ]
     `);
-    expect(featureTogglesLoggerSpy.warning.mock.calls).toMatchSnapshot();
+    expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
     expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
     expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
