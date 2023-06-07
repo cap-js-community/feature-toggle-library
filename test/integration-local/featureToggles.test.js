@@ -149,7 +149,7 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(oldValue);
 
     expect(await changeFeatureValue(FEATURE.E, newValue)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "//": 9,
       }
@@ -187,14 +187,14 @@ describe("local integration test", () => {
     const forbiddenNewValue = 10;
 
     expect(await changeFeatureValue(FEATURE.E, forbiddenNewValue, scopeMap)).toMatchSnapshot();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`undefined`);
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`undefined`);
     expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(rootOldValue);
     expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(rootOldValue);
     expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);
     expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
     expect(await changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "component::c1##tenant::t1": 3,
       }
@@ -205,7 +205,7 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
     expect(await changeFeatureValue(FEATURE.E, superScopeNewValue, superScopeMap)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "component::c1##tenant::t1": 3,
         "tenant::t1": 2,
@@ -217,7 +217,7 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
     expect(await changeFeatureValue(FEATURE.E, subScopeNewValue, subScopeMap)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "component::c1##layer::l1##tenant::t1": 4,
         "component::c1##tenant::t1": 3,
@@ -230,7 +230,7 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
     expect(await changeFeatureValue(FEATURE.E, rootNewValue)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "//": 1,
         "component::c1##layer::l1##tenant::t1": 4,
@@ -275,7 +275,7 @@ describe("local integration test", () => {
     expect(await changeFeatureValue(FEATURE.E, superScopeNewValue, superScopeMap)).toBeUndefined();
     expect(await changeFeatureValue(FEATURE.E, subScopeNewValue, subScopeMap)).toBeUndefined();
     expect(await changeFeatureValue(FEATURE.E, rootNewValue)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "//": 1,
         "component::c1##layer::l1##tenant::t1": 4,
@@ -289,7 +289,7 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(rootNewValue);
 
     expect(await changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap, { clearSubScopes: true })).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`
       {
         "//": 1,
         "component::c1##tenant::t1": 3,
@@ -302,7 +302,7 @@ describe("local integration test", () => {
     expect(getFeatureValue(FEATURE.E)).toEqual(rootNewValue);
 
     expect(await resetFeatureValue(FEATURE.E)).toBeUndefined();
-    expect(getFeatureInfo(FEATURE.E).stateScopedValues).toMatchInlineSnapshot(`undefined`);
+    expect(getFeatureInfo(FEATURE.E).scopedValues).toMatchInlineSnapshot(`undefined`);
     expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(rootOldValue);
     expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(rootOldValue);
     expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);

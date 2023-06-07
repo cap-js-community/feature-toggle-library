@@ -47,14 +47,22 @@ const SCOPE_KEY_INNER_SEPARATOR = "::";
 const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
 
-const CONFIG_CACHE_KEY = Object.freeze({
+const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
-  APP_URL: "APP_URL",
   VALIDATION: "VALIDATION",
-  APP_URL_ACTIVE: "APP_URL_ACTIVE",
   VALIDATION_REG_EXP: "VALIDATION_REG_EXP",
+  APP_URL: "APP_URL",
+  APP_URL_ACTIVE: "APP_URL_ACTIVE",
 });
+
+const CONFIG_INFO_KEY = {
+  [CONFIG_KEY.TYPE]: true,
+  [CONFIG_KEY.ACTIVE]: true,
+  [CONFIG_KEY.VALIDATION]: true,
+  [CONFIG_KEY.APP_URL]: true,
+  [CONFIG_KEY.APP_URL_ACTIVE]: true,
+};
 
 const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
@@ -128,23 +136,23 @@ class FeatureToggles {
       this.__config[featureKey] = {};
 
       if (type) {
-        this.__config[featureKey][CONFIG_CACHE_KEY.TYPE] = type;
+        this.__config[featureKey][CONFIG_KEY.TYPE] = type;
       }
 
       if (active !== undefined) {
-        this.__config[featureKey][CONFIG_CACHE_KEY.ACTIVE] = active;
+        this.__config[featureKey][CONFIG_KEY.ACTIVE] = active;
       }
 
       if (validation) {
-        this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION] = validation;
-        this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
+        this.__config[featureKey][CONFIG_KEY.VALIDATION] = validation;
+        this.__config[featureKey][CONFIG_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
       }
 
       if (appUrl) {
-        this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL] = appUrl;
+        this.__config[featureKey][CONFIG_KEY.APP_URL] = appUrl;
 
         const appUrlRegex = new RegExp(appUrl);
-        this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL_ACTIVE] =
+        this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] =
           !Array.isArray(cfAppUris) ||
           cfAppUris.reduce((accumulator, cfAppUri) => accumulator && appUrlRegex.test(cfAppUri), true);
       }
@@ -234,16 +242,16 @@ class FeatureToggles {
 
     // NOTE: skip validating active properties during initialization
     if (this.__isInitialized) {
-      if (this.__config[featureKey][CONFIG_CACHE_KEY.ACTIVE] === false) {
+      if (this.__config[featureKey][CONFIG_KEY.ACTIVE] === false) {
         return [{ featureKey, errorMessage: "feature key is not active" }];
       }
 
-      if (this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL_ACTIVE] === false) {
+      if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
         return [
           {
             featureKey,
             errorMessage: "feature key is not active because app url does not match regular expression {1}",
-            errorMessageValues: [this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL]],
+            errorMessageValues: [this.__config[featureKey][CONFIG_KEY.APP_URL]],
           },
         ];
       }
@@ -261,25 +269,25 @@ class FeatureToggles {
       ];
     }
 
-    if (valueType !== this.__config[featureKey][CONFIG_CACHE_KEY.TYPE]) {
+    if (valueType !== this.__config[featureKey][CONFIG_KEY.TYPE]) {
       return [
         {
           featureKey,
           ...(scopeKey && { scopeKey }),
           errorMessage: 'value "{0}" has invalid type {1}, must be {2}',
-          errorMessageValues: [value, valueType, this.__config[featureKey][CONFIG_CACHE_KEY.TYPE]],
+          errorMessageValues: [value, valueType, this.__config[featureKey][CONFIG_KEY.TYPE]],
         },
       ];
     }
 
-    const validationRegExp = this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION_REG_EXP];
+    const validationRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATION_REG_EXP];
     if (validationRegExp && !validationRegExp.test(value)) {
       return [
         {
           featureKey,
           ...(scopeKey && { scopeKey }),
           errorMessage: 'value "{0}" does not match validation regular expression {1}',
-          errorMessageValues: [value, this.__config[featureKey][CONFIG_CACHE_KEY.VALIDATION]],
+          errorMessageValues: [value, this.__config[featureKey][CONFIG_KEY.VALIDATION]],
         },
       ];
     }
@@ -420,8 +428,8 @@ class FeatureToggles {
 
   _isKeyActive(featureKey) {
     return (
-      this.__config[featureKey][CONFIG_CACHE_KEY.ACTIVE] !== false &&
-      this.__config[featureKey][CONFIG_CACHE_KEY.APP_URL_ACTIVE] !== false
+      this.__config[featureKey][CONFIG_KEY.ACTIVE] !== false &&
+      this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] !== false
     );
   }
 
@@ -556,11 +564,20 @@ class FeatureToggles {
   // START OF GET_FEATURES_INFOS SECTION
   // ========================================
 
+  static _getFeatureInfoConfig(config, featureKey) {
+    return Object.entries(config[featureKey]).reduce((acc, [configKey, value]) => {
+      if (CONFIG_INFO_KEY[configKey]) {
+        acc[configKey] = value;
+      }
+      return acc;
+    }, {});
+  }
+
   _getFeatureInfo(featureKey) {
     return {
       fallbackValue: this.__fallbackValues[featureKey],
-      stateScopedValues: this.__stateScopedValues[featureKey],
-      config: this.__config[featureKey],
+      scopedValues: this.__stateScopedValues[featureKey],
+      config: FeatureToggles._getFeatureInfoConfig(this.__config, featureKey),
     };
   }
 
@@ -1152,6 +1169,8 @@ module.exports = {
   SCOPE_ROOT_KEY,
 
   _: {
+    CONFIG_KEY,
+    CONFIG_INFO_KEY,
     _getLogger: () => logger,
     _setLogger: (value) => (logger = value),
   },

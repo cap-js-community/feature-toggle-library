@@ -4,6 +4,7 @@ const VError = require("verror");
 const yaml = require("yaml");
 const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
+const { CONFIG_KEY, CONFIG_INFO_KEY } = featureTogglesModule._;
 
 const { FEATURE, mockConfig, redisKey, redisChannel } = require("./mockdata");
 
@@ -34,7 +35,7 @@ const fallbackValuesFromInfos = (featureInfos) =>
   Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.fallbackValue]));
 
 const scopedValuesFromInfos = (featureInfos) =>
-  Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.stateScopedValues]));
+  Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.scopedValues]));
 
 describe("feature toggles test", () => {
   beforeEach(async () => {
@@ -44,6 +45,19 @@ describe("feature toggles test", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe("enums", () => {
+    it("config info consistency", () => {
+      const internalKeys = [CONFIG_KEY.VALIDATION_REG_EXP];
+      const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
+      const configKeys = Object.values(CONFIG_KEY).sort();
+
+      const configKeysMismatch = configKeys.find((value, index) => value !== configKeysCheck[index]);
+      expect(configKeysMismatch).toBeUndefined();
+      const configKeysCheckMismatch = configKeysCheck.find((value, index) => value !== configKeys[index]);
+      expect(configKeysCheckMismatch).toBeUndefined();
+    });
   });
 
   describe("static functions", () => {
@@ -424,7 +438,7 @@ describe("feature toggles test", () => {
             "TYPE": "boolean",
           },
           "fallbackValue": false,
-          "stateScopedValues": undefined,
+          "scopedValues": undefined,
         }
       `);
       expect(featureToggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
@@ -433,7 +447,7 @@ describe("feature toggles test", () => {
             "TYPE": "number",
           },
           "fallbackValue": 1,
-          "stateScopedValues": undefined,
+          "scopedValues": undefined,
         }
       `);
       expect(featureToggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
@@ -442,7 +456,7 @@ describe("feature toggles test", () => {
             "TYPE": "string",
           },
           "fallbackValue": "best",
-          "stateScopedValues": undefined,
+          "scopedValues": undefined,
         }
       `);
     });
