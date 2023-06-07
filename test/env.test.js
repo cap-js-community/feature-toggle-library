@@ -26,11 +26,11 @@ const mockCfServicesEnv = {
       binding_name: null,
       credentials: {
         cluster_mode: false,
-        hostname: "master.rg-89daca6f-8a9a-48d1-a832-652d3265afa1.vwvwdz.euc1.cache.amazonaws.com",
+        hostname: "redis-cache-hostname",
         password: "",
         port: 1428,
         tls: true,
-        uri: "rediss://no-user-name-for-redis:WmVxojGvTNsSBIJfBJsWzIeBwKouRLLT@master.rg-89daca6f-8a9a-48d1-a832-652d3265afa1.vwvwdz.euc1.cache.amazonaws.com:1428",
+        uri: "rediss://no-user-name-for-redis:redis-cache-uri-password@redis-cache-uri-hostname",
       },
       instance_guid: "89daca6f-8a9a-48d1-a832-652d3265afa1",
       instance_name: "afc-redis",
@@ -82,8 +82,7 @@ const mockCfServicesEnv = {
         tenantmode: "shared",
         uaadomain: "authentication.sap.hana.ondemand.com",
         url: "https://skyfin.authentication.sap.hana.ondemand.com",
-        verificationkey:
-          "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx/jN5v1mp/TVn9nTQoYVIUfCsUDHa3Upr5tDZC7mzlTrN2PnwruzyS7w1Jd+StqwW4/vn87ua2YlZzU8Ob0jR4lbOPCKaHIi0kyNtJXQvQ7LZPG8epQLbx0IIP/WLVVVtB8bL5OWuHma3pUnibbmATtbOh5LksQ2zLMngEjUF52JQyzTpjoQkahp0BNe/drlAqO253keiY63FL6belKjJGmSqdnotSXxB2ym+HQ0ShaNvTFLEvi2+ObkyjGWgFpQaoCcGq0KX0y0mPzOvdFsNT+rBFdkHiK+Jl638Sbim1z9fItFbH9hiVwY37R9rLtH1YKi3PuATMjf/DJ7mUluDQIDAQAB-----END PUBLIC KEY-----",
+        verificationkey: "",
         xsappname: "afc-dev!t5874",
         zoneid: "7b20408e-3fe0-4ade-aa2e-ad97baac72e8",
       },
