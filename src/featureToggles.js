@@ -961,6 +961,27 @@ class FeatureToggles {
       return validationErrors;
     }
 
+    const integrationMode = await getRedisIntegrationMode();
+    // NOTE: for NO_REDIS mode, we just do a local update without further validation
+    if (integrationMode === REDIS_INTEGRATION_MODE.NO_REDIS) {
+      const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+        this.__superScopeCache,
+        this.__stateScopedValues,
+        this.__fallbackValues,
+        featureKey,
+        scopeMap
+      );
+      await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
+      FeatureToggles._updateStateScopedValuesOneScopeInPlace(
+        this.__stateScopedValues,
+        featureKey,
+        newValue,
+        scopeKey,
+        options
+      );
+      return;
+    }
+
     const newRedisStateCallback = (scopedValues) =>
       FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
@@ -970,39 +991,18 @@ class FeatureToggles {
       const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
       await publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
     } catch (err) {
-      logger.warning(
-        isOnCF
-          ? new VError(
-              {
-                name: VERROR_CLUSTER_NAME,
-                cause: err,
-                info: {
-                  featureKey,
-                  newValue,
-                  ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
-                  ...(options && { options: JSON.stringify(options) }),
-                },
-              },
-              "error during change remote feature values, switching to local update"
-            )
-          : "error during change remote feature values, switching to local update"
-      );
-      const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
-        this.__superScopeCache,
-        this.__stateScopedValues,
-        this.__fallbackValues,
-        featureKey,
-        scopeMap
-      );
-
-      // NOTE: in local mode, it makes no sense to validate newValue again
-      await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
-      FeatureToggles._updateStateScopedValuesOneScopeInPlace(
-        this.__stateScopedValues,
-        featureKey,
-        newValue,
-        scopeKey,
-        options
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            featureKey,
+            newValue,
+            ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
+            ...(options && { options: JSON.stringify(options) }),
+          },
+        },
+        "error during change remote feature values"
       );
     }
   }

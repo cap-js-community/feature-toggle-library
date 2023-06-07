@@ -45,7 +45,11 @@ class ReadableLogger {
           console.info;
     const { [CUSTOM_FIELD_LAYER]: layer, [CUSTOM_FIELD_ERROR_INFO]: errInfo } = this.__fields;
 
-    const formattedMessage = util.format(...args.map((arg) => (arg instanceof VError ? VError.fullStack(arg) : arg)));
+    const lastArg = args.length > 0 ? args[args.length - 1] : null;
+    // NOTE: cf-nodejs-logging-support removes lastArg errors with .stack fields from the msg field output, so we
+    //   emulate this behavior here
+    const formatArgs = lastArg instanceof VError ? args.slice(0, -1) : args;
+    const formattedMessage = util.format(...formatArgs);
     const now = new Date();
     const timestamp = util.format(
       "%s:%s:%s.%s",
@@ -85,6 +89,10 @@ class Logger {
     this.__logger.setCustomFields({ [CUSTOM_FIELD_LAYER]: this.__layer });
   }
 
+  // NOTE: cf-nodejs-logging-support does not handle VErrors properly. We fill the layer and errorInfo custom fields
+  // with the related information and then pass the error twice to logMessage, first as VError.fullStack(err), which
+  // ends up in the msg field and second as err itself, which ends up in the stacktrace field. See "check json logging"
+  // test.
   _log(level, ...args) {
     if (args.length === 1 && args[0] instanceof VError) {
       const err = args[0];
@@ -93,7 +101,7 @@ class Logger {
         [CUSTOM_FIELD_LAYER]: this.__layer,
         [CUSTOM_FIELD_ERROR_INFO]: errInfo,
       });
-      this.__logger.logMessage(level, err);
+      this.__logger.logMessage(level, VError.fullStack(err), err);
       this._resetCustomFields();
     } else {
       this.__logger.logMessage(level, ...args);
