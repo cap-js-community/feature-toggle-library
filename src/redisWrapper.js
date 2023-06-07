@@ -265,6 +265,8 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
     mainClient = await getMainClient();
   }
 
+  // TODO these attempts should probably be linked to the watch, but currently the watch throws and ends up being
+  //  re-thrown
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       await mainClient.WATCH(key);
