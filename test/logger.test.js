@@ -40,7 +40,15 @@ const cleanupJSONLogCalls = (args) =>
         .filter(
           ([key, value]) => !["written_at", "written_ts", "correlation_id"].includes(key) && !["-", "0"].includes(value)
         )
-        .map(([key, value]) => (key === "stacktrace" ? [key, value.slice(0, 1)] : [key, value]))
+        .map(([key, value]) => {
+          if (["stacktrace"].includes(key)) {
+            return [key, value.slice(0, 1)];
+          }
+          if (["msg"].includes(key)) {
+            return [key, value.replace(/\n.*$/gm, "")];
+          }
+          return [key, value];
+        })
     );
     return JSON.stringify(newData);
   });
@@ -84,6 +92,7 @@ describe("logger test", () => {
       [
         [
           "88:88:88.888 | error | Testing | FeatureTogglesError: error during registered validator: bad validator
+      caused by: Error: bad validator
       error info: {
         validator: 'mockConstructor',
         featureKey: 'test/feature_b',
@@ -102,7 +111,8 @@ describe("logger test", () => {
     featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
     await featureToggles.initializeFeatures({ config: mockConfig });
 
-    expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)).toMatchInlineSnapshot(`
+    const logCalls = processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls);
+    expect(logCalls).toMatchInlineSnapshot(`
       [
         [
           "{"logger":"nodejs-logger","type":"log","msg":"FeatureTogglesError: error during registered validator: bad validator","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"layer":"Testing","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"featureKey\\":\\"test/feature_b\\",\\"value\\":1}"}",
@@ -115,6 +125,11 @@ describe("logger test", () => {
         ],
       ]
     `);
-    expect(processStreamSpy.stderr.mock.calls.map(cleanupJSONLogCalls)).toMatchInlineSnapshot(`[]`);
+    const [registerValidatorError, initializeError] = logCalls.map(([log]) => JSON.parse(log));
+    expect(registerValidatorError.msg).toContain("bad validator");
+    expect(registerValidatorError.stacktrace).toBeDefined();
+    expect(initializeError.msg).toContain("invalid");
+    expect(initializeError.stacktrace).toBeDefined();
+    expect(processStreamSpy.stderr).toHaveBeenCalledTimes(0);
   });
 });

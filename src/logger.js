@@ -90,8 +90,9 @@ class Logger {
   }
 
   // NOTE: cf-nodejs-logging-support does not handle VErrors properly. We fill the layer and errorInfo custom fields
-  // with the related information and then pass the error twice to logMessage, first as err.toString(), which ends up
-  // in the msg field and second as err itself, which ends up in the stacktrace field. See "check json logging" test.
+  // with the related information and then pass the error twice to logMessage, first as VError.fullStack(err), which
+  // ends up in the msg field and second as err itself, which ends up in the stacktrace field. See "check json logging"
+  // test.
   _log(level, ...args) {
     if (args.length === 1 && args[0] instanceof VError) {
       const err = args[0];
@@ -100,7 +101,7 @@ class Logger {
         [CUSTOM_FIELD_LAYER]: this.__layer,
         [CUSTOM_FIELD_ERROR_INFO]: errInfo,
       });
-      this.__logger.logMessage(level, err.toString(), err);
+      this.__logger.logMessage(level, VError.fullStack(err), err);
       this._resetCustomFields();
     } else {
       this.__logger.logMessage(level, ...args);
