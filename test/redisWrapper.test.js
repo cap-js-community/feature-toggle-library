@@ -275,7 +275,7 @@ describe("redis wrapper test", () => {
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  it("watchedGetSetObject 2x attempts", async () => {
+  it("watchedGetSetObject 2x attempts on exec null reply", async () => {
     const oldValue1 = { oldValue1: "oldValue" };
     const oldValue2 = { oldValue2: "oldValue" };
     mockClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue1));
@@ -306,6 +306,91 @@ describe("redis wrapper test", () => {
     expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(2);
     expect(result).toBe(newValue2);
     expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
+
+  it("watchedGetSetObject with exec keeps returning null", async () => {
+    const newValue1 = { newValue1: "newValue" };
+    const oldValue1 = { oldValue1: "oldValue" };
+    mockClient.GET.mockImplementation(async () => JSON.stringify(oldValue1));
+    mockMultiClient.EXEC.mockImplementation(async () => null);
+    const newValueCallback = jest.fn(() => newValue1);
+    await expect(redisWrapper.watchedGetSetObject("key", newValueCallback)).rejects.toMatchInlineSnapshot(
+      `[RedisWrapperError: exceeded watched get set attempt limit]`
+    );
+
+    expect(mockClient.WATCH).toHaveBeenCalledTimes(10);
+    expect(mockClient.WATCH).toHaveBeenNthCalledWith(10, "key");
+    expect(mockClient.GET).toHaveBeenCalledTimes(10);
+    expect(mockClient.GET).toHaveBeenNthCalledWith(10, "key");
+    expect(newValueCallback).toHaveBeenCalledTimes(10);
+    expect(newValueCallback).toHaveBeenNthCalledWith(10, oldValue1);
+    expect(mockMultiClient.SET).toHaveBeenCalledTimes(10);
+    expect(mockMultiClient.SET).toHaveBeenNthCalledWith(10, "key", JSON.stringify(newValue1));
+    expect(mockMultiClient.EXEC).toHaveBeenCalledTimes(10);
+    expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(10);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+    mockClient.GET.mockClear();
+    mockMultiClient.EXEC.mockClear();
+  });
+
+  it("watchedGetSetObject 2x attempts on exec throw", async () => {
+    const oldValue1 = { oldValue1: "oldValue" };
+    const oldValue2 = { oldValue2: "oldValue" };
+    mockClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue1));
+    mockClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue2));
+    mockMultiClient.EXEC.mockImplementationOnce(async () => {
+      throw new Error("fail");
+    });
+    mockMultiClient.EXEC.mockImplementationOnce(async () => ["OK"]);
+    const newValue1 = { newValue1: "newValue" };
+    const newValue2 = { newValue2: "newValue" };
+    const newValueCallback = jest.fn();
+    newValueCallback.mockImplementationOnce(() => newValue1);
+    newValueCallback.mockImplementationOnce(() => newValue2);
+    const result = await redisWrapper.watchedGetSetObject("key", newValueCallback);
+
+    expect(mockClient.WATCH).toHaveBeenCalledTimes(2);
+    expect(mockClient.WATCH).toHaveBeenNthCalledWith(1, "key");
+    expect(mockClient.WATCH).toHaveBeenNthCalledWith(2, "key");
+    expect(mockClient.GET).toHaveBeenCalledTimes(2);
+    expect(mockClient.GET).toHaveBeenNthCalledWith(1, "key");
+    expect(mockClient.GET).toHaveBeenNthCalledWith(2, "key");
+    expect(newValueCallback).toHaveBeenCalledTimes(2);
+    expect(newValueCallback).toHaveBeenNthCalledWith(1, oldValue1);
+    expect(newValueCallback).toHaveBeenNthCalledWith(2, oldValue2);
+    expect(mockMultiClient.SET).toHaveBeenCalledTimes(2);
+    expect(mockMultiClient.SET).toHaveBeenNthCalledWith(1, "key", JSON.stringify(newValue1));
+    expect(mockMultiClient.SET).toHaveBeenNthCalledWith(2, "key", JSON.stringify(newValue2));
+    expect(mockMultiClient.EXEC).toHaveBeenCalledTimes(2);
+    expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(1);
+    expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(2);
+    expect(result).toBe(newValue2);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
+
+  it("watchedGetSetObject with exec keeps throwing", async () => {
+    const newValue1 = { newValue1: "newValue" };
+    const oldValue1 = { oldValue1: "oldValue" };
+    mockClient.GET.mockImplementation(async () => JSON.stringify(oldValue1));
+    mockMultiClient.EXEC.mockRejectedValue(new Error("fail"));
+    const newValueCallback = jest.fn(() => newValue1);
+    await expect(redisWrapper.watchedGetSetObject("key", newValueCallback)).rejects.toMatchInlineSnapshot(
+      `[RedisWrapperError: error during watched get set: fail]`
+    );
+
+    expect(mockClient.WATCH).toHaveBeenCalledTimes(10);
+    expect(mockClient.WATCH).toHaveBeenNthCalledWith(10, "key");
+    expect(mockClient.GET).toHaveBeenCalledTimes(10);
+    expect(mockClient.GET).toHaveBeenNthCalledWith(10, "key");
+    expect(newValueCallback).toHaveBeenCalledTimes(10);
+    expect(newValueCallback).toHaveBeenNthCalledWith(10, oldValue1);
+    expect(mockMultiClient.SET).toHaveBeenCalledTimes(10);
+    expect(mockMultiClient.SET).toHaveBeenNthCalledWith(10, "key", JSON.stringify(newValue1));
+    expect(mockMultiClient.EXEC).toHaveBeenCalledTimes(10);
+    expect(mockMultiClient.EXEC).toHaveBeenNthCalledWith(10);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+    mockClient.GET.mockClear();
+    mockMultiClient.EXEC.mockClear();
   });
 
   it("watchedHashGetSetObject", async () => {
