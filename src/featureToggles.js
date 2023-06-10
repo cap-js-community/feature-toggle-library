@@ -513,7 +513,7 @@ class FeatureToggles {
         const featureKeyType = await redisType(this.__redisKey);
         if (featureKeyType !== "hash" && featureKeyType !== "none") {
           await redisDel(this.__redisKey);
-          logger.warning("removed legacy redis feature key of type string");
+          logger.warning("removed legacy redis key of type string");
         }
 
         const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
