@@ -265,8 +265,8 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
     mainClient = await getMainClient();
   }
 
-  // TODO these attempts should probably be linked to the watch, but currently the watch throws and ends up being
-  //  re-thrown
+  let lastAttemptError = null;
+  let badReplyError = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       await mainClient.WATCH(key);
@@ -291,25 +291,35 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
         validFirstReplies = useHash ? [0, 1] : ["OK"];
       }
       const replies = await clientMulti.EXEC();
-      if (replies !== null) {
-        if (!Array.isArray(replies) || replies.length !== 1 || !validFirstReplies.includes(replies[0])) {
-          throw new VError(
-            { name: VERROR_CLUSTER_NAME, info: { key, ...(field && { field }), attempt, attempts, replies } },
-            "received unexpected replies from redis"
-          );
-        }
-        return newValue;
+      if (replies === null) {
+        // NOTE: EXEC can return null, if the operations was aborted, i.e., should be retried.
+        lastAttemptError = null;
+        continue;
       }
+      if (!Array.isArray(replies) || replies.length !== 1 || !validFirstReplies.includes(replies[0])) {
+        badReplyError = new VError(
+          { name: VERROR_CLUSTER_NAME, info: { key, ...(field && { field }), attempt, attempts, replies } },
+          "received unexpected replies from redis"
+        );
+        break;
+      }
+      return newValue;
     } catch (err) {
-      throw new VError(
-        { name: VERROR_CLUSTER_NAME, cause: err, info: { key, ...(field && { field }) } },
-        "error during watched get set"
-      );
+      lastAttemptError = err;
     }
+  }
+  if (badReplyError) {
+    throw badReplyError;
+  }
+  if (lastAttemptError) {
+    throw new VError(
+      { name: VERROR_CLUSTER_NAME, cause: lastAttemptError, info: { key, ...(field && { field }), attempts } },
+      "error during watched get set"
+    );
   }
   throw new VError(
     { name: VERROR_CLUSTER_NAME, info: { key, ...(field && { field }), attempts } },
-    "reached watched get set attempt limit"
+    "exceeded watched get set attempt limit"
   );
 };
 
