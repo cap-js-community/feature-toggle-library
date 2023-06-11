@@ -541,6 +541,7 @@ class FeatureToggles {
           const stringTypeState = redis.getObject(this.__redisKey);
           if (stringTypeState) {
             stringTypeStateEntries = Object.entries(stringTypeState);
+            logger.info("found %i string type state entries", stringTypeStateEntries.length);
           }
         }
         if (featureKeyType !== "hash" && featureKeyType !== "none") {
