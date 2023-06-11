@@ -454,6 +454,34 @@ class FeatureToggles {
     }, Promise.resolve([{}, []]));
   }
 
+  async _migrateStringTypeState(stringTypeStateEntries) {
+    for (const [featureKey, value] of stringTypeStateEntries) {
+      if (
+        !FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey) ||
+        this.__fallbackValues[featureKey] === value
+      ) {
+        continue;
+      }
+      try {
+        const newRedisStateCallback = (scopedValues) =>
+          FeatureToggles._updateScopedValuesInPlace(scopedValues, value, SCOPE_ROOT_KEY);
+        await redis.watchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
+      } catch (err) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            cause: err,
+            info: {
+              featureKey,
+              value,
+            },
+          },
+          "error during string type state migration"
+        );
+      }
+    }
+  }
+
   /**
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
@@ -501,12 +529,23 @@ class FeatureToggles {
     const redisIntegrationMode = await redis.getIntegrationMode();
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {
-        // NOTE in our legacy code the redisKey was a string
+        // NOTE: in our legacy code the redisKey was a string
+        let stringTypeStateEntries;
         const featureKeyType = await redis.type(this.__redisKey);
+        if (featureKeyType === "string") {
+          const stringTypeState = redis.getObject(this.__redisKey);
+          if (stringTypeState) {
+            stringTypeStateEntries = Object.entries(stringTypeState);
+          }
+        }
         if (featureKeyType !== "hash" && featureKeyType !== "none") {
-          const oldState = redis.getObject(this.__redisKey);
           await redis.del(this.__redisKey);
-          logger.warning("removed legacy redis key of type string");
+          logger.info("removed legacy redis key of type: %s", featureKeyType);
+        }
+        if (stringTypeStateEntries) {
+          // NOTE: this will write to the redisKey as a hash, so it needs to run after delete
+          await this._migrateStringTypeState(stringTypeStateEntries);
+          logger.info("migrated %i string type state entries", stringTypeStateEntries.length);
         }
 
         const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
