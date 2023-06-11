@@ -20,16 +20,8 @@ const path = require("path");
 const { readFile } = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
-const {
-  REDIS_INTEGRATION_MODE,
-  getIntegrationMode: getRedisIntegrationMode,
-  type: redisType,
-  del: redisDel,
-  watchedHashGetSetObject: redisWatchedHashGetSetObject,
-  publishMessage,
-  subscribe: redisSubscribe,
-  registerMessageHandler,
-} = require("./redisWrapper");
+const redis = require("./redisWrapper");
+const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
@@ -437,7 +429,7 @@ class FeatureToggles {
     return await this.__featureKeys.reduce(async (acc, featureKey) => {
       let [validatedStateScopedValues, validationErrors] = await acc;
       if (this._isKeyActive(featureKey)) {
-        const validatedScopedValues = await redisWatchedHashGetSetObject(
+        const validatedScopedValues = await redis.watchedHashGetSetObject(
           this.__redisKey,
           featureKey,
           async (scopedValues) => {
@@ -460,6 +452,39 @@ class FeatureToggles {
       }
       return [validatedStateScopedValues, validationErrors];
     }, Promise.resolve([{}, []]));
+  }
+
+  async _migrateStringTypeState(stringTypeStateEntries) {
+    let migrationCount = 0;
+    for (const [featureKey, value] of stringTypeStateEntries) {
+      if (
+        !FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey) ||
+        this.__fallbackValues[featureKey] === value
+      ) {
+        continue;
+      }
+      try {
+        const newRedisStateCallback = (scopedValues) =>
+          FeatureToggles._updateScopedValuesInPlace(scopedValues, value, SCOPE_ROOT_KEY);
+        await redis.watchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
+        migrationCount++;
+      } catch (err) {
+        logger.error(
+          new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              cause: err,
+              info: {
+                featureKey,
+                value,
+              },
+            },
+            "error during string type state migration"
+          )
+        );
+      }
+    }
+    return migrationCount;
   }
 
   /**
@@ -506,14 +531,27 @@ class FeatureToggles {
       );
     }
 
-    const redisIntegrationMode = await getRedisIntegrationMode();
+    const redisIntegrationMode = await redis.getIntegrationMode();
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {
-        // NOTE in our legacy code the redisKey was a string
-        const featureKeyType = await redisType(this.__redisKey);
+        // NOTE: in our legacy code the redisKey was a string
+        let stringTypeStateEntries;
+        const featureKeyType = await redis.type(this.__redisKey);
+        if (featureKeyType === "string") {
+          const stringTypeState = redis.getObject(this.__redisKey);
+          if (stringTypeState) {
+            stringTypeStateEntries = Object.entries(stringTypeState);
+            logger.info("found %i string type state entries", stringTypeStateEntries.length);
+          }
+        }
         if (featureKeyType !== "hash" && featureKeyType !== "none") {
-          await redisDel(this.__redisKey);
-          logger.warning("removed legacy redis key of type string");
+          await redis.del(this.__redisKey);
+          logger.info("removed legacy redis key of type: %s", featureKeyType);
+        }
+        if (stringTypeStateEntries) {
+          // NOTE: this will write to the redisKey as a hash, so it needs to run after delete
+          const migrationCount = await this._migrateStringTypeState(stringTypeStateEntries);
+          logger.info("migrated %i string type state entries", migrationCount);
         }
 
         const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
@@ -530,8 +568,8 @@ class FeatureToggles {
         }
         this.__stateScopedValues = validatedStateScopedValues;
 
-        registerMessageHandler(this.__redisChannel, this.__messageHandler);
-        await redisSubscribe(this.__redisChannel);
+        redis.registerMessageHandler(this.__redisChannel, this.__messageHandler);
+        await redis.subscribe(this.__redisChannel);
       } catch (err) {
         logger.warning(
           isOnCF
@@ -978,7 +1016,7 @@ class FeatureToggles {
       return validationErrors;
     }
 
-    const integrationMode = await getRedisIntegrationMode();
+    const integrationMode = await redis.getIntegrationMode();
     // NOTE: for NO_REDIS mode, we just do a local update without further validation
     if (integrationMode === REDIS_INTEGRATION_MODE.NO_REDIS) {
       const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
@@ -1002,11 +1040,11 @@ class FeatureToggles {
     const newRedisStateCallback = (scopedValues) =>
       FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
-      await redisWatchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
+      await redis.watchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
       // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
       // from the scopeMap by the receiver, so we leave it out here.
       const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
-      await publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
+      await redis.publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
     } catch (err) {
       throw new VError(
         {
