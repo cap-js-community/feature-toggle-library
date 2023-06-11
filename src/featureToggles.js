@@ -455,6 +455,7 @@ class FeatureToggles {
   }
 
   async _migrateStringTypeState(stringTypeStateEntries) {
+    let migrationCount = 0;
     for (const [featureKey, value] of stringTypeStateEntries) {
       if (
         !FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey) ||
@@ -466,20 +467,24 @@ class FeatureToggles {
         const newRedisStateCallback = (scopedValues) =>
           FeatureToggles._updateScopedValuesInPlace(scopedValues, value, SCOPE_ROOT_KEY);
         await redis.watchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
+        migrationCount++;
       } catch (err) {
-        throw new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            cause: err,
-            info: {
-              featureKey,
-              value,
+        logger.error(
+          new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              cause: err,
+              info: {
+                featureKey,
+                value,
+              },
             },
-          },
-          "error during string type state migration"
+            "error during string type state migration"
+          )
         );
       }
     }
+    return migrationCount;
   }
 
   /**
@@ -544,8 +549,8 @@ class FeatureToggles {
         }
         if (stringTypeStateEntries) {
           // NOTE: this will write to the redisKey as a hash, so it needs to run after delete
-          await this._migrateStringTypeState(stringTypeStateEntries);
-          logger.info("migrated %i string type state entries", stringTypeStateEntries.length);
+          const migrationCount = await this._migrateStringTypeState(stringTypeStateEntries);
+          logger.info("migrated %i string type state entries", migrationCount);
         }
 
         const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
