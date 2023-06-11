@@ -538,7 +538,7 @@ class FeatureToggles {
         let stringTypeStateEntries;
         const featureKeyType = await redis.type(this.__redisKey);
         if (featureKeyType === "string") {
-          const stringTypeState = redis.getObject(this.__redisKey);
+          const stringTypeState = await redis.getObject(this.__redisKey);
           if (stringTypeState) {
             stringTypeStateEntries = Object.entries(stringTypeState);
             logger.info("found %i string type state entries", stringTypeStateEntries.length);
