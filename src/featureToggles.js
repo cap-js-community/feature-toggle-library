@@ -742,7 +742,7 @@ class FeatureToggles {
 
     for (const superScopeKey of FeatureToggles._getNonRootSuperScopeKeys(superScopeCache, scopeMap)) {
       const scopedValue = scopedValues[superScopeKey];
-      if (scopedValue) {
+      if (scopedValue !== undefined) {
         return scopedValue;
       }
     }

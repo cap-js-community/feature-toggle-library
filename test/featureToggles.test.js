@@ -494,6 +494,39 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
+    it("getFeatureValue with scoping", async () => {
+      const testScopeMap = { tenant: "t1" };
+      const testScopeKey = FeatureToggles.getScopeKey(testScopeMap);
+      const mockFeatureValuesEntries = [
+        [[FEATURE.A], { [SCOPE_ROOT_KEY]: true, [testScopeKey]: false }],
+        [[FEATURE.B], { [SCOPE_ROOT_KEY]: 0, [testScopeKey]: 10 }],
+        [[FEATURE.C], { [SCOPE_ROOT_KEY]: "cvalue", [testScopeKey]: "" }],
+      ];
+      const mockFeatureValues = Object.fromEntries(mockFeatureValuesEntries);
+      const otherEntries = [
+        ["d", "avalue"],
+        ["e", "bvalue"],
+        ["f", "cvalue"],
+      ];
+      for (let i = 0; i < 3; i++) {
+        redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
+      }
+      await featureToggles.initializeFeatures({ config: mockConfig });
+
+      expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
+        mockFeatureValuesEntries.map(([, value]) => value[SCOPE_ROOT_KEY])
+      );
+      expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key, testScopeMap))).toStrictEqual(
+        mockFeatureValuesEntries.map(([, value]) => value[testScopeKey])
+      );
+      expect(otherEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
+        otherEntries.map(() => null)
+      );
+
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
     it("changeFeatureValue", async () => {
       await featureToggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
