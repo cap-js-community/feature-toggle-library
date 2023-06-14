@@ -1202,9 +1202,9 @@ class FeatureToggles {
 }
 
 module.exports = {
+  SCOPE_ROOT_KEY,
   FeatureToggles,
   readConfigFromFile,
-  SCOPE_ROOT_KEY,
 
   _: {
     CONFIG_KEY,
