@@ -1,7 +1,7 @@
 "use strict";
 
 const {
-  singleton: { getFeaturesInfos, refreshFeatureValues, changeFeatureValue },
+  singleton: { getFeaturesInfos, changeFeatureValue },
 } = require("@cap-js-community/feature-toggle-library");
 const cds = require("@sap/cds");
 
@@ -15,23 +15,7 @@ const stateHandler = async (context) => {
   return context.reply(result);
 };
 
-/**
- * Refresh feature values from redis and then read all.
- */
-const redisReadHandler = async (context) => {
-  try {
-    await refreshFeatureValues();
-    const result = getFeaturesInfos();
-    context.reply(result);
-  } catch (err) {
-    cds.log().error(err);
-    context.reject(500, {
-      message: "caught unexpected error during redis read, check server logs",
-      _afcDoNotLog: true,
-    });
-  }
-};
-
+// TODO this is straight up wrong
 /**
  * Add, remove, or change some or all feature values. The change is done by mixing in new values to the current state
  * and value = null means resetting the respective key to its fallback value. Validation ensures that only values of
@@ -54,12 +38,7 @@ const redisUpdateHandler = async (context) => {
         for (const { featureKey: target, errorMessage, errorMessageValues } of validationErrors) {
           // TODO this should be better
           const errorMessageWithValues = JSON.stringify([errorMessage, errorMessageValues]);
-          context.error(
-            VALIDATION_ERROR_HTTP_CODE,
-            { message: errorMessageWithValues, _afcDoNotLog: true },
-            [],
-            target
-          );
+          context.error(VALIDATION_ERROR_HTTP_CODE, { message: errorMessageWithValues }, [], target);
         }
       }
     };
@@ -73,10 +52,7 @@ const redisUpdateHandler = async (context) => {
     context.reply();
   } catch (err) {
     cds.log().error(err);
-    context.reject(500, {
-      message: "caught unexpected error during redis update, check server logs",
-      _afcDoNotLog: true,
-    });
+    context.reject(500, { message: "caught unexpected error during redis update, check server logs" });
   }
 };
 
