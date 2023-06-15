@@ -1,7 +1,7 @@
 "use strict";
 
 const {
-  singleton: { getFeaturesInfos, changeFeatureValue },
+  singleton: { getFeaturesInfos, refreshFeatureValues, changeFeatureValue },
 } = require("@cap-js-community/feature-toggle-library");
 const cds = require("@sap/cds");
 
@@ -13,6 +13,20 @@ const VALIDATION_ERROR_HTTP_CODE = 422;
 const stateHandler = async (context) => {
   const result = getFeaturesInfos();
   return context.reply(result);
+};
+
+/**
+ * Refresh feature values from redis and then read all.
+ */
+const redisReadHandler = async (context) => {
+  try {
+    await refreshFeatureValues();
+    const result = getFeaturesInfos();
+    context.reply(result);
+  } catch (err) {
+    cds.log().error(err);
+    context.reject(500, { message: "caught unexpected error during redis read, check server logs" });
+  }
 };
 
 // TODO this is straight up wrong

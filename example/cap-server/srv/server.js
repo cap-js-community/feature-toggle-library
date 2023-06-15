@@ -7,7 +7,7 @@ const {
   singleton: { initializeFeatures },
 } = require("@cap-js-community/feature-toggle-library");
 
-const FEATURES_FILEPATH = pathlib.join(__dirname, "..", "featureTogglesConfig.yaml");
+const { FEATURES_FILEPATH } = require("./feature");
 
 module.exports = async (options) => {
   await initializeFeatures({
