@@ -11,6 +11,7 @@ const {
   ExpiringLazyCache,
   LimitedLazyCache,
 } = require("./shared/cache");
+const { DynamicIntervalController } = require("./shared/dynamicIntervalController");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { Semaphore } = require("./shared/semaphore");
@@ -31,6 +32,7 @@ module.exports = {
   ExpiringLazyCache,
   LimitedLazyCache,
 
+  DynamicIntervalController,
   HandlerCollection,
   promiseAllDone,
   Semaphore,
