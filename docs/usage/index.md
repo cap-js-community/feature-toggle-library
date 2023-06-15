@@ -168,21 +168,6 @@ While `getFeatureValue` is synchronous, and could happen on the top-level of a m
 is called _before_ `initializeFeatures`, which is asynchronous. So, it's never sensible to have this on
 top-level.
 
-You can also query the values of all feature toggles at once.
-
-```javascript
-const {
-  singleton: { getFeatureValues },
-} = require("@cap-js-community/feature-toggle-library");
-
-// ... in some function
-const allValues = getFeatureValues();
-const logLevel = allValues["/srv/util/logger/logLevel"];
-```
-
-The API `getFeatureValues` returns a clone of the internal state, so the object returned here can be modified without
-side effects.
-
 ### Observing Feature Value Changes
 
 You can register for all updates of a specific feature toggle:
