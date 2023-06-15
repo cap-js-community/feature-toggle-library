@@ -214,7 +214,7 @@ The change API `changeFeatureValue` will return when the change is published to 
 processing delay until the change is picked up by all subscribers.
 
 {: .info }
-Setting a value to `null` will return the associated toggle to its fallback value.
+Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback value.
 
 ### External Validation
 
