@@ -90,14 +90,8 @@ service.js
 
 ```javascript
 const {
-  singleton: {
-    initializeFeatureValues,
-    getFeatureConfigs,
-    getFeatureValues,
-    refreshFeatureValues,
-    changeFeatureValues,
-  },
-} = require("@sap/btp-feature-toggles");
+  singleton: { initializeFeatures, getFeatureConfigs, getFeatureValues, refreshFeatureValues, changeFeatureValues },
+} = require("@cap-js-community/feature-toggle-library");
 const { FEATURES_FILEPATH } = require("./featureTogglesConfig");
 const { Logger } = require("../../util/logger");
 const { formatText } = require("../../util/i18n");
@@ -171,7 +165,7 @@ const redisUpdateHandler = async (context) => {
 module.exports = async (srv) => {
   // NOTE: this happens during cap's service loading, if you need the toggles before that add them earlier in your
   // bootstraping
-  await initializeFeatureValues({
+  await initializeFeatures({
     configFile: FEATURES_FILEPATH,
   });
 
