@@ -21,7 +21,7 @@ Redis don't access the same data, unless this is intended. Whenever two or more 
 must be _initialized_ with the same configuration.
 
 ```javascript
-const { FeatureToggles } = require("@sap/btp-feature-toggles");
+const { FeatureToggles } = require("@cap-js-community/feature-toggle-library");
 const instance = new FeatureToggles({ uniqueName: "snowflake" });
 ```
 
@@ -29,7 +29,7 @@ The library prepares a convenient `singleton` instance of FeatureToggles for out
 Foundry _app name_ is used as unique name. This should be sufficient for most use-cases.
 
 ```javascript
-const { singleton } = require("@sap/btp-feature-toggles");
+const { singleton } = require("@cap-js-community/feature-toggle-library");
 ```
 
 {: .warn }
@@ -46,23 +46,23 @@ deployments. You will need to use the corresponding filepath, in order to initia
 ```javascript
 const pathlib = require("path");
 const {
-  singleton: { initializeFeatureValues },
-} = require("@sap/btp-feature-toggles");
+  singleton: { initializeFeatures },
+} = require("@cap-js-community/feature-toggle-library");
 const FEATURES_FILEPATH = pathlib.join(__dirname, "featureTogglesConfig.yml");
 
 // ... during application bootstrap
-await initializeFeatureValues({ configFile: FEATURES_FILEPATH });
+await initializeFeatures({ configFile: FEATURES_FILEPATH });
 ```
 
 Alternatively, a runtime configuration object is also supported.
 
 ```javascript
 const {
-  singleton: { initializeFeatureValues },
-} = require("@sap/btp-feature-toggles");
+  singleton: { initializeFeatures },
+} = require("@cap-js-community/feature-toggle-library");
 
 // ... during application bootstrap
-await initializeFeatureValues({
+await initializeFeatures({
   config: {
     runNewCode: {
       type: "boolean",
@@ -82,15 +82,15 @@ feature toggles.
 ```javascript
 const pathlib = require("path");
 const {
-  singleton: { initializeFeatureValues },
+  singleton: { initializeFeatures },
   readConfigFromFile,
-} = require("@sap/btp-feature-toggles");
+} = require("@cap-js-community/feature-toggle-library");
 const FEATURES_FILEPATH = pathlib.join(__dirname, "featureTogglesConfig.yml");
 
 // ... during application bootstrap
 const config = await readConfigFromFile(FEATURES_FILEPATH);
 // ... manipulate
-await initializeFeatureValues({ config });
+await initializeFeatures({ config });
 ```
 
 ### Format
@@ -132,20 +132,20 @@ serialization/deserialization yourself. In these cases, make sure to use [extern
 so that new values can be deserialized correctly.
 
 {: .warn }
-When using active or appUrl to block activation of a feature toggle, then user-code accessing the
+When using active or appUrl to block activation of a feature toggle, then user code accessing the
 feature toggle value will _always_ get the fallback value.
 
 ## Environment Variables
 
 The following environment variables can be used to fine-tune the library's behavior:
 
-| variable                   | default                 | meaning                                                                  |
-| :------------------------- | :---------------------- | :----------------------------------------------------------------------- |
-| `BTP_FEATURES_UNIQUE_NAME` | `<cfAppName>`           | override `uniqueName` of singleton (see [Class](#feature-toggles-class)) |
-| `BTP_FEATURES_KEY`         | `features-<uniqueName>` | override Redis key for central state                                     |
-| `BTP_FEATURES_CHANNEL`     | `features-<uniqueName>` | override Redis channel for synchronization                               |
+| variable                     | default                 | meaning                                                                  |
+| :--------------------------- | :---------------------- | :----------------------------------------------------------------------- |
+| `BTP_FEATURES_UNIQUE_NAME`   | `<cfAppName>`           | override `uniqueName` of singleton (see [Class](#feature-toggles-class)) |
+| `BTP_FEATURES_REDIS_KEY`     | `features-<uniqueName>` | override Redis key for central state                                     |
+| `BTP_FEATURES_REDIS_CHANNEL` | `features-<uniqueName>` | override Redis channel for synchronization                               |
 
-## User-Code
+## User Code
 
 In this section, we will assume that the [initialization](#initialization) has happened and the configuration contained
 a feature toggle with the key `/srv/util/logger/logLevel`, similar to the one described [here](#format).
@@ -157,7 +157,7 @@ You can query the current in memory state of any feature toggle:
 ```javascript
 const {
   singleton: { getFeatureValue },
-} = require("@sap/btp-feature-toggles");
+} = require("@cap-js-community/feature-toggle-library");
 
 // ... in some function
 const logLevel = getFeatureValue("/srv/util/logger/logLevel");
@@ -165,23 +165,8 @@ const logLevel = getFeatureValue("/srv/util/logger/logLevel");
 
 {: .warn }
 While `getFeatureValue` is synchronous, and could happen on the top-level of a module. The function will throw, if it
-is called _before_ `initializeFeatureValues`, which is asynchronous. So, it's never sensible to have this on
+is called _before_ `initializeFeatures`, which is asynchronous. So, it's never sensible to have this on
 top-level.
-
-You can also query the values of all feature toggles at once.
-
-```javascript
-const {
-  singleton: { getFeatureValues },
-} = require("@sap/btp-feature-toggles");
-
-// ... in some function
-const allValues = getFeatureValues();
-const logLevel = allValues["/srv/util/logger/logLevel"];
-```
-
-The API `getFeatureValues` returns a clone of the internal state, so the object returned here can be modified without
-side effects.
 
 ### Observing Feature Value Changes
 
@@ -190,7 +175,7 @@ You can register for all updates of a specific feature toggle:
 ```javascript
 const {
   singleton: { registerFeatureValueChangeHandler },
-} = require("@sap/btp-feature-toggles");
+} = require("@cap-js-community/feature-toggle-library");
 
 registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue) => {
   console.log("changing log level from %s to %s", oldValue, newValue);
@@ -213,7 +198,7 @@ Finally, updating the feature toggle value:
 ```javascript
 const {
   singleton: { changeFeatureValue },
-} = require("@sap/btp-feature-toggles");
+} = require("@cap-js-community/feature-toggle-library");
 
 async function changeIt(newValue) {
   const validationErrors = await changeFeatureValue("/srv/util/logger/logLevel", newValue);
@@ -229,7 +214,7 @@ The change API `changeFeatureValue` will return when the change is published to 
 processing delay until the change is picked up by all subscribers.
 
 {: .info }
-Setting a value to `null` will return the associated toggle to its fallback value.
+Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback value.
 
 ### External Validation
 
@@ -239,7 +224,7 @@ inputs in-depth before allowing changes to be published and propagated.
 ```javascript
 const {
   singleton: { registerFeatureValueValidation },
-} = require("@sap/btp-feature-toggles");
+} = require("@cap-js-community/feature-toggle-library");
 
 registerFeatureValueValidation("/srv/util/logger/logLevel", (newValue) => {
   if (isBad(newValue)) {

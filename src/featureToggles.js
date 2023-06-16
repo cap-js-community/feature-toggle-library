@@ -29,6 +29,7 @@ const { ENV, isNull } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
+const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
 const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
@@ -190,12 +191,56 @@ class FeatureToggles {
    * For syntax and details regarding the configuration object refer to README.md.
    */
   // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-  constructor({ uniqueName, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
+  constructor({ uniqueName = undefined, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
     this._reset({ uniqueName, redisChannel, redisKey });
   }
 
   // ========================================
   // END OF CONSTRUCTOR SECTION
+  // ========================================
+  // ========================================
+  // START OF SINGLETON SECTION
+  // ========================================
+
+  static _getInstanceUniqueName() {
+    if (ENV_UNIQUE_NAME) {
+      return ENV_UNIQUE_NAME;
+    }
+    let cfApp;
+    try {
+      cfApp = cfEnv.cfApp();
+      if (cfApp.application_name) {
+        return cfApp.application_name;
+      }
+    } catch (err) {
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            cfApp: JSON.stringify(cfApp),
+          },
+        },
+        "error determining cf app name"
+      );
+    }
+  }
+
+  /**
+   * Get singleton instance
+   *
+   * @return FeatureToggles
+   */
+  static getInstance() {
+    if (!FeatureToggles.__instance) {
+      const uniqueName = FeatureToggles._getInstanceUniqueName();
+      FeatureToggles.__instance = new FeatureToggles({ uniqueName });
+    }
+    return FeatureToggles.__instance;
+  }
+
+  // ========================================
+  // END OF SINGLETON SECTION
   // ========================================
   // ========================================
   // START OF VALIDATION SECTION
@@ -346,9 +391,9 @@ class FeatureToggles {
    *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
    *
    * @type object
-   * @property {string}        featureKey            feature toggle
-   * @property {string}        errorMessage          user-readable error message
-   * @property {Array<string>} [errorMessageValues]  optional parameters for error message, which are ignored for localization
+   * @property {string}         featureKey            feature toggle
+   * @property {string}         errorMessage          user-readable error message
+   * @property {Array<string>}  [errorMessageValues]  optional parameters for error message, which are ignored for localization
    */
   /**
    * Validate the value of a given featureKey, value pair. Allows passing an optional scopeMap that is added to

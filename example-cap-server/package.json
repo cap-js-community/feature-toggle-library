@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "example-cap-server",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "dependencies": {
+    "@cap-js-community/feature-toggle-library": "file:../",
+    "@sap/cds": "^6.8.4",
+    "express": "^4.18.2"
+  }
+}

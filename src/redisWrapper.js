@@ -193,6 +193,28 @@ const _clientExec = async (functionName, argsObject) => {
 };
 
 /**
+ * Asynchronously sends a command to redis.
+ *
+ * @param {Array<string>} command
+ * @returns {Promise<any>}
+ */
+const sendCommand = async (command) => {
+  // NOTE: _clientExec would not work here, because its error logging does not allow for args with array fields
+  if (!mainClient) {
+    mainClient = await getMainClient();
+  }
+
+  try {
+    return await mainClient.sendCommand(command);
+  } catch (err) {
+    throw new VError(
+      { name: VERROR_CLUSTER_NAME, cause: err, info: { command: JSON.stringify(command) } },
+      "error during redis client sendCommand"
+    );
+  }
+};
+
+/**
  * Asynchronously get the type for a given key.
  *
  * @param key
@@ -478,6 +500,7 @@ module.exports = {
   getMainClient,
   getSubscriberClient,
   getIntegrationMode,
+  sendCommand,
   type,
   get,
   getObject,

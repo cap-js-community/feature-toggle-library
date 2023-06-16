@@ -2,7 +2,7 @@
 
 const { SCOPE_ROOT_KEY, FeatureToggles, readConfigFromFile } = require("./featureToggles");
 const singleton = require("./singleton");
-const redisWrapper = require("./redisWrapper");
+const redis = require("./redisWrapper");
 const {
   DEFAULT_SEPARATOR,
   DEFAULT_EXPIRATION_GAP,
@@ -23,7 +23,7 @@ module.exports = {
 
   singleton,
 
-  redisWrapper,
+  redis,
 
   DEFAULT_SEPARATOR,
   DEFAULT_EXPIRATION_GAP,

@@ -1,21 +1,8 @@
 "use strict";
 
 const { FeatureToggles } = require("./featureToggles");
-const { cfEnv } = require("./env");
-const { ENV } = require("./shared/static");
 
-const _uniqueNameFromEnv = process.env[ENV.UNIQUE_NAME] || null;
-
-const _uniqueNameFromCfApp = () => {
-  try {
-    const { application_name } = cfEnv.cfApp();
-    return application_name;
-  } catch (err) {
-    return null;
-  }
-};
-
-const instance = new FeatureToggles({ uniqueName: _uniqueNameFromEnv || _uniqueNameFromCfApp() });
+const instance = FeatureToggles.getInstance();
 module.exports = {
   getScopeKey: FeatureToggles.getScopeKey.bind(FeatureToggles),
   getScopeMap: FeatureToggles.getScopeMap.bind(FeatureToggles),
@@ -33,7 +20,4 @@ module.exports = {
   registerFeatureValueValidation: instance.registerFeatureValueValidation.bind(instance),
   removeFeatureValueValidation: instance.removeFeatureValueValidation.bind(instance),
   removeAllFeatureValueValidation: instance.removeAllFeatureValueValidation.bind(instance),
-  _: {
-    _instance: () => instance,
-  },
 };
