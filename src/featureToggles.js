@@ -191,7 +191,7 @@ class FeatureToggles {
    * For syntax and details regarding the configuration object refer to README.md.
    */
   // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-  constructor({ uniqueName, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
+  constructor({ uniqueName = undefined, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
     this._reset({ uniqueName, redisChannel, redisKey });
   }
 
@@ -209,7 +209,9 @@ class FeatureToggles {
     let cfApp;
     try {
       cfApp = cfEnv.cfApp();
-      return cfApp.application_name;
+      if (cfApp.application_name) {
+        return cfApp.application_name;
+      }
     } catch (err) {
       throw new VError(
         {
@@ -226,7 +228,8 @@ class FeatureToggles {
 
   static getInstance() {
     if (!FeatureToggles.__instance) {
-      FeatureToggles.__instance = new FeatureToggles({ uniqueName: FeatureToggles._getInstanceUniqueName });
+      const uniqueName = FeatureToggles._getInstanceUniqueName();
+      FeatureToggles.__instance = new FeatureToggles({ uniqueName });
     }
     return FeatureToggles.__instance;
   }
