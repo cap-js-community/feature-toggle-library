@@ -20,7 +20,4 @@ module.exports = {
   registerFeatureValueValidation: instance.registerFeatureValueValidation.bind(instance),
   removeFeatureValueValidation: instance.removeFeatureValueValidation.bind(instance),
   removeAllFeatureValueValidation: instance.removeAllFeatureValueValidation.bind(instance),
-  _: {
-    _instance: () => instance,
-  },
 };

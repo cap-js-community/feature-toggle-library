@@ -226,6 +226,11 @@ class FeatureToggles {
     }
   }
 
+  /**
+   * Get singleton instance
+   *
+   * @return FeatureToggles
+   */
   static getInstance() {
     if (!FeatureToggles.__instance) {
       const uniqueName = FeatureToggles._getInstanceUniqueName();

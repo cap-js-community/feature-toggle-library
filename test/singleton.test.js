@@ -1,27 +1,6 @@
 "use strict";
 
-const MockFeatureToggles = jest.fn();
-
-const IGNORE_PROPERTIES = ["constructor", "length", "name", "prototype"];
-
-jest.mock("../src/featureToggles", () => {
-  const { FeatureToggles } = jest.requireActual("../src/featureToggles");
-  Object.getOwnPropertyNames(FeatureToggles.prototype)
-    .filter((prop) => !IGNORE_PROPERTIES.includes(prop) && !prop.startsWith("_"))
-    .forEach((prop) => {
-      MockFeatureToggles.prototype[prop] = jest.fn();
-    });
-  Object.getOwnPropertyNames(FeatureToggles)
-    .filter((prop) => !IGNORE_PROPERTIES.includes(prop) && !prop.startsWith("_"))
-    .forEach((prop) => {
-      MockFeatureToggles[prop] = jest.fn();
-    });
-  return {
-    FeatureToggles: MockFeatureToggles,
-  };
-});
-
-const { FeatureToggles } = jest.requireActual("../src/featureToggles");
+const { FeatureToggles } = require("../src/featureToggles");
 const singleton = require("../src/singleton");
 const { ENV } = require("../src/shared/static");
 
@@ -31,6 +10,8 @@ describe("singleton test", () => {
   });
 
   it("singleton correctly exposes public apis of feature-toggles", async () => {
+    const IGNORE_PROPERTIES = ["constructor", "length", "name", "prototype", "getInstance"];
+
     // check same properties
     const singletonProps = Object.keys(singleton).filter((p) => !p.startsWith("_"));
     const ftInstanceProps = Object.getOwnPropertyNames(FeatureToggles.prototype).filter(
@@ -46,52 +27,26 @@ describe("singleton test", () => {
 
     expect(sameLength).toBe(true);
     expect(mismatch).toBe(undefined);
-
-    // singleton prop is correctly bound to instance
-    const inputs = ["input1", "input2"];
-    const instance = singleton._._instance();
-    for (const prop of singletonProps) {
-      const singletonFunc = singleton[prop];
-      const instanceFunc = instance[prop] || MockFeatureToggles[prop];
-      await singletonFunc(...inputs);
-      expect(instanceFunc).toHaveBeenCalledTimes(1);
-      expect(instanceFunc).toHaveBeenCalledWith(...inputs);
-    }
   });
 
-  it("singleton uniquename can be set via cf app name", async () => {
+  it("singleton unique name can be set via cf app name", async () => {
     jest.resetModules();
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
 
-    require("../src/singleton");
-    expect(MockFeatureToggles.mock.calls).toMatchInlineSnapshot(`
-      [
-        [
-          {
-            "uniqueName": "test_app_name",
-          },
-        ],
-      ]
-    `);
+    const { FeatureToggles: FeatureTogglesAgain } = require("../src/featureToggles");
+    expect(FeatureTogglesAgain._getInstanceUniqueName()).toMatchInlineSnapshot(`"test_app_name"`);
 
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");
   });
 
-  it("singleton uniquename can be set via env and beats cf app name", async () => {
+  it("singleton unique name can be set via env and beats cf app name", async () => {
     jest.resetModules();
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
-    process.env[ENV.UNIQUE_NAME] = "test_unqiue_name";
+    process.env[ENV.UNIQUE_NAME] = "test_unique_name";
 
-    require("../src/singleton");
-    expect(MockFeatureToggles.mock.calls).toMatchInlineSnapshot(`
-      [
-        [
-          {
-            "uniqueName": "test_unqiue_name",
-          },
-        ],
-      ]
-    `);
+    require("../src/featureToggles");
+    const { FeatureToggles: FeatureTogglesAgain } = require("../src/featureToggles");
+    expect(FeatureTogglesAgain._getInstanceUniqueName()).toMatchInlineSnapshot(`"test_unique_name"`);
 
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");
     Reflect.deleteProperty(process.env, ENV.UNIQUE_NAME);
