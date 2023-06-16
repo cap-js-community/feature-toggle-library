@@ -1,12 +1,12 @@
 ---
 # info: check api priority; 0 means access is disabled
-/srv/checkApi/priority:
+/check/priority:
   type: number
   fallbackValue: 0
   validation: '^\d+$'
 
 # info: memory statistics logging interval (in milliseconds); 0 means disabled
-/srv/memoryStatistics/logInterval:
+/memory/logInterval:
   type: number
   fallbackValue: 0
   validation: '^\d+$'

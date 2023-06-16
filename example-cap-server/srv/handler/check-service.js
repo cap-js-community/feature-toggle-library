@@ -8,7 +8,7 @@ const { FEATURE } = require("../feature");
 
 const BAD_REQUEST_ERROR_HTTP_CODE = 400;
 
-const SUCCESS_RESPONSES = ["well done", "works", "42", "success", "huzzah", "celebrations"];
+const SUCCESS_RESPONSES = ["well done", "works", "success", "huzzah", "celebrations"];
 
 const priorityHandler = async (context) => {
   const value = getFeatureValue(FEATURE.CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });

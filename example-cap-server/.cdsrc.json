@@ -14,12 +14,12 @@
           "id": "bob@builder.com"
         },
         "clark": {
-          "tenant": "dogs",
+          "tenant": "pets",
           "password": "clark",
           "id": "clark@kent.com"
         },
         "danny": {
-          "tenant": "dogs",
+          "tenant": "pets",
           "password": "danny",
           "id": "danny@boy.com"
         }
