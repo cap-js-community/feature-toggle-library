@@ -1,6 +1,6 @@
 @protocol: 'rest'
 @impl: './../handler/feature-service.js'
-// TODO in practice this would need security restrictions
+// NOTE: in practice this needs security restrictions
 service FeatureService {
     type JSON {};
     function state() returns JSON;

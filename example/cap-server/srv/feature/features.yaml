@@ -1,15 +1,4 @@
 ---
-# info: switch log pool statistics on and off
-/srv/util/genericPoolStatistics/active:
-  type: boolean
-  fallbackValue: false
-
-# info: change log pool statistics writing interval (in milliseconds)
-/srv/util/genericPoolStatistics/logInterval:
-  type: number
-  fallbackValue: 60000
-  validation: '^\d+$'
-
 # info: switch memory statistics on and off
 /srv/util/memoryStatistics/active:
   type: boolean
