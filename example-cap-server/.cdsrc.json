@@ -1,0 +1,29 @@
+{
+  "requires": {
+    "auth": {
+      "kind": "mocked-auth",
+      "users": {
+        "alice": {
+          "tenant": "people",
+          "password": "alice",
+          "id": "alice@wonderland.com"
+        },
+        "bob": {
+          "tenant": "people",
+          "password": "bob",
+          "id": "bob@builder.com"
+        },
+        "clark": {
+          "tenant": "dogs",
+          "password": "clark",
+          "id": "clark@kent.com"
+        },
+        "danny": {
+          "tenant": "dogs",
+          "password": "danny",
+          "id": "danny@boy.com"
+        }
+      }
+    }
+  }
+}
