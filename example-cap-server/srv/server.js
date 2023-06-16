@@ -1,7 +1,5 @@
 "use strict";
 
-const pathlib = require("path");
-
 const cds = require("@sap/cds");
 const {
   singleton: { initializeFeatures },
