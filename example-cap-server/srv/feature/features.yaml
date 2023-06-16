@@ -1,8 +1,8 @@
 ---
 # info: enable or disable check api
-/srv/checkApi/enabled:
-  type: boolean
-  fallbackValue: false
+/srv/checkApi/priority:
+  type: number
+  fallbackValue: -1
 
 # info: switch memory statistics on and off
 /srv/memoryStatistics/active:
