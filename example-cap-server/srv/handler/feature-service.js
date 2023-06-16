@@ -29,15 +29,18 @@ const redisReadHandler = async (context) => {
   }
 };
 
-// TODO this is straight up wrong
 /**
- * Add, remove, or change some or all feature values. The change is done by mixing in new values to the current state
- * and value = null means resetting the respective key to its fallback value. Validation ensures that only values of
- * type string, number, and boolean are kept.
+ * Add, remove, or change one or many feature values. The value = null means resetting the respective key to its
+ * fallback value. Validation ensures that only values of type string, number, and boolean are allowed. You can also
+ * scope changes to only take effect in specific contexts.
  *
- * Example:
- *   old_state = { a: "a", b: 2, c: true }, input = { a: null, b: "b", d: 1 }
- *   => new_state = { a: "initial", b: "b", c: true, d: 1 }
+ * Examples:
+ *   single feature input = { "key": "a", "value": true }
+ *   multi feature input = [
+ *     { "key": "a", "value": true },
+ *     { "key": "b", "value": 10 }
+ *   ]
+ *   scoped change input = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
  *
  * NOTE this will answer 204 if the input was accepted and sent to redis, otherwise 422 with a list of validation
  * errors.
