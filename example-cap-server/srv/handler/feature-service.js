@@ -1,6 +1,7 @@
 "use strict";
 
 const {
+  redis,
   singleton: { getFeaturesInfos, refreshFeatureValues, changeFeatureValue },
 } = require("@cap-js-community/feature-toggle-library");
 const cds = require("@sap/cds");
@@ -73,11 +74,20 @@ const redisUpdateHandler = async (context) => {
   }
 };
 
-// TODO ideally we would want redis sendCommand here as well
+const redisSendCommandHandler = async (context) => {
+  const { command } = context.data;
+  if (!Array.isArray(command)) {
+    context.reject(400, { message: "request body needs to contain a 'command' field of type array" });
+    return;
+  }
+  const result = await redis.sendCommand(command);
+  context.reply(typeof result === "string" ? result : JSON.stringify(result));
+};
 
 module.exports = async (srv) => {
-  const { state, redisRead, redisUpdate } = srv.operations("FeatureService");
+  const { state, redisRead, redisUpdate, redisSendCommand } = srv.operations("FeatureService");
   srv.on(state, stateHandler);
   srv.on(redisRead, redisReadHandler);
   srv.on(redisUpdate, redisUpdateHandler);
+  srv.on(redisSendCommand, redisSendCommandHandler);
 };

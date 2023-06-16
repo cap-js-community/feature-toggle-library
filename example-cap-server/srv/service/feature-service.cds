@@ -9,4 +9,8 @@ service FeatureService {
     // NOTE: expects an object as input
     @open
     action redisUpdate(newValues: JSON);
+
+    // NOTE: expects an object as input
+    @open
+    action redisSendCommand(command: JSON) returns String;
 }
