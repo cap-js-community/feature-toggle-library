@@ -6,7 +6,16 @@ const {
 } = require("@cap-js-community/feature-toggle-library");
 const cds = require("@sap/cds");
 
+const COMPONENT_NAME = "featureService";
 const VALIDATION_ERROR_HTTP_CODE = 422;
+
+const textFormat = (pattern, values) =>
+  pattern.replace(/\{(\d+)}/g, (match, group) => {
+    const index = parseInt(group);
+    if (!Number.isNaN(index) && index < values.length) {
+      return values[index];
+    }
+  });
 
 /**
  * Read all feature values.
@@ -25,7 +34,7 @@ const redisReadHandler = async (context) => {
     const result = getFeaturesInfos();
     context.reply(result);
   } catch (err) {
-    cds.log().error(err);
+    cds.log(COMPONENT_NAME).error(err);
     context.reject(500, { message: "caught unexpected error during redis read, check server logs" });
   }
 };
@@ -54,8 +63,7 @@ const redisUpdateHandler = async (context) => {
       const validationErrors = await changeFeatureValue(key, value, scopeMap, options);
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
         for (const { featureKey: target, errorMessage, errorMessageValues } of validationErrors) {
-          // TODO this could be better
-          const errorMessageWithValues = JSON.stringify([errorMessage, errorMessageValues]);
+          const errorMessageWithValues = textFormat(errorMessage, errorMessageValues);
           context.error(VALIDATION_ERROR_HTTP_CODE, { message: errorMessageWithValues }, [], target);
         }
       }
@@ -69,7 +77,7 @@ const redisUpdateHandler = async (context) => {
     }
     context.reply();
   } catch (err) {
-    cds.log().error(err);
+    cds.log(COMPONENT_NAME).error(err);
     context.reject(500, { message: "caught unexpected error during redis update, check server logs" });
   }
 };
