@@ -8,7 +8,7 @@ const {
   DynamicIntervalController,
 } = require("@cap-js-community/feature-toggle-library");
 const {
-  FEATURE: { MEM_STAT_ACTIVE, MEM_STAT_LOG_INTERVAL },
+  FEATURE: { MEM_STAT_LOG_INTERVAL },
 } = require("./feature");
 
 const logger = cds.log("memoryStatistics");
@@ -21,16 +21,17 @@ const _logStatistics = () => {
 };
 
 const initializeMemoryStatistics = () => {
-  const logIntervalController = new DynamicIntervalController(
-    _logStatistics,
-    getFeatureValue(MEM_STAT_ACTIVE),
-    getFeatureValue(MEM_STAT_LOG_INTERVAL)
-  );
+  const value = getFeatureValue(MEM_STAT_LOG_INTERVAL);
+  const logIntervalController = new DynamicIntervalController(_logStatistics, value > 0, value);
 
-  registerFeatureValueChangeHandler(MEM_STAT_ACTIVE, (newValue) => logIntervalController.setActive(newValue));
-  registerFeatureValueChangeHandler(MEM_STAT_LOG_INTERVAL, (newValue) =>
-    logIntervalController.setWaitInterval(newValue)
-  );
+  registerFeatureValueChangeHandler(MEM_STAT_LOG_INTERVAL, (newValue) => {
+    if (newValue <= 0) {
+      logIntervalController.setActive(false);
+    } else {
+      logIntervalController.setWaitInterval(newValue);
+      logIntervalController.setActive(true);
+    }
+  });
 
   return logIntervalController;
 };
