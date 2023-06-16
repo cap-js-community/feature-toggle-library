@@ -50,7 +50,7 @@ const redisUpdateHandler = async (context) => {
       const validationErrors = await changeFeatureValue(key, value, scopeMap, options);
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
         for (const { featureKey: target, errorMessage, errorMessageValues } of validationErrors) {
-          // TODO this should be better
+          // TODO this could be better
           const errorMessageWithValues = JSON.stringify([errorMessage, errorMessageValues]);
           context.error(VALIDATION_ERROR_HTTP_CODE, { message: errorMessageWithValues }, [], target);
         }
@@ -69,6 +69,8 @@ const redisUpdateHandler = async (context) => {
     context.reject(500, { message: "caught unexpected error during redis update, check server logs" });
   }
 };
+
+// TODO ideally we would want redis sendCommand here as well
 
 module.exports = async (srv) => {
   const { state, redisRead, redisUpdate } = srv.operations("FeatureService");

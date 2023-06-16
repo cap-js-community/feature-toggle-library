@@ -15,3 +15,5 @@ module.exports = async (options) => {
   });
   return cds.server(options);
 };
+
+// TODO start kick-off for memory stuff
