@@ -193,6 +193,14 @@ const _clientExec = async (functionName, argsObject) => {
 };
 
 /**
+ * Asynchronously sends a command to redis.
+ *
+ * @param {Array<string>} command
+ * @returns {Promise<any>}
+ */
+const sendCommand = async (command) => await _clientExec("sendCommand", { command });
+
+/**
  * Asynchronously get the type for a given key.
  *
  * @param key
@@ -478,6 +486,7 @@ module.exports = {
   getMainClient,
   getSubscriberClient,
   getIntegrationMode,
+  sendCommand,
   type,
   get,
   getObject,
