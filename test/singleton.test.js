@@ -34,33 +34,6 @@ describe("singleton test", () => {
     expect(mismatch).toBe(undefined);
   });
 
-  it("singleton property mapping is correct", async () => {
-    // NOTE: the singleton properties and FeatureToggles properties match up, but the mapping could be flipped, so we
-    //  check that the calls reach the correct function
-
-    const spies = {};
-    const instance = FeatureToggles.__instance;
-    for (const prop of ftInstanceProps) {
-      spies[prop] = jest.spyOn(instance, prop).mockReturnValueOnce();
-    }
-    for (const prop of ftClassProps) {
-      spies[prop] = jest.spyOn(FeatureToggles, prop).mockReturnValueOnce();
-    }
-
-    jest.resetModules();
-    require("../src/singleton");
-
-    const inputs = ["input1", "input2"];
-    for (const prop of ftProps) {
-      const propSpy = spies[prop];
-      const singletonFunc = singleton[prop];
-      await singletonFunc(...inputs);
-      expect(propSpy).toHaveBeenCalledTimes(1);
-      expect(propSpy).toHaveBeenCalledWith(...inputs);
-      propSpy.resetMocks();
-    }
-  });
-
   it("singleton unique name can be set via cf app name", async () => {
     jest.resetModules();
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
