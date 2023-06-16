@@ -10,9 +10,8 @@ const BAD_REQUEST_ERROR_HTTP_CODE = 400;
 
 const SUCCESS_RESPONSES = ["well done", "works", "42", "success", "huzzah", "celebrations"];
 
-// TODO this should take into account context.tenant or context.user to demo scopes
 const checkHandler = async (context) => {
-  return getFeatureValue(FEATURE.CHECK_API_ENABLED)
+  return getFeatureValue(FEATURE.CHECK_API_ENABLED, { tenant: context.tenant, user: context.user.id })
     ? context.reply(SUCCESS_RESPONSES[Math.floor(Math.random() * SUCCESS_RESPONSES.length)])
     : context.error(BAD_REQUEST_ERROR_HTTP_CODE);
 };
