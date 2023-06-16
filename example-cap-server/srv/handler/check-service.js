@@ -8,7 +8,7 @@ const { FEATURE } = require("../feature");
 
 const BAD_REQUEST_ERROR_HTTP_CODE = 400;
 
-const SUCCESS_RESPONSES = ["well done", "works", "42", "success", "huzza", "celebrations"];
+const SUCCESS_RESPONSES = ["well done", "works", "42", "success", "huzzah", "celebrations"];
 
 // TODO this should take into account context.tenant or context.user to demo scopes
 const checkHandler = async (context) => {
