@@ -29,6 +29,7 @@ const { ENV, isNull } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
+const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
 const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
 const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
@@ -196,6 +197,42 @@ class FeatureToggles {
 
   // ========================================
   // END OF CONSTRUCTOR SECTION
+  // ========================================
+  // ========================================
+  // START OF SINGLETON SECTION
+  // ========================================
+
+  static _getInstanceUniqueName() {
+    if (ENV_UNIQUE_NAME) {
+      return ENV_UNIQUE_NAME;
+    }
+    let cfApp;
+    try {
+      cfApp = cfEnv.cfApp();
+      return cfApp.application_name;
+    } catch (err) {
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            cfApp: JSON.stringify(cfApp),
+          },
+        },
+        "error determining cf app name"
+      );
+    }
+  }
+
+  static getInstance() {
+    if (!FeatureToggles.__instance) {
+      FeatureToggles.__instance = new FeatureToggles({ uniqueName: FeatureToggles._getInstanceUniqueName });
+    }
+    return FeatureToggles.__instance;
+  }
+
+  // ========================================
+  // END OF SINGLETON SECTION
   // ========================================
   // ========================================
   // START OF VALIDATION SECTION
