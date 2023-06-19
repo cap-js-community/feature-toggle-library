@@ -23,7 +23,8 @@ describe("singleton test with feature toggles class mock", () => {
   });
 
   it("singleton property mapping is correct", async () => {
-    // NOTE: the singleton properties and FeatureToggles properties match up, but the mapping could be flipped, so we
+    // NOTE: the singleton and FeatureToggles functions match up, but the mapping could be flipped, so we check that
+    //   any call to the singleton reaches the correct instance function of the FeatureToggles
     const { singletonProps } = require("./__common__/ftProps");
 
     const inputs = ["input1", "input2"];
