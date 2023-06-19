@@ -817,7 +817,7 @@ class FeatureToggles {
    *   const FEATURE_VALUE_KEY = "/server/part_x/feature_y"
    *   ...
    *   const result = getFeatureValue(FEATURE_VALUE_KEY);
-   *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenantId: "tenant123" });
+   *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenant: "tenant123" });
    *
    * @param {string}               featureKey  valid feature key
    * @param {Map<string, string>}  [scopeMap]  optional scope restrictions
