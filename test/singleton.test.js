@@ -4,32 +4,16 @@ const { FeatureToggles } = require("../src/featureToggles");
 const singleton = require("../src/singleton");
 const { ENV } = require("../src/shared/static");
 
-let ftInstanceProps;
-let ftClassProps;
-let ftProps;
-
 describe("singleton test", () => {
-  beforeAll(() => {
-    const IGNORE_PROPERTIES = ["constructor", "length", "name", "prototype", "getInstance"];
-    ftInstanceProps = Object.getOwnPropertyNames(FeatureToggles.prototype).filter(
-      (prop) => !IGNORE_PROPERTIES.includes(prop) && !prop.startsWith("_")
-    );
-    ftClassProps = Object.getOwnPropertyNames(FeatureToggles).filter(
-      (prop) => !IGNORE_PROPERTIES.includes(prop) && !prop.startsWith("_")
-    );
-    ftProps = [].concat(ftClassProps, ftInstanceProps);
-  });
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("singleton correctly exposes public apis of feature-toggles", async () => {
-    // check same properties
-    const singletonProps = Object.keys(singleton).filter((p) => !p.startsWith("_"));
+  it("singleton exposes same public apis as feature-toggles", async () => {
+    const { ftProps, singletonProps } = require("./__common__/ftProps");
 
     const sameLength = ftProps.length === singletonProps.length;
     const mismatch = ftProps.find((p, i) => p !== singletonProps[i]);
-
     expect(sameLength).toBe(true);
     expect(mismatch).toBe(undefined);
   });
