@@ -1,7 +1,5 @@
 "use strict";
 
-const { FeatureToggles } = require("../src/featureToggles");
-const singleton = require("../src/singleton");
 const { ENV } = require("../src/shared/static");
 
 describe("singleton test", () => {
