@@ -497,6 +497,7 @@ describe("feature toggles test", () => {
     it("getFeatureValue", async () => {
       const mockFeatureValuesEntries = [
         [[FEATURE.A], { [SCOPE_ROOT_KEY]: true }],
+        [[FEATURE.AA], { [SCOPE_ROOT_KEY]: true }],
         [[FEATURE.B], { [SCOPE_ROOT_KEY]: 0 }],
         [[FEATURE.C], { [SCOPE_ROOT_KEY]: "cvalue" }],
       ];
@@ -506,7 +507,7 @@ describe("feature toggles test", () => {
         ["e", "bvalue"],
         ["f", "cvalue"],
       ];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
       await featureToggles.initializeFeatures({ config: mockConfig });
@@ -527,6 +528,7 @@ describe("feature toggles test", () => {
       const testScopeKey = FeatureToggles.getScopeKey(testScopeMap);
       const mockFeatureValuesEntries = [
         [[FEATURE.A], { [SCOPE_ROOT_KEY]: true, [testScopeKey]: false }],
+        [[FEATURE.AA], { [SCOPE_ROOT_KEY]: true, [testScopeKey]: false }],
         [[FEATURE.B], { [SCOPE_ROOT_KEY]: 0, [testScopeKey]: 10 }],
         [[FEATURE.C], { [SCOPE_ROOT_KEY]: "cvalue", [testScopeKey]: "" }],
       ];
@@ -536,7 +538,7 @@ describe("feature toggles test", () => {
         ["e", "bvalue"],
         ["f", "cvalue"],
       ];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
       await featureToggles.initializeFeatures({ config: mockConfig });
