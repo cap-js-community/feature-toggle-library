@@ -291,7 +291,7 @@ class FeatureToggles {
           {
             featureKey,
             scopeKey,
-            errorMessage: "scope '{1}' is not allowed",
+            errorMessage: 'scope "{0}" is not allowed',
             errorMessageValues: [mismatch],
           },
         ];
@@ -313,7 +313,7 @@ class FeatureToggles {
         return [
           {
             featureKey,
-            errorMessage: "feature key is not active because app url does not match regular expression {1}",
+            errorMessage: "feature key is not active because app url does not match regular expression {0}",
             errorMessageValues: [this.__config[featureKey][CONFIG_KEY.APP_URL]],
           },
         ];
