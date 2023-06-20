@@ -50,6 +50,7 @@ const CONFIG_KEY = Object.freeze({
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
   ALLOWED_SCOPES: "ALLOWED_SCOPES",
+  ALLOWED_SCOPES_CHECK_MAP: "ALLOWED_SCOPES_CHECK_MAP",
 });
 
 const CONFIG_INFO_KEY = {
@@ -58,6 +59,7 @@ const CONFIG_INFO_KEY = {
   [CONFIG_KEY.VALIDATION]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
+  [CONFIG_KEY.ALLOWED_SCOPES]: true,
 };
 
 const COMPONENT_NAME = "/FeatureToggles";
@@ -154,7 +156,8 @@ class FeatureToggles {
       }
 
       if (Array.isArray(allowedScopes)) {
-        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES] = allowedScopes.reduce((acc, scope) => {
+        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES] = allowedScopes;
+        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP] = allowedScopes.reduce((acc, scope) => {
           acc[scope] = true;
           return acc;
         }, {});
@@ -282,10 +285,11 @@ class FeatureToggles {
       return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
     }
 
-    if (scopeKey !== undefined && scopeKey !== SCOPE_ROOT_KEY) {
-      const allowedScopes = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES];
+    // TODO this needs a test
+    const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
+    if (allowedScopesCheckMap && scopeKey !== undefined && scopeKey !== SCOPE_ROOT_KEY) {
       const actualScopes = Object.keys(scopeMap);
-      const mismatch = actualScopes.find((scope) => !allowedScopes[scope]);
+      const mismatch = actualScopes.find((scope) => !allowedScopesCheckMap[scope]);
       if (mismatch !== undefined) {
         return [
           {
@@ -309,6 +313,7 @@ class FeatureToggles {
         return [{ featureKey, errorMessage: "feature key is not active" }];
       }
 
+      // TODO this was wrong and needs a test
       if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
         return [
           {
