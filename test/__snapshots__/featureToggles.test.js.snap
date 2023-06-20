@@ -2,29 +2,29 @@
 
 exports[`feature toggles test basic apis _changeRemoteFeatureValues 2`] = `
 {
-  "test/feature_a": undefined,
-  "test/feature_b": undefined,
-  "test/feature_c": undefined,
-  "test/feature_d": undefined,
-  "test/feature_e": undefined,
-  "test/feature_f": undefined,
-  "test/feature_g": undefined,
-  "test/feature_h": undefined,
+  "test/feature_a": {},
+  "test/feature_b": {},
+  "test/feature_c": {},
+  "test/feature_d": {},
+  "test/feature_e": {},
+  "test/feature_f": {},
+  "test/feature_g": {},
+  "test/feature_h": {},
 }
 `;
 
 exports[`feature toggles test basic apis _changeRemoteFeatureValues 3`] = `
 {
-  "test/feature_a": undefined,
-  "test/feature_b": undefined,
+  "test/feature_a": {},
+  "test/feature_b": {},
   "test/feature_c": {
-    "//": "new_a",
+    "rootValue": "new_a",
   },
-  "test/feature_d": undefined,
-  "test/feature_e": undefined,
-  "test/feature_f": undefined,
-  "test/feature_g": undefined,
-  "test/feature_h": undefined,
+  "test/feature_d": {},
+  "test/feature_e": {},
+  "test/feature_f": {},
+  "test/feature_g": {},
+  "test/feature_h": {},
 }
 `;
 
@@ -35,21 +35,18 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "TYPE": "boolean",
     },
     "fallbackValue": false,
-    "scopedValues": undefined,
   },
   "test/feature_b": {
     "config": {
       "TYPE": "number",
     },
     "fallbackValue": 1,
-    "scopedValues": undefined,
   },
   "test/feature_c": {
     "config": {
       "TYPE": "string",
     },
     "fallbackValue": "best",
-    "scopedValues": undefined,
   },
   "test/feature_d": {
     "config": {
@@ -57,7 +54,6 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "VALIDATION": "^(?:true)$",
     },
     "fallbackValue": true,
-    "scopedValues": undefined,
   },
   "test/feature_e": {
     "config": {
@@ -65,7 +61,6 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "VALIDATION": "^\\d{1}$",
     },
     "fallbackValue": 5,
-    "scopedValues": undefined,
   },
   "test/feature_f": {
     "config": {
@@ -73,7 +68,6 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "VALIDATION": "^(?:best|worst)$",
     },
     "fallbackValue": "best",
-    "scopedValues": undefined,
   },
   "test/feature_g": {
     "config": {
@@ -81,7 +75,6 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "activeTest",
-    "scopedValues": undefined,
   },
   "test/feature_h": {
     "config": {
@@ -90,7 +83,6 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",
-    "scopedValues": undefined,
   },
 }
 `;

@@ -71,21 +71,18 @@ exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
       "TYPE": "boolean",
     },
     "fallbackValue": false,
-    "scopedValues": undefined,
   },
   "test/feature_b": {
     "config": {
       "TYPE": "number",
     },
     "fallbackValue": 1,
-    "scopedValues": undefined,
   },
   "test/feature_c": {
     "config": {
       "TYPE": "string",
     },
     "fallbackValue": "best",
-    "scopedValues": undefined,
   },
   "test/feature_d": {
     "config": {
@@ -93,7 +90,6 @@ exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
       "VALIDATION": "^(?:true)$",
     },
     "fallbackValue": true,
-    "scopedValues": undefined,
   },
   "test/feature_e": {
     "config": {
@@ -101,7 +97,6 @@ exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
       "VALIDATION": "^\\d{1}$",
     },
     "fallbackValue": 5,
-    "scopedValues": undefined,
   },
   "test/feature_f": {
     "config": {
@@ -109,7 +104,6 @@ exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
       "VALIDATION": "^(?:best|worst)$",
     },
     "fallbackValue": "best",
-    "scopedValues": undefined,
   },
   "test/feature_g": {
     "config": {
@@ -117,7 +111,6 @@ exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "activeTest",
-    "scopedValues": undefined,
   },
   "test/feature_h": {
     "config": {
@@ -126,7 +119,6 @@ exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",
-    "scopedValues": undefined,
   },
 }
 `;

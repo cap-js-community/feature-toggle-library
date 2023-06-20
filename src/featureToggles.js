@@ -657,20 +657,25 @@ class FeatureToggles {
   }
 
   _getFeatureInfo(featureKey) {
-    let rootValue = null;
-    let scopedValues = null;
+    let rootValue;
+    let foundScopedValues = false;
+    let scopedValues;
     if (this.__stateScopedValues[featureKey]) {
-      scopedValues = { ...this.__stateScopedValues[featureKey] };
-    }
-    if (scopedValues && scopedValues[SCOPE_ROOT_KEY] !== undefined) {
-      rootValue = scopedValues[SCOPE_ROOT_KEY];
-      Reflect.deleteProperty(scopedValues, SCOPE_ROOT_KEY);
+      scopedValues = Object.entries(this.__stateScopedValues[featureKey]).reduce((acc, [scopeKey, value]) => {
+        if (scopeKey === SCOPE_ROOT_KEY) {
+          rootValue = value;
+        } else {
+          foundScopedValues = true;
+          acc[scopeKey] = value;
+        }
+        return acc;
+      }, {});
     }
 
     return {
       fallbackValue: this.__fallbackValues[featureKey],
-      ...(rootValue && { rootValue }),
-      ...(scopedValues && { scopedValues }),
+      ...(rootValue !== undefined && { rootValue }),
+      ...(foundScopedValues && { scopedValues }),
       config: FeatureToggles._getFeatureInfoConfig(this.__config, featureKey),
     };
   }
