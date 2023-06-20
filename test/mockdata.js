@@ -5,6 +5,7 @@ const redisChannel = "feature-channel";
 
 const FEATURE = {
   A: "test/feature_a",
+  AA: "test/feature_aa",
   B: "test/feature_b",
   C: "test/feature_c",
   D: "test/feature_d",
@@ -18,6 +19,11 @@ const mockConfig = {
   [FEATURE.A]: {
     fallbackValue: false,
     type: "boolean",
+  },
+  [FEATURE.AA]: {
+    fallbackValue: false,
+    type: "boolean",
+    allowedScopes: ["tenant", "user"],
   },
   [FEATURE.B]: {
     fallbackValue: 1,

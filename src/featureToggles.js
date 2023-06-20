@@ -47,6 +47,8 @@ const CONFIG_KEY = Object.freeze({
   VALIDATION_REG_EXP: "VALIDATION_REG_EXP",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
+  ALLOWED_SCOPES: "ALLOWED_SCOPES",
+  ALLOWED_SCOPES_CHECK_MAP: "ALLOWED_SCOPES_CHECK_MAP",
 });
 
 const CONFIG_INFO_KEY = {
@@ -55,6 +57,7 @@ const CONFIG_INFO_KEY = {
   [CONFIG_KEY.VALIDATION]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
+  [CONFIG_KEY.ALLOWED_SCOPES]: true,
 };
 
 const COMPONENT_NAME = "/FeatureToggles";
@@ -123,7 +126,7 @@ class FeatureToggles {
     const { uris: cfAppUris } = cfEnv.cfApp();
 
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, validation, fallbackValue }] of configEntries) {
+    for (const [featureKey, { type, active, appUrl, validation, fallbackValue, allowedScopes }] of configEntries) {
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
@@ -148,6 +151,14 @@ class FeatureToggles {
         this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] =
           !Array.isArray(cfAppUris) ||
           cfAppUris.reduce((accumulator, cfAppUri) => accumulator && appUrlRegex.test(cfAppUri), true);
+      }
+
+      if (Array.isArray(allowedScopes)) {
+        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES] = allowedScopes;
+        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP] = allowedScopes.reduce((acc, scope) => {
+          acc[scope] = true;
+          return acc;
+        }, {});
       }
     }
 
@@ -259,7 +270,7 @@ class FeatureToggles {
   }
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  async _validateFeatureValue(featureKey, value, scopeKey) {
+  async _validateFeatureValue(featureKey, value, scopeMap, scopeKey) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
@@ -270,6 +281,22 @@ class FeatureToggles {
 
     if (!FeatureToggles._isValidScopeKey(scopeKey)) {
       return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
+    }
+
+    const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
+    if (allowedScopesCheckMap && scopeKey !== undefined && scopeKey !== SCOPE_ROOT_KEY) {
+      const actualScopes = Object.keys(scopeMap);
+      const mismatch = actualScopes.find((scope) => !allowedScopesCheckMap[scope]);
+      if (mismatch !== undefined) {
+        return [
+          {
+            featureKey,
+            scopeKey,
+            errorMessage: 'scope "{0}" is not allowed',
+            errorMessageValues: [mismatch],
+          },
+        ];
+      }
     }
 
     // NOTE: value === null is our way of encoding featureKey resetting changes, so it is always allowed
@@ -287,7 +314,7 @@ class FeatureToggles {
         return [
           {
             featureKey,
-            errorMessage: "feature key is not active because app url does not match regular expression {1}",
+            errorMessage: "feature key is not active because app url does not match regular expression {0}",
             errorMessageValues: [this.__config[featureKey][CONFIG_KEY.APP_URL]],
           },
         ];
@@ -405,11 +432,9 @@ class FeatureToggles {
    * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
    */
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
-    return await this._validateFeatureValue(
-      featureKey,
-      value,
-      scopeMap !== undefined ? FeatureToggles.getScopeKey(scopeMap) : scopeMap
-    );
+    return scopeMap === undefined
+      ? await this._validateFeatureValue(featureKey, value)
+      : await this._validateFeatureValue(featureKey, value, scopeMap, FeatureToggles.getScopeKey(scopeMap));
   }
 
   /**
@@ -436,7 +461,12 @@ class FeatureToggles {
     let validatedStateScopedValues = {};
 
     for (const [scopeKey, value] of Object.entries(scopedValues)) {
-      const entryValidationErrors = await this._validateFeatureValue(featureKey, value, scopeKey);
+      const entryValidationErrors = await this._validateFeatureValue(
+        featureKey,
+        value,
+        FeatureToggles.getScopeMap(scopeKey),
+        scopeKey
+      );
       let updateValue = value;
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
@@ -817,7 +847,7 @@ class FeatureToggles {
    *   const FEATURE_VALUE_KEY = "/server/part_x/feature_y"
    *   ...
    *   const result = getFeatureValue(FEATURE_VALUE_KEY);
-   *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenantId: "tenant123" });
+   *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenant: "tenant123" });
    *
    * @param {string}               featureKey  valid feature key
    * @param {Map<string, string>}  [scopeMap]  optional scope restrictions
@@ -1025,7 +1055,7 @@ class FeatureToggles {
             scopeMap
           );
 
-          const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeKey);
+          const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeMap, scopeKey);
           if (Array.isArray(validationErrors) && validationErrors.length > 0) {
             logger.warning(
               new VError(
@@ -1072,7 +1102,7 @@ class FeatureToggles {
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeKey);
+    const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeMap, scopeKey);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
     }

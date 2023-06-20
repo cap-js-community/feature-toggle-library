@@ -6,6 +6,7 @@ const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
 const { CONFIG_KEY, CONFIG_INFO_KEY } = featureTogglesModule._;
 
+const { cfEnv } = require("../src/env");
 const { FEATURE, mockConfig, redisKey, redisChannel } = require("./mockdata");
 
 const { readFile: readFileSpy } = require("fs");
@@ -45,7 +46,7 @@ describe("feature toggles test", () => {
 
   describe("enums", () => {
     it("config info consistency", () => {
-      const internalKeys = [CONFIG_KEY.VALIDATION_REG_EXP];
+      const internalKeys = [CONFIG_KEY.VALIDATION_REG_EXP, CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
 
@@ -353,6 +354,12 @@ describe("feature toggles test", () => {
       const inputArgsList = [
         [FEATURE.A, 1, { a: 1 }],
         [FEATURE.A, 1, "a::1"],
+        [FEATURE.AA, true],
+        [FEATURE.AA, true, { tenant: "t1", user: "u1" }],
+        [FEATURE.AA, true, { tenant: "t1" }],
+        [FEATURE.AA, true, { user: "u1" }],
+        [FEATURE.AA, true, { usr: "u1" }],
+        [FEATURE.AA, true, { Tenant: "t1" }],
       ];
 
       let i = 0;
@@ -381,6 +388,34 @@ describe("feature toggles test", () => {
             ],
             "featureKey": "test/feature_a",
             "scopeKey": "//",
+          },
+        ]
+      `);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" is not allowed",
+            "errorMessageValues": [
+              "usr",
+            ],
+            "featureKey": "test/feature_aa",
+            "scopeKey": "usr::u1",
+          },
+        ]
+      `);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" is not allowed",
+            "errorMessageValues": [
+              "Tenant",
+            ],
+            "featureKey": "test/feature_aa",
+            "scopeKey": "Tenant::t1",
           },
         ]
       `);
@@ -462,6 +497,7 @@ describe("feature toggles test", () => {
     it("getFeatureValue", async () => {
       const mockFeatureValuesEntries = [
         [[FEATURE.A], { [SCOPE_ROOT_KEY]: true }],
+        [[FEATURE.AA], { [SCOPE_ROOT_KEY]: true }],
         [[FEATURE.B], { [SCOPE_ROOT_KEY]: 0 }],
         [[FEATURE.C], { [SCOPE_ROOT_KEY]: "cvalue" }],
       ];
@@ -471,7 +507,7 @@ describe("feature toggles test", () => {
         ["e", "bvalue"],
         ["f", "cvalue"],
       ];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
       await featureToggles.initializeFeatures({ config: mockConfig });
@@ -492,6 +528,7 @@ describe("feature toggles test", () => {
       const testScopeKey = FeatureToggles.getScopeKey(testScopeMap);
       const mockFeatureValuesEntries = [
         [[FEATURE.A], { [SCOPE_ROOT_KEY]: true, [testScopeKey]: false }],
+        [[FEATURE.AA], { [SCOPE_ROOT_KEY]: true, [testScopeKey]: false }],
         [[FEATURE.B], { [SCOPE_ROOT_KEY]: 0, [testScopeKey]: 10 }],
         [[FEATURE.C], { [SCOPE_ROOT_KEY]: "cvalue", [testScopeKey]: "" }],
       ];
@@ -501,7 +538,7 @@ describe("feature toggles test", () => {
         ["e", "bvalue"],
         ["f", "cvalue"],
       ];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
       await featureToggles.initializeFeatures({ config: mockConfig });
@@ -773,6 +810,41 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(featureToggles.getFeatureValue(FEATURE.G)).toBe(oldValue);
+    });
+
+    it("FeatureValueValidation and appUrl working", async () => {
+      jest.spyOn(cfEnv, "cfApp").mockReturnValueOnce({ uris: ["https://it.cfapps.sap.hana.ondemand.com"] });
+      const newValue = "newValue";
+      await featureToggles.initializeFeatures({ config: mockConfig });
+      const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
+
+      expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
+      expect(featureConfig.APP_URL_ACTIVE).toBe(true);
+      expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toBeUndefined();
+      expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(newValue);
+    });
+
+    it("FeatureValueValidation and appUrl failing", async () => {
+      jest.spyOn(cfEnv, "cfApp").mockReturnValueOnce({ uris: ["https://not-it.com"] });
+      const newValue = "newValue";
+      await featureToggles.initializeFeatures({ config: mockConfig });
+      const oldValue = featureToggles.getFeatureValue(FEATURE.H);
+      const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
+
+      expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
+      expect(featureConfig.APP_URL_ACTIVE).toBe(false);
+      expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "feature key is not active because app url does not match regular expression {0}",
+            "errorMessageValues": [
+              "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+            ],
+            "featureKey": "test/feature_h",
+          },
+        ]
+      `);
+      expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(oldValue);
     });
 
     it("validateInput throws error", async () => {
