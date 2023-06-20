@@ -312,7 +312,6 @@ class FeatureToggles {
         return [{ featureKey, errorMessage: "feature key is not active" }];
       }
 
-      // TODO this was wrong and needs a test
       if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
         return [
           {

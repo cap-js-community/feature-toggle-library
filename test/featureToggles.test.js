@@ -354,6 +354,12 @@ describe("feature toggles test", () => {
       const inputArgsList = [
         [FEATURE.A, 1, { a: 1 }],
         [FEATURE.A, 1, "a::1"],
+        [FEATURE.AA, true],
+        [FEATURE.AA, true, { tenant: "t1", user: "u1" }],
+        [FEATURE.AA, true, { tenant: "t1" }],
+        [FEATURE.AA, true, { user: "u1" }],
+        [FEATURE.AA, true, { usr: "u1" }],
+        [FEATURE.AA, true, { Tenant: "t1" }],
       ];
 
       let i = 0;
@@ -382,6 +388,34 @@ describe("feature toggles test", () => {
             ],
             "featureKey": "test/feature_a",
             "scopeKey": "//",
+          },
+        ]
+      `);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" is not allowed",
+            "errorMessageValues": [
+              "usr",
+            ],
+            "featureKey": "test/feature_aa",
+            "scopeKey": "usr::u1",
+          },
+        ]
+      `);
+      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" is not allowed",
+            "errorMessageValues": [
+              "Tenant",
+            ],
+            "featureKey": "test/feature_aa",
+            "scopeKey": "Tenant::t1",
           },
         ]
       `);
