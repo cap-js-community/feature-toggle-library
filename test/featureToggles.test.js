@@ -13,6 +13,8 @@ jest.mock("fs", () => ({
   readFile: jest.fn(),
 }));
 
+const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/fromInfo");
+
 const { LimitedLazyCache } = require("../src/shared/cache");
 const redisWrapperMock = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
@@ -30,12 +32,6 @@ const loggerSpy = {
   warning: jest.spyOn(featureTogglesModule._._getLogger(), "warning"),
   error: jest.spyOn(featureTogglesModule._._getLogger(), "error"),
 };
-
-const fallbackValuesFromInfos = (featureInfos) =>
-  Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.fallbackValue]));
-
-const scopedValuesFromInfos = (featureInfos) =>
-  Object.fromEntries(Object.entries(featureInfos).map(([key, value]) => [key, value.scopedValues]));
 
 describe("feature toggles test", () => {
   beforeEach(async () => {
@@ -243,10 +239,10 @@ describe("feature toggles test", () => {
       await featureToggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      const beforeValues = scopedValuesFromInfos(await featureToggles.getFeaturesInfos());
+      const beforeValues = stateFromInfos(await featureToggles.getFeaturesInfos());
       await featureToggles._changeRemoteFeatureValue(FEATURE.B, null);
       await featureToggles._changeRemoteFeatureValue(FEATURE.C, "new_a");
-      const afterValues = scopedValuesFromInfos(await featureToggles.getFeaturesInfos());
+      const afterValues = stateFromInfos(await featureToggles.getFeaturesInfos());
 
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(2);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -438,7 +434,6 @@ describe("feature toggles test", () => {
             "TYPE": "boolean",
           },
           "fallbackValue": false,
-          "scopedValues": undefined,
         }
       `);
       expect(featureToggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
@@ -447,7 +442,6 @@ describe("feature toggles test", () => {
             "TYPE": "number",
           },
           "fallbackValue": 1,
-          "scopedValues": undefined,
         }
       `);
       expect(featureToggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
@@ -456,7 +450,6 @@ describe("feature toggles test", () => {
             "TYPE": "string",
           },
           "fallbackValue": "best",
-          "scopedValues": undefined,
         }
       `);
     });
