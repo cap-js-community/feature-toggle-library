@@ -3,6 +3,7 @@
 exports[`feature toggles test basic apis _changeRemoteFeatureValues 2`] = `
 {
   "test/feature_a": {},
+  "test/feature_aa": {},
   "test/feature_b": {},
   "test/feature_c": {},
   "test/feature_d": {},
@@ -16,6 +17,7 @@ exports[`feature toggles test basic apis _changeRemoteFeatureValues 2`] = `
 exports[`feature toggles test basic apis _changeRemoteFeatureValues 3`] = `
 {
   "test/feature_a": {},
+  "test/feature_aa": {},
   "test/feature_b": {},
   "test/feature_c": {
     "rootValue": "new_a",
@@ -32,6 +34,16 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 {
   "test/feature_a": {
     "config": {
+      "TYPE": "boolean",
+    },
+    "fallbackValue": false,
+  },
+  "test/feature_aa": {
+    "config": {
+      "ALLOWED_SCOPES": [
+        "tenant",
+        "user",
+      ],
       "TYPE": "boolean",
     },
     "fallbackValue": false,
@@ -90,6 +102,17 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
 {
   "test/feature_a": {
+    "TYPE": "boolean",
+  },
+  "test/feature_aa": {
+    "ALLOWED_SCOPES": [
+      "tenant",
+      "user",
+    ],
+    "ALLOWED_SCOPES_CHECK_MAP": {
+      "tenant": true,
+      "user": true,
+    },
     "TYPE": "boolean",
   },
   "test/feature_b": {
