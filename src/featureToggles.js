@@ -657,9 +657,20 @@ class FeatureToggles {
   }
 
   _getFeatureInfo(featureKey) {
+    let rootValue = null;
+    let scopedValues = null;
+    if (this.__stateScopedValues[featureKey]) {
+      scopedValues = { ...this.__stateScopedValues[featureKey] };
+    }
+    if (scopedValues && scopedValues[SCOPE_ROOT_KEY] !== undefined) {
+      rootValue = scopedValues[SCOPE_ROOT_KEY];
+      Reflect.deleteProperty(scopedValues, SCOPE_ROOT_KEY);
+    }
+
     return {
       fallbackValue: this.__fallbackValues[featureKey],
-      scopedValues: this.__stateScopedValues[featureKey],
+      ...(rootValue && { rootValue }),
+      ...(scopedValues && { scopedValues }),
       config: FeatureToggles._getFeatureInfoConfig(this.__config, featureKey),
     };
   }
