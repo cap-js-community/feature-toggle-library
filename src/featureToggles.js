@@ -11,8 +11,6 @@
 
 "use strict";
 
-// TODO configuration should allow users to limit valid scoping values, if bad values are used the related update
-//  should fail
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
