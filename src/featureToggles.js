@@ -285,7 +285,6 @@ class FeatureToggles {
       return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
     }
 
-    // TODO this needs a test
     const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
     if (allowedScopesCheckMap && scopeKey !== undefined && scopeKey !== SCOPE_ROOT_KEY) {
       const actualScopes = Object.keys(scopeMap);

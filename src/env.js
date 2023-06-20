@@ -47,6 +47,13 @@ class CfEnv {
     }, {});
   }
 
+  static getInstance() {
+    if (!CfEnv.__instance) {
+      CfEnv.__instance = new CfEnv();
+    }
+    return CfEnv.__instance;
+  }
+
   cfApp() {
     return this.__cfApp;
   }
@@ -71,5 +78,5 @@ class CfEnv {
 module.exports = {
   isLocal,
   isOnCF,
-  cfEnv: new CfEnv(),
+  cfEnv: CfEnv.getInstance(),
 };

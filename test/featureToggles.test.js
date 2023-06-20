@@ -6,6 +6,7 @@ const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
 const { CONFIG_KEY, CONFIG_INFO_KEY } = featureTogglesModule._;
 
+const { cfEnv } = require("../src/env");
 const { FEATURE, mockConfig, redisKey, redisChannel } = require("./mockdata");
 
 const { readFile: readFileSpy } = require("fs");
@@ -773,6 +774,41 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(featureToggles.getFeatureValue(FEATURE.G)).toBe(oldValue);
+    });
+
+    it("FeatureValueValidation and appUrl working", async () => {
+      jest.spyOn(cfEnv, "cfApp").mockReturnValueOnce({ uris: ["https://it.cfapps.sap.hana.ondemand.com"] });
+      const newValue = "newValue";
+      await featureToggles.initializeFeatures({ config: mockConfig });
+      const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
+
+      expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
+      expect(featureConfig.APP_URL_ACTIVE).toBe(true);
+      expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toBeUndefined();
+      expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(newValue);
+    });
+
+    it("FeatureValueValidation and appUrl failing", async () => {
+      jest.spyOn(cfEnv, "cfApp").mockReturnValueOnce({ uris: ["https://not-it.com"] });
+      const newValue = "newValue";
+      await featureToggles.initializeFeatures({ config: mockConfig });
+      const oldValue = featureToggles.getFeatureValue(FEATURE.H);
+      const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
+
+      expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
+      expect(featureConfig.APP_URL_ACTIVE).toBe(false);
+      expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "feature key is not active because app url does not match regular expression {0}",
+            "errorMessageValues": [
+              "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+            ],
+            "featureKey": "test/feature_h",
+          },
+        ]
+      `);
+      expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(oldValue);
     });
 
     it("validateInput throws error", async () => {
