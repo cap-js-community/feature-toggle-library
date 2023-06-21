@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes 1`] = `
+exports[`local integration test after init getFeatureValue, changeFeatureValue with scopes 1`] = `
 [
   {
     "errorMessage": "value "{0}" does not match validation regular expression {1}",
@@ -14,7 +14,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes 8`] = `
+exports[`local integration test after init getFeatureValue, changeFeatureValue with scopes 8`] = `
 [
   [
     "%s | %O",
@@ -26,7 +26,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
+exports[`local integration test after init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
 [
   [
     "%s | %O",
@@ -38,7 +38,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue with scopes 
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue without scopes 1`] = `
+exports[`local integration test after init getFeatureValue, changeFeatureValue without scopes 1`] = `
 [
   {
     "errorMessage": "value "{0}" does not match validation regular expression {1}",
@@ -52,7 +52,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
 ]
 `;
 
-exports[`local integration test getFeatureValue, changeFeatureValue without scopes 4`] = `
+exports[`local integration test after init getFeatureValue, changeFeatureValue without scopes 4`] = `
 [
   [
     "%s | %O",
@@ -64,7 +64,7 @@ exports[`local integration test getFeatureValue, changeFeatureValue without scop
 ]
 `;
 
-exports[`local integration test getFeatureValues, getFeaturesInfos 1`] = `
+exports[`local integration test after init getFeatureValues, getFeaturesInfos 1`] = `
 {
   "test/feature_a": {
     "config": {

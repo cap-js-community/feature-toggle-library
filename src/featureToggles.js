@@ -589,8 +589,9 @@ class FeatureToggles {
       );
     }
 
+    let toggleCount;
     try {
-      const toggleCount = this._processConfig(config);
+      toggleCount = this._processConfig(config);
     } catch (err) {
       throw new VError(
         {
