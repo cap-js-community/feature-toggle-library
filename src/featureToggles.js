@@ -575,23 +575,35 @@ class FeatureToggles {
     try {
       config = configInput ? configInput : await readConfigFromFile(configFilepath);
     } catch (err) {
-      logger.error(
-        new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            cause: err,
-            info: {
-              configFilepath,
-              ...(configInput && { configBaseInput: JSON.stringify(configInput) }),
-              ...(config && { configBase: JSON.stringify(config) }),
-            },
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            configFilepath,
+            ...(configInput && { configBaseInput: JSON.stringify(configInput) }),
+            ...(config && { configBase: JSON.stringify(config) }),
           },
-          "initialization aborted, could not resolve configuration"
-        )
+        },
+        "initialization aborted, could not resolve configuration"
       );
     }
 
-    const toggleCount = this._processConfig(config);
+    let toggleCount;
+    try {
+      toggleCount = this._processConfig(config);
+    } catch (err) {
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            ...(config && { config: JSON.stringify(config) }),
+          },
+        },
+        "initialization aborted, could not process configuration"
+      );
+    }
 
     const validationErrors = await this._validateFallbackValues(this.__fallbackValues);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
