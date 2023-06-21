@@ -3,8 +3,6 @@
 //NOTE: if a local redis is running when these integration tests are performed, then they will not work. we rely on
 // and test only the local mode here.
 
-const fs = require("fs");
-
 const { stateFromInfo } = require("../__common__/fromInfo");
 
 let featureTogglesLoggerSpy, redisWrapperLoggerSpy;
