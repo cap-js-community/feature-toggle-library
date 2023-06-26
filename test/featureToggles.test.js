@@ -708,14 +708,25 @@ describe("feature toggles test", () => {
 
       // NOTE: we get called twice here once for upstream to redis and once downstream from redis
       expect(validator).toHaveBeenCalledTimes(2);
-      expect(validator).toHaveBeenNthCalledWith(1, newValue, SCOPE_ROOT_KEY);
-      expect(validator).toHaveBeenNthCalledWith(2, newValue, SCOPE_ROOT_KEY);
+      expect(validator).toHaveBeenNthCalledWith(1, newValue, undefined, SCOPE_ROOT_KEY);
+      expect(validator).toHaveBeenNthCalledWith(2, newValue, undefined, SCOPE_ROOT_KEY);
+
+      // with scopes
+      validator.mockClear();
+      const testScopeMap = { domain: "value " };
+      const testScopeKey = FeatureToggles.getScopeKey(testScopeMap);
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 102, testScopeMap)).toBeUndefined();
+      expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue, testScopeMap)).toBeUndefined();
+
+      expect(validator).toHaveBeenCalledTimes(2);
+      expect(validator).toHaveBeenNthCalledWith(1, newValue, testScopeMap, testScopeKey);
+      expect(validator).toHaveBeenNthCalledWith(2, newValue, testScopeMap, testScopeKey);
 
       // right toggle but failing
       validator.mockClear();
       const mockErrorMessage = "wrong input";
       validator.mockResolvedValueOnce({ errorMessage: mockErrorMessage });
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 102)).toBeUndefined();
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 103)).toBeUndefined();
       expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
         [
           {
@@ -726,7 +737,7 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenCalledWith(newValue, SCOPE_ROOT_KEY);
+      expect(validator).toHaveBeenCalledWith(newValue, undefined, SCOPE_ROOT_KEY);
 
       // right toggle but failing with messageValues
       validator.mockClear();
@@ -736,7 +747,7 @@ describe("feature toggles test", () => {
         errorMessage: mockErrorMessageWithValues,
         errorMessageValues: mockErrorMessageValues,
       });
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 102)).toBeUndefined();
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 104)).toBeUndefined();
       expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
         [
           {
@@ -751,7 +762,7 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenCalledWith(newValue, SCOPE_ROOT_KEY);
+      expect(validator).toHaveBeenCalledWith(newValue, undefined, SCOPE_ROOT_KEY);
 
       // right toggle but failing with multiple errors
       validator.mockClear();
@@ -768,7 +779,7 @@ describe("feature toggles test", () => {
           errorMessageValues: mockErrorMessageValues,
         },
       ]);
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 102)).toBeUndefined();
+      expect(await featureToggles.changeFeatureValue(FEATURE.B, 105)).toBeUndefined();
       expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
         [
           {
@@ -788,7 +799,7 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(validator).toHaveBeenCalledTimes(1);
-      expect(validator).toHaveBeenCalledWith(newValue, SCOPE_ROOT_KEY);
+      expect(validator).toHaveBeenCalledWith(newValue, undefined, SCOPE_ROOT_KEY);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();

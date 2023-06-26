@@ -364,7 +364,7 @@ class FeatureToggles {
       validators.map(async (validator) => {
         const validatorName = validator.name || "anonymous";
         try {
-          const validationErrorOrErrors = (await validator(value, scopeKey)) || [];
+          const validationErrorOrErrors = (await validator(value, scopeMap, scopeKey)) || [];
           const validationErrors = Array.isArray(validationErrorOrErrors)
             ? validationErrorOrErrors
             : [validationErrorOrErrors];
@@ -1251,9 +1251,11 @@ class FeatureToggles {
    *
    * The validator gets the new value and can do any number of checks on it. Returning anything falsy, like undefined,
    * means the new value passes validation, otherwise the validator must return either a single {@link ValidationError},
-   * or a list of ValidationErrors.
+   * or a list of ValidationErrors. The validator will receive either no scoping information or both the scopeMap and
+   * scopeKey for reference.
    *
    * @param {boolean | number | string}  newValue
+   * @param {Map<string, string>}        [scopeMap]  optional scopeMap for reference
    * @param {string}                     [scopeKey]  optional scopeKey for reference
    * @returns {undefined | ValidationError | Array<ValidationError>} in case of failure a ValidationError, or an array
    *   of ValidationErrors, otherwise undefined
