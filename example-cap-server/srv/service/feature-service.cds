@@ -1,6 +1,7 @@
 @protocol: 'rest'
 @impl: './../handler/feature-service.js'
 @(requires: 'authenticated-user')
+@path: '/feature'
 // NOTE: in practice this needs proper security restrictions
 service FeatureService {
     type JSON {};
