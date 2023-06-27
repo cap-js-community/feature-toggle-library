@@ -7,17 +7,70 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v0.6.7 - 2023-06-20
 
+### Added
+
+- added `allowedScopes` configuration, which validates that correct scope names are used for updates
+
+### Fixed
+
+- separate `rootValue` from other `scopedValues` in `getFeatureInfo` and `getFeaturesInfos` APIs
+
 ## v0.6.6 - 2023-06-19
+
+### Added
+
+- added `example-cap-server` code, that acts both as an example integration code into existing cap projects and as a
+  starting point for manual testing
+
+### Fixed
+
+- first iteration towards updating documentation
 
 ## v0.6.5 - 2023-06-13
 
+### Fixed
+
+- fix bug where scoped values were ignored if they are falsy
+
 ## v0.6.4 - 2023-06-11
+
+### Added
+
+- simple migration for old sting-type state to hash-type persistence state
 
 ## v0.6.2 - 2023-06-10
 
+### Fixed
+
+- fix redis transaction re-writes
+
 ## v0.6.1 - 2023-06-07
 
+### Removed
+
+- remove API to read feature config and metadata `getFeatureConfig` and `getFeatureConfigs`.
+  use `getFeatureInfo` and `getFeaturesInfos` instead
+
+### Added
+
+- new option to add _scope restrictions_ when reading or setting feature toggles
+
+- separate persistence on redis using `HGET`, `HSET`, so that individual toggle changes don't have to touch the state
+  of all feature toggles. effectively we change the redis type for the persistence key from `string` to `hash`.
+
+- new API `getFeatureInfo` and `getFeaturesInfos` to get all config and state information in one call
+
+### Fixed
+
+- rewrite to improve config handling internally
+
+- fix some problems with the logger in combination with verror
+
 ## v0.5.18 - 2023-04-25
+
+### Removed
+
+- restrict to node v16+
 
 ### Added
 
