@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v0.6.7 - 2023-06-20
+
+## v0.6.6 - 2023-06-19
+
+## v0.6.5 - 2023-06-13
+
+## v0.6.4 - 2023-06-11
+
+## v0.6.2 - 2023-06-10
+
+## v0.6.1 - 2023-06-07
+
+## v0.5.18 - 2023-04-25
+
+### Added
+
+- new interface to get `main` and `subscriber` client in redis wrapper
+
+### Fixed
+
+- better coding and interface for `LazyCache` and `ExpiringLazyCache`
+
+- more and improved jsdocs
+
+- allow options to be passed in redis wrapper `set` implementation.
+  see [SET](https://redis.io/commands/set/) for details.
+
+## v0.5.17 - 2022-12-13
+
+### Fixed
+
+- make logging for warn level work properly
+
 ## v0.5.16 - 2022-12-08
 
 ### Fixed
