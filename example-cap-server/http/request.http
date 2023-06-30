@@ -1,0 +1,97 @@
+### CHECK_SERVICE | ALICE
+GET {{base_url}}/rest/check/priority
+Authorization: Basic alice alice
+
+### CHECK_SERVICE | BOB
+GET {{base_url}}/rest/check/priority
+Authorization: Basic bob bob
+
+### CHECK_SERVICE | CLARK
+GET {{base_url}}/rest/check/priority
+Authorization: Basic clark clark
+
+### CHECK_SERVICE | DANNY
+GET {{base_url}}/rest/check/priority
+Authorization: Basic danny danny
+
+
+
+### FEATURE_SERVICE | STATE
+GET {{base_url}}/rest/feature/state
+Authorization: Basic alice alice
+
+### FEATURE_SERVICE | REDIS_UPDATE
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic alice alice
+Content-Type: application/json
+
+{
+  "key": "/check/priority",
+  "value": 1
+}
+
+### FEATURE_SERVICE | REDIS_UPDATE
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic alice alice
+Content-Type: application/json
+
+{
+  "key": "/check/priority",
+  "value": 10,
+  "scope": { "tenant": "people" }
+}
+
+### FEATURE_SERVICE | REDIS_UPDATE
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic alice alice
+Content-Type: application/json
+
+{
+  "key": "/check/priority",
+  "value": 100,
+  "scope": { "user": "alice@wonderland.com", "tenant": "people" }
+}
+
+
+### FEATURE_SERVICE | REDIS_UPDATE
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic alice alice
+Content-Type: application/json
+
+{
+  "key": "/memory/logInterval",
+  "value": 1000
+}
+
+### FEATURE_SERVICE | REDIS_UPDATE
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic alice alice
+Content-Type: application/json
+
+{
+  "key": "/memory/logInterval",
+  "value": 100
+}
+
+### FEATURE_SERVICE | RESET
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic alice alice
+Content-Type: application/json
+
+[
+  {
+    "key": "/check/priority",
+    "value": null,
+    "options": {
+      "clearSubScopes": true
+    }
+  },
+  {
+    "key": "/memory/logInterval",
+    "value": null,
+    "options": {
+      "clearSubScopes": true
+    }
+  }
+]
+
