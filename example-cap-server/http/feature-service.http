@@ -1,0 +1,79 @@
+### state
+GET {{base_url}}/rest/feature/state
+Authorization: Basic {{username}} {{password}}
+
+### redis_update | check 1
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "key": "/check/priority",
+  "value": 1
+}
+
+### redis_update | check 2
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "key": "/check/priority",
+  "value": 10,
+  "scope": { "tenant": "people" }
+}
+
+### redis_update | check 3
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "key": "/check/priority",
+  "value": 100,
+  "scope": { "user": "alice@wonderland.com", "tenant": "people" }
+}
+
+
+### redis_update | memory 1
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "key": "/memory/logInterval",
+  "value": 1000
+}
+
+### redis_update | memory 2
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+{
+  "key": "/memory/logInterval",
+  "value": 100
+}
+
+### redis_update | reset
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+
+[
+  {
+    "key": "/check/priority",
+    "value": null,
+    "options": {
+      "clearSubScopes": true
+    }
+  },
+  {
+    "key": "/memory/logInterval",
+    "value": null,
+    "options": {
+      "clearSubScopes": true
+    }
+  }
+]
+

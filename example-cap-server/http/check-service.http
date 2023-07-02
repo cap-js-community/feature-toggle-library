@@ -1,0 +1,15 @@
+### priority | alice
+GET {{base_url}}/rest/check/priority
+Authorization: Basic alice alice
+
+### priority | bob
+GET {{base_url}}/rest/check/priority
+Authorization: Basic bob bob
+
+### priority | clark
+GET {{base_url}}/rest/check/priority
+Authorization: Basic clark clark
+
+### priority | danny
+GET {{base_url}}/rest/check/priority
+Authorization: Basic danny danny
