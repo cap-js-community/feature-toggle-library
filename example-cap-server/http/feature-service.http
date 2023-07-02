@@ -1,28 +1,10 @@
-### CHECK_SERVICE | ALICE
-GET {{base_url}}/rest/check/priority
-Authorization: Basic alice alice
-
-### CHECK_SERVICE | BOB
-GET {{base_url}}/rest/check/priority
-Authorization: Basic bob bob
-
-### CHECK_SERVICE | CLARK
-GET {{base_url}}/rest/check/priority
-Authorization: Basic clark clark
-
-### CHECK_SERVICE | DANNY
-GET {{base_url}}/rest/check/priority
-Authorization: Basic danny danny
-
-
-
-### FEATURE_SERVICE | STATE
+### state
 GET {{base_url}}/rest/feature/state
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 
-### FEATURE_SERVICE | REDIS_UPDATE
+### redis_update | check 1
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
 
 {
@@ -30,9 +12,9 @@ Content-Type: application/json
   "value": 1
 }
 
-### FEATURE_SERVICE | REDIS_UPDATE
+### redis_update | check 2
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
 
 {
@@ -41,9 +23,9 @@ Content-Type: application/json
   "scope": { "tenant": "people" }
 }
 
-### FEATURE_SERVICE | REDIS_UPDATE
+### redis_update | check 3
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
 
 {
@@ -53,9 +35,9 @@ Content-Type: application/json
 }
 
 
-### FEATURE_SERVICE | REDIS_UPDATE
+### redis_update | memory 1
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
 
 {
@@ -63,9 +45,9 @@ Content-Type: application/json
   "value": 1000
 }
 
-### FEATURE_SERVICE | REDIS_UPDATE
+### redis_update | memory 2
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
 
 {
@@ -73,9 +55,9 @@ Content-Type: application/json
   "value": 100
 }
 
-### FEATURE_SERVICE | RESET
+### redis_update | reset
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic alice alice
+Authorization: Basic {{username}} {{password}}
 Content-Type: application/json
 
 [
