@@ -14,6 +14,7 @@
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
+// TODO validation should fail for scopeMap with complex entries
 
 const { promisify } = require("util");
 const path = require("path");
