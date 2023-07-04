@@ -352,7 +352,7 @@ describe("feature toggles test", () => {
       await featureToggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
-        [FEATURE.A, 1, { a: 1 }],
+        [FEATURE.A, 1, { a: "1" }],
         [FEATURE.A, 1, "a::1"],
         [FEATURE.AA, true],
         [FEATURE.AA, true, { tenant: "t1", user: "u1" }],
