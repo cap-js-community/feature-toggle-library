@@ -14,7 +14,6 @@
 // TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
-// TODO validation should fail for scopeMap with complex entries
 
 const { promisify } = require("util");
 const path = require("path");
@@ -280,24 +279,35 @@ class FeatureToggles {
       return [{ featureKey, errorMessage: "feature key is not valid" }];
     }
 
-    if (!FeatureToggles._isValidScopeKey(scopeKey)) {
-      return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
+    if (scopeMap) {
+      const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
+      for (const [scope, value] of Object.entries(scopeMap)) {
+        if (allowedScopesCheckMap && !allowedScopesCheckMap[scope]) {
+          return [
+            {
+              featureKey,
+              scopeKey,
+              errorMessage: 'scope "{0}" is not allowed',
+              errorMessageValues: [scope],
+            },
+          ];
+        }
+        const scopeType = typeof value;
+        if (scopeType !== "string") {
+          return [
+            {
+              featureKey,
+              scopeKey,
+              errorMessage: 'scope "{0}" has invalid type {1}, must be string',
+              errorMessageValues: [scope, scopeType],
+            },
+          ];
+        }
+      }
     }
 
-    const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
-    if (allowedScopesCheckMap && scopeKey !== undefined && scopeKey !== SCOPE_ROOT_KEY) {
-      const actualScopes = Object.keys(scopeMap);
-      const mismatch = actualScopes.find((scope) => !allowedScopesCheckMap[scope]);
-      if (mismatch !== undefined) {
-        return [
-          {
-            featureKey,
-            scopeKey,
-            errorMessage: 'scope "{0}" is not allowed',
-            errorMessageValues: [mismatch],
-          },
-        ];
-      }
+    if (!FeatureToggles._isValidScopeKey(scopeKey)) {
+      return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
     }
 
     // NOTE: value === null is our way of encoding featureKey resetting changes, so it is always allowed

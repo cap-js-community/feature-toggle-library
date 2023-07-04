@@ -357,6 +357,52 @@ describe("local integration test", () => {
       expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
+    it("validateFeatureValue with invalid scopes", async () => {
+      // valid
+      expect(await validateFeatureValue(FEATURE.C, "", { tenant: "t1" })).toMatchInlineSnapshot(`[]`);
+
+      // invalid
+      expect(await validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } })).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" has invalid type {1}, must be string",
+            "errorMessageValues": [
+              "tenant",
+              "object",
+            ],
+            "featureKey": "test/feature_c",
+            "scopeKey": "tenant::[object Object]",
+          },
+        ]
+      `);
+      expect(await validateFeatureValue(FEATURE.C, "", { tenant: ["a", "b", "c"] })).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" has invalid type {1}, must be string",
+            "errorMessageValues": [
+              "tenant",
+              "object",
+            ],
+            "featureKey": "test/feature_c",
+            "scopeKey": "tenant::a,b,c",
+          },
+        ]
+      `);
+      expect(await validateFeatureValue(FEATURE.C, "", { tenant: () => "1" })).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" has invalid type {1}, must be string",
+            "errorMessageValues": [
+              "tenant",
+              "function",
+            ],
+            "featureKey": "test/feature_c",
+            "scopeKey": "tenant::() => "1"",
+          },
+        ]
+      `);
+    });
+
     it("registerFeatureValueValidation, validateFeatureValue", async () => {
       const successfulValidator = () => undefined;
       const failingValidator1 = () => {
