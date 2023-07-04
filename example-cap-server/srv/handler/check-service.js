@@ -6,15 +6,23 @@ const {
 
 const { FEATURE } = require("../feature");
 
-const BAD_REQUEST_ERROR_HTTP_CODE = 400;
+const LOW_VALUE_RESPONSES = ["hello", "barely made it"];
 
-const SUCCESS_RESPONSES = ["well done", "works", "success", "huzzah", "celebrations"];
+const MEDIUM_VALUE_RESPONSES = ["welcome", "take a seat", "step right up"];
+const MEDIUM_BOUNDARY = 10;
+
+const HIGH_VALUE_RESPONSES = ["well done", "full success", "huzzah", "celebrations"];
+const HIGH_BOUNDARY = 100;
 
 const priorityHandler = async (context) => {
   const value = getFeatureValue(FEATURE.CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
-  return value > 0
-    ? context.reply(value + " | " + SUCCESS_RESPONSES[Math.floor(Math.random() * SUCCESS_RESPONSES.length)])
-    : context.error(BAD_REQUEST_ERROR_HTTP_CODE);
+  const messages =
+    value >= HIGH_BOUNDARY
+      ? HIGH_VALUE_RESPONSES
+      : value >= MEDIUM_BOUNDARY
+      ? MEDIUM_VALUE_RESPONSES
+      : LOW_VALUE_RESPONSES;
+  return context.reply(value + " | " + messages[Math.floor(Math.random() * messages.length)]);
 };
 
 module.exports = async (srv) => {
