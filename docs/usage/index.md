@@ -167,6 +167,12 @@ const {
 
 // ... in some function
 const logLevel = getFeatureValue("/srv/util/logger/logLevel");
+
+// ... with runtime scope information
+const logLevel = getFeatureValue("/srv/util/logger/logLevel", {
+  tenant: cds.context.tenant,
+  user: cds.context.user.id,
+});
 ```
 
 {: .warn }
@@ -183,13 +189,13 @@ const {
   singleton: { registerFeatureValueChangeHandler },
 } = require("@cap-js-community/feature-toggle-library");
 
-registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue) => {
-  console.log("changing log level from %s to %s", oldValue, newValue);
+registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue, scopeMap) => {
+  console.log("changing log level from %s to %s (scope %j)", oldValue, newValue, scopeMap);
   updateLogLevel(newValue);
 });
 
 // ... or for async APIs
-registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (newValue) => {
+registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (newValue, oldValue, scopeMap) => {
   await updateLogLevel(newValue);
 });
 ```
@@ -206,8 +212,9 @@ const {
   singleton: { changeFeatureValue },
 } = require("@cap-js-community/feature-toggle-library");
 
-async function changeIt(newValue) {
-  const validationErrors = await changeFeatureValue("/srv/util/logger/logLevel", newValue);
+// optionally pass in a scopeMap, which describes the least specific scope where the change should happen
+async function changeIt(newValue, scopeMap) {
+  const validationErrors = await changeFeatureValue("/srv/util/logger/logLevel", newValue, scopeMap);
   if (Array.isArray(validationErrors) && validationErrors.length > 0) {
     for (const { errorMessage, errorMessageValues } of validationErrors) {
       // show errors to the user, the change did not happen
