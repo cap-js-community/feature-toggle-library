@@ -1,0 +1,46 @@
+<mxfile host="app.diagrams.net" modified="2023-06-19T15:01:53.777Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15" etag="SroURJhN3uC3tcFok7gJ" version="21.5.0" type="device">
+  <diagram name="Page-1" id="IgljjqXF11xHlQnlV1vm">
+    <mxGraphModel dx="1162" dy="826" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sAZw095eo5NpUbxJhi_2-9" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=default;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="640" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-1" value="" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="80" width="580" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="110" y="147.5" width="350" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-4" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="260" y="147.5" width="350" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-5" value="Root Scope" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="330" y="90" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-6" value="Scope user" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="130" y="220" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-10" value="Fallback" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="90" y="40" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-11" value="Scope tenant" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="520" y="220" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-12" value="Scope user+tenant" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="330" y="225" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-13" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#60a917;strokeColor=#2D7600;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="150" y="45" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-14" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f0a30a;strokeColor=#BD7000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="730" y="450" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="sAZw095eo5NpUbxJhi_2-17" value="&lt;h1 style=&quot;font-size: 22px;&quot;&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;Value check order&lt;/font&gt;&lt;/h1&gt;&lt;p style=&quot;font-size: 22px;&quot;&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;Request (no scope) root, fallback&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;font-size: 22px;&quot;&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;Request (tenant: t1) tenant, root, fallback&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;font-size: 22px;&quot;&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;Request (user: u1, tenant: t1): user+tenant, user, tenant, root, fallback&lt;/font&gt;&lt;/p&gt;&lt;p style=&quot;border-color: var(--border-color); font-size: 22px;&quot;&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;Request (tenant: t1, user: u1): user+tenant, tenant, user, root, fallback&lt;/font&gt;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="480" width="760" height="270" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
