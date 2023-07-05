@@ -15,23 +15,21 @@ nav_order: 3
 
 ## Initialization
 
-During initialization the Feature Toggles want to synchronize with the central state or lazyly create it based on the
-fallback values if necessary. Another goal is to make sure that _current_ validation rules are respected in all cases
-and, for example, retroactively applied to the central state.
+During initialization the Feature Toggles want to synchronize with the central state. Another goal is to make sure
+that _current_ validation rules are respected in all cases and retroactively applied to the central state.
 
 Initialization broadly has this workflow:
 
-- read the configuration
+- read and process the configuration
 - validate fallback values and warn about invalid fallback values
 - if Redis cannot be reached:
   - use fallback values as local state and stop
 - if Redis is reachable:
   - read state and filter out values inconsistent with validation rules
-  - publish those validated fallback values, where corresponding keys are missing from state
   - use validated Redis values if possible or, if none exist, fallback values as local state
 - subscribe to future updates from Redis
 
-After intialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
+After initialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
 if possible, validated values from Redis.
 
 ## Single Key Approach
@@ -53,6 +51,10 @@ Using a single key on Redis for the state of all toggles has some implementation
 
 On the other hand, there is also a disadvantage. The sync speed will degrade with the cumulative size of all toggle
 states. In practice, if you have lots of toggles with long state strings, it will be slower than necessary.
+
+## Scoping
+
+TODO
 
 ## Request-Level Toggles
 
