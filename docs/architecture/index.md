@@ -79,7 +79,7 @@ by using
 
 - `changeFeatureValue(key, "new value for t1", { tenant: "t1" })`
 
-And we could change the behavior again with for the more specific tenant `t1` and user `john`, by using
+And we could change the behavior again with for the more specific user `john` and tenant `t1`, by using
 
 - `changeFeatureValue(key, "new value just for john within t1", { user: "john", tenant: "t1" })`
 
@@ -87,3 +87,9 @@ And we could change the behavior again with for the more specific tenant `t1` an
 As we can see in the precedence check order, if we had just set `changeFeatureValue(key, "new value for john", { user: "john" })`,
 then it depends on the order used in the `getFeatureValue` call, whether the `user` scope is evaluated before
 the `tenant` scope.
+
+Note that the scoping concept is not opinionated about which particular information you use to discriminate a feature
+toggle's value at runtime. There is a practical limit that only 4 scopes can be used at once, because the precedence
+checks grow exponentially in the number of scopes. But other than that, you can use any 4 strings. In other words, the
+scopes need not be `tenant` or `user`, they could be code component information, like the `__filename`, or whatever
+seems natural for you to use and is easy to predict for the user-group where changes should occur.
