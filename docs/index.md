@@ -1,6 +1,6 @@
 ---
 layout: home
-title: Home
+title: Overview
 nav_order: 1
 ---
 
@@ -17,9 +17,9 @@ npm install --save @cap-js-community/feature-toggle-library
 ## Features
 
 - maintain feature toggle states consistently across multiple app instances
-- feature toggle changes are published from Redis to subscribed app instance with publish/subscribe pattern [PUB/SUB](https://redis.io/topics/pubsub)
+- feature toggle changes are published from Redis to subscribed app instances with publish/subscribe pattern [PUB/SUB](https://redis.io/topics/pubsub)
 - horizontal app scaling is supported and new app instances will start with the correct state, or fallback values, if they cannot connect to Redis
-- feature toggles can be changed only for accesses with specific scopes, i.e, for specific tenants
+- feature toggle values can be changed specifically for accessors with certain scopes, e.g., for specific tenants, users,...
 - users can register change handler callbacks for specific toggles
 - users can register custom input validation callbacks for specific toggles
 
@@ -27,4 +27,4 @@ npm install --save @cap-js-community/feature-toggle-library
 
 - Configuration and code snippets: [Usage](usage)
 - Architecture and related concepts: [Architecture](architecture)
-- CAP server example: [CAP Example](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server)
+- Example CAP server: [CAP Example](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server)

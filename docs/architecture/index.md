@@ -15,23 +15,21 @@ nav_order: 3
 
 ## Initialization
 
-During initialization the Feature Toggles want to synchronize with the central state or lazyly create it based on the
-fallback values if necessary. Another goal is to make sure that _current_ validation rules are respected in all cases
-and, for example, retroactively applied to the central state.
+During initialization the Feature Toggles want to synchronize with the central state. Another goal is to make sure
+that _current_ validation rules are respected in all cases and retroactively applied to the central state.
 
 Initialization broadly has this workflow:
 
-- read the configuration
+- read and process the configuration
 - validate fallback values and warn about invalid fallback values
 - if Redis cannot be reached:
   - use fallback values as local state and stop
 - if Redis is reachable:
   - read state and filter out values inconsistent with validation rules
-  - publish those validated fallback values, where corresponding keys are missing from state
   - use validated Redis values if possible or, if none exist, fallback values as local state
 - subscribe to future updates from Redis
 
-After intialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
+After initialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
 if possible, validated values from Redis.
 
 ## Single Key Approach
@@ -40,26 +38,52 @@ if possible, validated values from Redis.
 | :-------------------------------------: |
 |        _Single Key Architecture_        |
 
-The current implementation uses a single Redis key to store all the state for one unique name, which is usually
-associated with a single app, though the Feature Toggles support the case where multiple apps _with the same
-configuration_ use the same unique name. In the diagram you can see both examples, app 1 has a partner app, that uses
-the same unique key and all instances of both apps, will synchronize with Redis. On the other hand app 2 is alone,
-which is the most common use-case.
+The current implementation uses a single Redis key of type `hash` to store the state of all toggles for one unique
+name. A unique name is usually associated with a single app, but the library also supports the case where multiple apps
+_with the same configuration_ use the same unique name.
 
-Using a single key on Redis for the state of all toggles has some implementation advantages:
+In the diagram you can see both examples, app 1 has a partner app, that uses the same unique key and all instances of
+both apps, will synchronize with Redis. On the other hand app 2 is alone, which is the most common use-case.
 
-- discovery about which toggles are maintained is trivial, no namespacing is needed
-- pub/sub change-detection, synchronization, and lock-resolution are also easier
+## Scoping
 
-On the other hand, there is also a disadvantage. The sync speed will degrade with the cumulative size of all toggle
-states. In practice, if you have lots of toggles with long state strings, it will be slower than necessary.
+In their easiest use-cases, the Feature Toggles describe server-level state, which is _independent_ of any runtime
+context. Meaning the feature toggle's value will be the same for any request, any tenant, any user, any code component,
+or any other abstraction layer. In practice this is often insufficient.
 
-## Request-Level Toggles
+Scoping is our concept to allow discriminating the feature toggle values based on runtime context information.
+Let's take a very common example, where both `user` and `tenant` scopes are used.
 
-The Feature Toggles are currently implemented with server-level state. They have the limitation that their runtime
-values _cannot_ be different based on attributes of individual requests, for example, which tenant is making the
-request.
+|         ![](architecture-scopes.png)          |
+| :-------------------------------------------: |
+| _User and tenant scopes for a feature toggle_ |
 
-This kind of logic can be implemented outside the Feature Toggles though. You can use a string-type toggle and encode
-the relevant states for all tenants, or other discriminating request attributes. During the request processing, you can
-get the toggle's state for all tenants and act based on the one making the request.
+To realize the distinction, runtime scope information is passed to the library as a `Map<string, string>`, which results
+in a corresponding value check order of _descending specificity_, e.g.:
+
+- `getFeatureValue(key)`
+  - root scope, fallback
+- `getFeatureValue(key, { tenant: cds.context.tenant })`
+  - `tenant` scope, root scope, fallback
+- `getFeatureValue(key, { user: cds.context.user.id, tenant: cds.context.tenant })`
+  - `user+tenant` scope, `user` scope, `tenant` scope, root scope, fallback
+- `getFeatureValue(key, { tenant: cds.context.tenant, user: cds.context.user.id })`
+  - `user+tenant` scope, `tenant` scope, `user` scope, root scope, fallback
+
+The root scope is always the least specific or broadest scope and corresponds to _not_ specifying any particular scope
+information. Now, the framework will go through these potential values in this order and check if any of them have been
+set. The first value that has been set stops the chain and is returned to the caller.
+
+With this setup, we can change the resulting value for anyone with tenant `t1`, _and no other, more specific scopes_,
+by using
+
+- `changeFeatureValue(key, "new value for t1", { tenant: "t1" })`
+
+And we could change the behavior again with for the more specific tenant `t1` and user `john`, by using
+
+- `changeFeatureValue(key, "new value just for john within t1", { user: "john", tenant: "t1" })`
+
+{: .warn}
+As we can see in the precedence check order, if we had just set `changeFeatureValue(key, "new value for john", { user: "john" })`,
+then it depends on the order used in the `getFeatureValue` call, whether the `user` scope is evaluated before
+the `tenant` scope.

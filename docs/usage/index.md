@@ -34,7 +34,7 @@ const { singleton } = require("@cap-js-community/feature-toggle-library");
 
 {: .warn }
 Be aware that using the singleton instance and changing the app name will invalidate the Redis state and set
-back all toggles to their fallback.
+back all toggles to their fallback values.
 
 ## Configuration
 
@@ -114,9 +114,10 @@ The semantics of these properties are as follows.
 | fallbackValue | true     | see below                                                        |
 | appUrl        |          | see below                                                        |
 | validation    |          | regex for input validation                                       |
+| allowedScopes |          | see below                                                        |
 
 _fallbackValue_<br>
-This value gets set initially when the featue toggle is introduced, and it is also used as a fallback when
+This value gets set initially when the feature toggle is introduced, and it is also used as a fallback when
 communication with Redis is blocked during startup.
 
 _appUrl_<br>
@@ -125,6 +126,11 @@ Regex for activating feature toggle _only_ if the cf app's url matches
 - for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`
 - for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`
 - specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`
+
+_allowedScopes_<br>
+This is an additional form of change validation. AllowedScopes can be set to a list of strings, for example
+`allowedScopes: [tenant, user]`. With this configuration only matching scopes can be used when setting feature toggle
+values.
 
 {: .info }
 You can use the type `string` to encode more complex data types, like arrays or objects, but need to take care of the
@@ -161,6 +167,12 @@ const {
 
 // ... in some function
 const logLevel = getFeatureValue("/srv/util/logger/logLevel");
+
+// ... with runtime scope information
+const logLevel = getFeatureValue("/srv/util/logger/logLevel", {
+  tenant: cds.context.tenant,
+  user: cds.context.user.id,
+});
 ```
 
 {: .warn }
@@ -170,20 +182,20 @@ top-level.
 
 ### Observing Feature Value Changes
 
-You can register for all updates of a specific feature toggle:
+You can register a callback for all updates to a feature toggle:
 
 ```javascript
 const {
   singleton: { registerFeatureValueChangeHandler },
 } = require("@cap-js-community/feature-toggle-library");
 
-registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue) => {
-  console.log("changing log level from %s to %s", oldValue, newValue);
+registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue, scopeMap) => {
+  console.log("changing log level from %s to %s (scope %j)", oldValue, newValue, scopeMap);
   updateLogLevel(newValue);
 });
 
 // ... or for async APIs
-registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (newValue) => {
+registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (newValue, oldValue, scopeMap) => {
   await updateLogLevel(newValue);
 });
 ```
@@ -200,8 +212,9 @@ const {
   singleton: { changeFeatureValue },
 } = require("@cap-js-community/feature-toggle-library");
 
-async function changeIt(newValue) {
-  const validationErrors = await changeFeatureValue("/srv/util/logger/logLevel", newValue);
+// optionally pass in a scopeMap, which describes the least specific scope where the change should happen
+async function changeIt(newValue, scopeMap) {
+  const validationErrors = await changeFeatureValue("/srv/util/logger/logLevel", newValue, scopeMap);
   if (Array.isArray(validationErrors) && validationErrors.length > 0) {
     for (const { errorMessage, errorMessageValues } of validationErrors) {
       // show errors to the user, the change did not happen
@@ -214,7 +227,8 @@ The change API `changeFeatureValue` will return when the change is published to 
 processing delay until the change is picked up by all subscribers.
 
 {: .info }
-Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback value.
+Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback
+value.
 
 ### External Validation
 

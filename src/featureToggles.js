@@ -11,7 +11,6 @@
 
 "use strict";
 
-// TODO the naming is very confusing stateScopedValues are scopedValues for all keys but they sound like the same thing
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
 
