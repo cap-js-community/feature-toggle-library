@@ -59,7 +59,7 @@ Let's take a very common example, where both `user` and `tenant` scopes are used
 | _User and tenant scopes for a feature toggle_ |
 
 To realize the distinction, runtime scope information is passed to the library as a `Map<string, string>`, which results
-in a corresponding value check order of descending specificity, e.g.:
+in a corresponding value check order of _descending specificity_, e.g.:
 
 - `getFeatureValue(key)`
   - root scope, fallback
@@ -71,17 +71,19 @@ in a corresponding value check order of descending specificity, e.g.:
   - `user+tenant` scope, `tenant` scope, `user` scope, root scope, fallback
 
 The root scope is always the least specific or broadest scope and corresponds to _not_ specifying any particular scope
-information. Now, the framework will go through these values in order and if any of them are set the most the chain
-stops and a response is sent to the caller.
+information. Now, the framework will go through these potential values in this order and check if any of them have been
+set. The first value that has been set stops the chain and is returned to the caller.
 
-## Request-Level Toggles
+With this setup, we can change the resulting value for anyone with tenant `t1`, _and no other, more specific scopes_,
+by using
 
-TODO this is not true with scoping
+- `changeFeatureValue(key, "new value for t1", { tenant: "t1" })`
 
-The Feature Toggles are currently implemented with server-level state. They have the limitation that their runtime
-values _cannot_ be different based on attributes of individual requests, for example, which tenant is making the
-request.
+And we could change the behavior again with for the more specific tenant `t1` and user `john`, by using
 
-This kind of logic can be implemented outside the Feature Toggles though. You can use a string-type toggle and encode
-the relevant states for all tenants, or other discriminating request attributes. During the request processing, you can
-get the toggle's state for all tenants and act based on the one making the request.
+- `changeFeatureValue(key, "new value just for john within t1", { user: "john", tenant: "t1" })`
+
+{: .warn}
+As we can see in the precedence check order, if we had just set `changeFeatureValue(key, "new value for john", { user: "john" })`,
+then it depends on the order used in the `getFeatureValue` call, whether the `user` scope is evaluated before
+the `tenant` scope.
