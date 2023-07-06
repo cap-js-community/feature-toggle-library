@@ -47,7 +47,32 @@ both apps, will synchronize with Redis. On the other hand app 2 is alone, which 
 
 ## Scoping
 
-TODO
+In their easiest use-cases, the Feature Toggles describe server-level state, which is _independent_ of any runtime
+context. Meaning the feature toggle's value will be the same for any request, any tenant, any user, any code component,
+or any other abstraction layer. In practice this is often insufficient.
+
+Scoping is our concept to allow discriminating the feature toggle values based on runtime context information.
+Let's take a very common example, where both `user` and `tenant` scopes are used.
+
+|         ![](architecture-scopes.png)          |
+| :-------------------------------------------: |
+| _User and tenant scopes for a feature toggle_ |
+
+To realize the distinction, runtime scope information is passed to the library as a `Map<string, string>`, which results
+in a corresponding value check order of descending specificity, e.g.:
+
+- `getFeatureValue(key)`
+  - root scope, fallback
+- `getFeatureValue(key, { tenant: cds.context.tenant })`
+  - `tenant` scope, root scope, fallback
+- `getFeatureValue(key, { user: cds.context.user.id, tenant: cds.context.tenant })`
+  - `user+tenant` scope, `user` scope, `tenant` scope, root scope, fallback
+- `getFeatureValue(key, { tenant: cds.context.tenant, user: cds.context.user.id })`
+  - `user+tenant` scope, `tenant` scope, `user` scope, root scope, fallback
+
+The root scope is always the least specific or broadest scope and corresponds to _not_ specifying any particular scope
+information. Now, the framework will go through these values in order and if any of them are set the most the chain
+stops and a response is sent to the caller.
 
 ## Request-Level Toggles
 
