@@ -3,7 +3,8 @@
   "name": "example-cap-server",
   "version": "1.0.0",
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds-serve",
+    "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def ."
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "file:..",
