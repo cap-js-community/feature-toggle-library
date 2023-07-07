@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "cds-serve",
-    "cloc": "npx cloc --exclude-dir=node_modules ."
+    "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def ."
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "file:..",
