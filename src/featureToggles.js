@@ -13,6 +13,8 @@
 
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
+// TODO handle better the case where getFeatureValue gets a scopeMap that has non-string values, these should be
+//  ignored
 
 const { promisify } = require("util");
 const path = require("path");
