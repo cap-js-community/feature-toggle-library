@@ -40,6 +40,8 @@ const SUPER_SCOPE_CACHE_SIZE_LIMIT = 15;
 const SCOPE_KEY_INNER_SEPARATOR = "::";
 const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
+// TODO code on... this is not right
+const SCOPE_ROOT_MAP = Object.freeze({}); // NOTE: this is just a symbol object to be checked against
 
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
@@ -763,6 +765,24 @@ class FeatureToggles {
   // START OF GET_FEATURE_VALUE SECTION
   // ========================================
 
+  static _isValidScopeMapValue(value) {
+    return typeof value === "string";
+  }
+
+  // in place sanitizer for scopeMap
+  static _sanitizeScopeMap(scopeMap) {
+    if (typeof scopeMap !== "object" || scopeMap === null) {
+      return SCOPE_ROOT_KEY;
+    }
+
+    for (const [scope, value] of Object.entries(scopeMap)) {
+      if (!FeatureToggles._isValidScopeMapValue(value)) {
+        Reflect.deleteProperty(scopeMap, scope);
+      }
+    }
+    return scopeMap;
+  }
+
   static getScopeKey(scopeMap) {
     if (typeof scopeMap !== "object" || scopeMap === null) {
       return SCOPE_ROOT_KEY;
@@ -851,6 +871,8 @@ class FeatureToggles {
     }
 
     const scopeRootValue = scopedValues[SCOPE_ROOT_KEY] ?? fallbackValue;
+
+    // TODO code on. We should sanitize scopeMap entries here before the early exit happens. Early exit should also happen for empty object.
     if (scopeMap === undefined) {
       return scopeRootValue;
     }
