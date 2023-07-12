@@ -40,8 +40,6 @@ const SUPER_SCOPE_CACHE_SIZE_LIMIT = 15;
 const SCOPE_KEY_INNER_SEPARATOR = "::";
 const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
-// TODO code on... this is not right
-const SCOPE_ROOT_MAP = Object.freeze({}); // NOTE: this is just a symbol object to be checked against
 
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
