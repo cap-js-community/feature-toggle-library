@@ -11,7 +11,10 @@ const ENV = Object.freeze({
 
 const isNull = (...args) => args.reduce((result, arg) => result || arg === undefined || arg === null, false);
 
+const isObject = (input) => typeof input === "object" && input !== null;
+
 module.exports = {
   ENV,
   isNull,
+  isObject,
 };

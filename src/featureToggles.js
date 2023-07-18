@@ -24,7 +24,7 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isNull } = require("./shared/static");
+const { ENV, isObject } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
@@ -278,27 +278,32 @@ class FeatureToggles {
       return [{ featureKey, errorMessage: "feature key is not valid" }];
     }
 
-    if (scopeMap) {
+    if (scopeMap !== undefined) {
+      if (!isObject(scopeMap)) {
+        return [
+          {
+            featureKey,
+            errorMessage: "scopeMap must be undefined or an object",
+          },
+        ];
+      }
       const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
       for (const [scope, value] of Object.entries(scopeMap)) {
+        if (!FeatureToggles._isValidScopeMapValue(value)) {
+          return [
+            {
+              featureKey,
+              errorMessage: 'scope "{0}" has invalid type {1}, must be string',
+              errorMessageValues: [scope, typeof value],
+            },
+          ];
+        }
         if (allowedScopesCheckMap && !allowedScopesCheckMap[scope]) {
           return [
             {
               featureKey,
-              scopeKey,
               errorMessage: 'scope "{0}" is not allowed',
               errorMessageValues: [scope],
-            },
-          ];
-        }
-        const scopeType = typeof value;
-        if (scopeType !== "string") {
-          return [
-            {
-              featureKey,
-              scopeKey,
-              errorMessage: 'scope "{0}" has invalid type {1}, must be string',
-              errorMessageValues: [scope, scopeType],
             },
           ];
         }
@@ -453,7 +458,7 @@ class FeatureToggles {
    */
   async _validateFallbackValues(fallbackValues) {
     let validationErrors = [];
-    if (isNull(fallbackValues) || typeof fallbackValues !== "object") {
+    if (!isObject(fallbackValues)) {
       return validationErrors;
     }
 
@@ -518,7 +523,7 @@ class FeatureToggles {
           this.__redisKey,
           featureKey,
           async (scopedValues) => {
-            if (typeof scopedValues !== "object" || scopedValues === null) {
+            if (!isObject(scopedValues)) {
               return null;
             }
             const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(
@@ -761,11 +766,34 @@ class FeatureToggles {
   // START OF GET_FEATURE_VALUE SECTION
   // ========================================
 
+  static _isValidScopeMapValue(value) {
+    return typeof value === "string";
+  }
+
+  /**
+   * This is used to make sure scopeMap is either undefined or a shallow map with string entries. This happens for all
+   * public interfaces with a scopeMap parameter, except {@link validateFeatureValue} and {@link changeFeatureValue}.
+   * For these two interfaces, we want the "bad" scopeMaps to cause validation errors.
+   * Also not for {@link getScopeKey}, where the sanitization must not happen in place.
+   */
+  static _sanitizeScopeMap(scopeMap) {
+    if (!isObject(scopeMap)) {
+      return undefined;
+    }
+    for (const [scope, value] of Object.entries(scopeMap)) {
+      if (!FeatureToggles._isValidScopeMapValue(value)) {
+        Reflect.deleteProperty(scopeMap, scope);
+      }
+    }
+    return scopeMap;
+  }
+
+  // NOTE: getScopeMap does the scopeMap sanitization on the fly, because it must not modify scopeMap in place.
   static getScopeKey(scopeMap) {
-    if (typeof scopeMap !== "object" || scopeMap === null) {
+    if (!isObject(scopeMap)) {
       return SCOPE_ROOT_KEY;
     }
-    const scopeMapKeys = Object.keys(scopeMap);
+    const scopeMapKeys = Object.keys(scopeMap).filter((scope) => FeatureToggles._isValidScopeMapValue(scopeMap[scope]));
     if (scopeMapKeys.length === 0) {
       return SCOPE_ROOT_KEY;
     }
@@ -781,8 +809,8 @@ class FeatureToggles {
   // NOTE: there are multiple scopeMaps for every scopeKey with more than one inner entry. This will return the unique
   // scopeMap whose keys are sorted, i.e., matching the keys in the scopeKey.
   static getScopeMap(scopeKey) {
-    return typeof scopeKey !== "string" || scopeKey === SCOPE_ROOT_KEY
-      ? {}
+    return !this._isValidScopeKey(scopeKey) || scopeKey === undefined || scopeKey === SCOPE_ROOT_KEY
+      ? undefined
       : scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR).reduce((acc, scopeInnerEntry) => {
           const [scopeInnerKey, value] = scopeInnerEntry.split(SCOPE_KEY_INNER_SEPARATOR);
           acc[scopeInnerKey] = value;
@@ -877,6 +905,7 @@ class FeatureToggles {
    */
   getFeatureValue(featureKey, scopeMap = undefined) {
     this._ensureInitialized();
+    scopeMap = FeatureToggles._sanitizeScopeMap(scopeMap);
     return FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
       this.__superScopeCache,
       this.__stateScopedValues,
