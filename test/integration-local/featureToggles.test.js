@@ -48,6 +48,7 @@ const config = {
     fallbackValue: 5,
     type: "number",
     validation: "^\\d{1}$",
+    allowedScopes: ["component", "layer", "tenant"],
   },
   [FEATURE.F]: {
     fallbackValue: "best",
@@ -196,10 +197,31 @@ describe("local integration test", () => {
     it("getFeatureValue with bad scopes", async () => {
       const oldRootValue = 5;
       const trapValue = 9;
-      const badScopeMap = { tenant: undefined, user: undefined };
-      const trapScopeMap = { tenant: "undefined", user: "undefined" };
+      const badScopeMap1 = null; // not an object
+      const badScopeMap2 = { tanent: "undefined" }; // scope that is not allowed
+      const badScopeMap3 = { tenant: undefined, layer: undefined };
+      const trapScopeMap = { tenant: "undefined", layer: "undefined" };
 
-      expect(await changeFeatureValue(FEATURE.E, trapValue, badScopeMap)).toMatchInlineSnapshot(`
+      expect(await changeFeatureValue(FEATURE.E, trapValue, badScopeMap1)).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scopeMap must be undefined or an object",
+            "featureKey": "test/feature_e",
+          },
+        ]
+      `);
+      expect(await changeFeatureValue(FEATURE.E, trapValue, badScopeMap2)).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scope "{0}" is not allowed",
+            "errorMessageValues": [
+              "tanent",
+            ],
+            "featureKey": "test/feature_e",
+          },
+        ]
+      `);
+      expect(await changeFeatureValue(FEATURE.E, trapValue, badScopeMap3)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "scope "{0}" has invalid type {1}, must be string",
@@ -212,7 +234,7 @@ describe("local integration test", () => {
         ]
       `);
       expect(await changeFeatureValue(FEATURE.E, trapValue, trapScopeMap)).toMatchInlineSnapshot(`undefined`);
-      expect(getFeatureValue(FEATURE.E, badScopeMap)).toEqual(oldRootValue);
+      expect(getFeatureValue(FEATURE.E, badScopeMap3)).toEqual(oldRootValue);
     });
 
     it("getFeatureValue, changeFeatureValue with scopes", async () => {
@@ -230,12 +252,10 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, forbiddenNewValue, scopeMap)).toMatchSnapshot();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`{}`);
-
-      // expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
-      // expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(rootOldValue);
-      // expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(rootOldValue);
-      // expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);
-      // expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
+      expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(rootOldValue);
+      expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(rootOldValue);
+      expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);
+      expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
       expect(await changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`

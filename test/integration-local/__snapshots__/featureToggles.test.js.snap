@@ -93,6 +93,11 @@ exports[`local integration test after init getFeatureValues, getFeaturesInfos 1`
   },
   "test/feature_e": {
     "config": {
+      "ALLOWED_SCOPES": [
+        "component",
+        "layer",
+        "tenant",
+      ],
       "TYPE": "number",
       "VALIDATION": "^\\d{1}$",
     },

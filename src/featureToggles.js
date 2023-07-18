@@ -449,7 +449,7 @@ class FeatureToggles {
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
     return scopeMap === undefined
       ? await this._validateFeatureValue(featureKey, value)
-      : await this._validateFeatureValue(featureKey, value, scopeMap, FeatureToggles._getScopeKey(scopeMap));
+      : await this._validateFeatureValue(featureKey, value, scopeMap, FeatureToggles.getScopeKey(scopeMap));
   }
 
   /**
@@ -773,7 +773,8 @@ class FeatureToggles {
   /**
    * This is used to make sure scopeMap is either undefined or a shallow map with string entries. This happens for all
    * public interfaces with a scopeMap parameter, except {@link validateFeatureValue} and {@link changeFeatureValue}.
-   * For these, we want the "bad" scopeMaps to cause validation errors.
+   * For these two interfaces, we want the "bad" scopeMaps to cause validation errors.
+   * Also not for {@link getScopeKey}, where the sanitization must not happen in place.
    */
   static _sanitizeScopeMap(scopeMap) {
     if (!isObject(scopeMap)) {
@@ -787,16 +788,12 @@ class FeatureToggles {
     return scopeMap;
   }
 
+  // NOTE: getScopeMap does the scopeMap sanitization on the fly, because it must not modify scopeMap in place.
   static getScopeKey(scopeMap) {
-    scopeMap = FeatureToggles._sanitizeScopeMap(scopeMap);
-    return FeatureToggles._getScopeKey(scopeMap);
-  }
-
-  static _getScopeKey(scopeMap) {
-    if (scopeMap === undefined) {
+    if (!isObject(scopeMap)) {
       return SCOPE_ROOT_KEY;
     }
-    const scopeMapKeys = Object.keys(scopeMap);
+    const scopeMapKeys = Object.keys(scopeMap).filter((scope) => FeatureToggles._isValidScopeMapValue(scopeMap[scope]));
     if (scopeMapKeys.length === 0) {
       return SCOPE_ROOT_KEY;
     }
@@ -1101,7 +1098,7 @@ class FeatureToggles {
         changeEntries.map(async (changeEntry) => {
           ({ featureKey, newValue, scopeMap, options } = changeEntry);
 
-          const scopeKey = FeatureToggles._getScopeKey(scopeMap);
+          const scopeKey = FeatureToggles.getScopeKey(scopeMap);
           const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
             this.__superScopeCache,
             this.__stateScopedValues,
@@ -1156,7 +1153,7 @@ class FeatureToggles {
   }
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
-    const scopeKey = FeatureToggles._getScopeKey(scopeMap);
+    const scopeKey = FeatureToggles.getScopeKey(scopeMap);
     const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeMap, scopeKey);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
