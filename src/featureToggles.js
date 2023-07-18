@@ -13,8 +13,6 @@
 
 // TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
-// TODO handle better the case where getFeatureValue gets a scopeMap that has non-string values, these should be
-//  ignored
 
 const { promisify } = require("util");
 const path = require("path");
@@ -448,7 +446,6 @@ class FeatureToggles {
    * @param {Map<string, string>}         [scopeMap]  optional scope restrictions
    * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
    */
-  // TODO scopeMap external interface validateFeatureValue
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
     return scopeMap === undefined
       ? await this._validateFeatureValue(featureKey, value)
@@ -790,7 +787,6 @@ class FeatureToggles {
     return scopeMap;
   }
 
-  // TODO scopeMap external interface getScopeKey
   static getScopeKey(scopeMap) {
     scopeMap = FeatureToggles._sanitizeScopeMap(scopeMap);
     return FeatureToggles._getScopeKey(scopeMap);
@@ -911,7 +907,6 @@ class FeatureToggles {
    * @param {Map<string, string>}  [scopeMap]  optional scope restrictions
    * @returns {string|number|boolean|null}
    */
-  // TODO scopeMap external interface getFeatureValue
   getFeatureValue(featureKey, scopeMap = undefined) {
     this._ensureInitialized();
     scopeMap = FeatureToggles._sanitizeScopeMap(scopeMap);
@@ -1230,7 +1225,6 @@ class FeatureToggles {
    * @param {ChangeOptions}               [options]   optional extra change options
    * @returns {Promise<Array<ValidationError> | void>}
    */
-  // TODO scopeMap external interface changeFeatureValue
   async changeFeatureValue(featureKey, newValue, scopeMap = undefined, options = undefined) {
     this._ensureInitialized();
     return await this._changeRemoteFeatureValue(featureKey, newValue, scopeMap, options);
