@@ -38,8 +38,7 @@ const cleanupJSONLogCalls = (args) =>
     const newData = Object.fromEntries(
       Object.entries(data)
         .filter(
-          ([key, value]) =>
-            !["written_at", "written_ts", "correlation_id"].includes(key) && !["-", "0"].includes(value)
+          ([key, value]) => !["written_at", "written_ts", "correlation_id"].includes(key) && !["-", "0"].includes(value)
         )
         .map(([key, value]) => {
           if (["stacktrace"].includes(key)) {
