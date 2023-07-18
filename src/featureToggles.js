@@ -11,7 +11,6 @@
 
 "use strict";
 
-// TODO update documentation regarding scoping and separate persistence => new PR
 // TODO locale for validation messages
 
 const { promisify } = require("util");
