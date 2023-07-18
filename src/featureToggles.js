@@ -519,32 +519,35 @@ class FeatureToggles {
   }
 
   async _freshStateScopedValues() {
-    return await this.__featureKeys.reduce(async (acc, featureKey) => {
-      let [validatedStateScopedValues, validationErrors] = await acc;
-      if (this._isKeyActive(featureKey)) {
-        const validatedScopedValues = await redis.watchedHashGetSetObject(
-          this.__redisKey,
-          featureKey,
-          async (scopedValues) => {
-            if (!isObject(scopedValues)) {
-              return null;
+    return await this.__featureKeys.reduce(
+      async (acc, featureKey) => {
+        let [validatedStateScopedValues, validationErrors] = await acc;
+        if (this._isKeyActive(featureKey)) {
+          const validatedScopedValues = await redis.watchedHashGetSetObject(
+            this.__redisKey,
+            featureKey,
+            async (scopedValues) => {
+              if (!isObject(scopedValues)) {
+                return null;
+              }
+              const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(
+                featureKey,
+                scopedValues
+              );
+              validationErrors = validationErrors.concat(scopedValidationErrors);
+              return validatedScopedValues;
             }
-            const [validatedScopedValues, scopedValidationErrors] = await this._validateScopedValues(
-              featureKey,
-              scopedValues
-            );
-            validationErrors = validationErrors.concat(scopedValidationErrors);
-            return validatedScopedValues;
-          }
-        );
-        FeatureToggles._updateStateScopedValuesAllScopesInPlace(
-          validatedStateScopedValues,
-          featureKey,
-          validatedScopedValues
-        );
-      }
-      return [validatedStateScopedValues, validationErrors];
-    }, Promise.resolve([{}, []]));
+          );
+          FeatureToggles._updateStateScopedValuesAllScopesInPlace(
+            validatedStateScopedValues,
+            featureKey,
+            validatedScopedValues
+          );
+        }
+        return [validatedStateScopedValues, validationErrors];
+      },
+      Promise.resolve([{}, []])
+    );
   }
 
   async _migrateStringTypeState(stringTypeStateEntries) {
