@@ -234,6 +234,8 @@ describe("local integration test", () => {
         ]
       `);
       expect(await changeFeatureValue(FEATURE.E, trapValue, trapScopeMap)).toMatchInlineSnapshot(`undefined`);
+      expect(getFeatureValue(FEATURE.E, badScopeMap1)).toEqual(oldRootValue);
+      expect(getFeatureValue(FEATURE.E, badScopeMap2)).toEqual(oldRootValue);
       expect(getFeatureValue(FEATURE.E, badScopeMap3)).toEqual(oldRootValue);
     });
 
@@ -409,6 +411,15 @@ describe("local integration test", () => {
       expect(await validateFeatureValue(FEATURE.C, "", { tenant: "t1" })).toMatchInlineSnapshot(`[]`);
 
       // invalid
+      expect(await validateFeatureValue(FEATURE.C, "", null)).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "scopeMap must be undefined or an object",
+            "featureKey": "test/feature_c",
+          },
+        ]
+      `);
+
       expect(await validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } })).toMatchInlineSnapshot(`
         [
           {
