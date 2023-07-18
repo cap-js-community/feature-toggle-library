@@ -877,7 +877,6 @@ class FeatureToggles {
     }
 
     const scopeRootValue = scopedValues[SCOPE_ROOT_KEY] ?? fallbackValue;
-
     if (scopeMap === undefined) {
       return scopeRootValue;
     }
