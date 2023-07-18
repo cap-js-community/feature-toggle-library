@@ -291,7 +291,7 @@ class FeatureToggles {
       }
       const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
       for (const [scope, value] of Object.entries(scopeMap)) {
-        if (FeatureToggles._isValidScopeMapValue(value)) {
+        if (!FeatureToggles._isValidScopeMapValue(value)) {
           return [
             {
               featureKey,
@@ -452,7 +452,7 @@ class FeatureToggles {
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
     return scopeMap === undefined
       ? await this._validateFeatureValue(featureKey, value)
-      : await this._validateFeatureValue(featureKey, value, scopeMap, FeatureToggles.getScopeKey(scopeMap));
+      : await this._validateFeatureValue(featureKey, value, scopeMap, FeatureToggles._getScopeKey(scopeMap));
   }
 
   /**
@@ -816,7 +816,7 @@ class FeatureToggles {
   // NOTE: there are multiple scopeMaps for every scopeKey with more than one inner entry. This will return the unique
   // scopeMap whose keys are sorted, i.e., matching the keys in the scopeKey.
   static getScopeMap(scopeKey) {
-    return !this._isValidScopeKey(scopeKey) || scopeKey === SCOPE_ROOT_KEY
+    return !this._isValidScopeKey(scopeKey) || scopeKey === undefined || scopeKey === SCOPE_ROOT_KEY
       ? undefined
       : scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR).reduce((acc, scopeInnerEntry) => {
           const [scopeInnerKey, value] = scopeInnerEntry.split(SCOPE_KEY_INNER_SEPARATOR);
@@ -1161,7 +1161,7 @@ class FeatureToggles {
   }
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
-    const scopeKey = FeatureToggles.getScopeKey(scopeMap);
+    const scopeKey = FeatureToggles._getScopeKey(scopeMap);
     const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeMap, scopeKey);
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;

@@ -172,9 +172,9 @@ describe("feature toggles test", () => {
       ];
 
       let i = 0;
-      expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`{}`);
-      expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`{}`);
-      expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`{}`);
+      expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`undefined`);
+      expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`undefined`);
+      expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`undefined`);
       expect(FeatureToggles.getScopeMap(scopeKeys[i++])).toMatchInlineSnapshot(`
         {
           "tenantId": "t1",
@@ -380,14 +380,8 @@ describe("feature toggles test", () => {
       expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
-            "errorMessage": "value "{0}" has invalid type {1}, must be {2}",
-            "errorMessageValues": [
-              1,
-              "number",
-              "boolean",
-            ],
+            "errorMessage": "scopeMap must be undefined or an object",
             "featureKey": "test/feature_a",
-            "scopeKey": "//",
           },
         ]
       `);
@@ -403,7 +397,6 @@ describe("feature toggles test", () => {
               "usr",
             ],
             "featureKey": "test/feature_aa",
-            "scopeKey": "usr::u1",
           },
         ]
       `);
@@ -415,7 +408,6 @@ describe("feature toggles test", () => {
               "Tenant",
             ],
             "featureKey": "test/feature_aa",
-            "scopeKey": "Tenant::t1",
           },
         ]
       `);

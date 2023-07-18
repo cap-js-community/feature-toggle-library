@@ -197,7 +197,7 @@ describe("local integration test", () => {
       const oldRootValue = 5;
       const trapValue = 9;
       const badScopeMap = { tenant: undefined, user: undefined };
-      const trapScopeMap = { tenant: String(undefined), user: String(undefined) };
+      const trapScopeMap = { tenant: "undefined", user: "undefined" };
 
       expect(await changeFeatureValue(FEATURE.E, trapValue, badScopeMap)).toMatchInlineSnapshot(`
         [
@@ -208,7 +208,6 @@ describe("local integration test", () => {
               "undefined",
             ],
             "featureKey": "test/feature_e",
-            "scopeKey": "//",
           },
         ]
       `);
@@ -399,7 +398,6 @@ describe("local integration test", () => {
               "object",
             ],
             "featureKey": "test/feature_c",
-            "scopeKey": "tenant::[object Object]",
           },
         ]
       `);
@@ -412,7 +410,6 @@ describe("local integration test", () => {
               "object",
             ],
             "featureKey": "test/feature_c",
-            "scopeKey": "tenant::a,b,c",
           },
         ]
       `);
@@ -425,7 +422,6 @@ describe("local integration test", () => {
               "function",
             ],
             "featureKey": "test/feature_c",
-            "scopeKey": "tenant::() => "1"",
           },
         ]
       `);
