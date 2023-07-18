@@ -240,7 +240,7 @@ describe("local integration test", () => {
     });
 
     it("getFeatureValue, changeFeatureValue with scopes", async () => {
-      const rootOldValue = 5;
+      const rootOldValue = getFeatureValue(FEATURE.E);
 
       const scopeMap = { component: "c1", tenant: "t1" };
       const subScopeMap = { layer: "l1", component: "c1", tenant: "t1" };
@@ -267,9 +267,6 @@ describe("local integration test", () => {
                 },
               }
           `);
-
-      getFeatureValue(FEATURE.E, { tenant: undefined, user: undefined });
-
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);
