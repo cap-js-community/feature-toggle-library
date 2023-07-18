@@ -12,6 +12,10 @@
 "use strict";
 
 // TODO locale for validation messages
+// TODO investigate how to turn library into a cds plugin similar to https://github.com/cap-js-community/event-queue
+//      this would incorporate a ready-made feature-service interface copied from example-cap-server
+// TODO remove dependency on cf-nodejs-logging-support. the way request level information are handled in there is
+//      not good. either we build our own logging, or hook into cds.log and make cds a full dependency...
 
 const { promisify } = require("util");
 const path = require("path");
