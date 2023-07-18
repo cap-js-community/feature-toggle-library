@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v0.6.9 - 2023-07-18
+
+### Added
+
+- example http request file for [example-cap-server](./example-cap-server)
+
+### Fixed
+
+- better documentation regarding scoping and redis hash map persistence
+
+- more resilient handling of bad input for scopeMaps in all external APIs
+
 ## v0.6.8 - 2023-06-27
 
 ### Added
