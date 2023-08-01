@@ -8,13 +8,12 @@ const CUSTOM_FIELD_LAYER = "layer";
 const CUSTOM_FIELD_ERROR_INFO = "errInfo";
 
 const LEVEL = Object.freeze({
-  OFF: "off",
+  OFF: "off", // SILENT: "silent"
   ERROR: "error",
   WARNING: "warn",
   INFO: "info",
-  VERBOSE: "verbose",
-  DEBUG: "debug",
-  SILLY: "silly",
+  DEBUG: "debug", // VERBOSE: "verbose",
+  TRACE: "trace", // SILLY: "silly"
 });
 
 const noopLogger = () => {};
