@@ -2,23 +2,41 @@
 const util = require("util");
 const VError = require("verror");
 
-const CUSTOM_FIELD_LAYER = "layer";
-const CUSTOM_FIELD_ERROR_INFO = "errInfo";
+const { cfEnv } = require("./env");
 
 const FIELD = Object.freeze({
-  LAYER: "layer",
-  ERROR_INFO: "errInfo",
+  TYPE: "type",
+  LEVEL: "level",
+  WRITTEN_AT: "written_at",
+  MESSAGE: "msg",
+
+  COMPONENT_NAME: "component_name",
+  COMPONENT_ID: "component_id",
+  COMPONENT_INSTANCE: "component_instance",
+  COMPONENT_TYPE: "component_type",
+  SPACE_NAME: "space_name",
+  SPACE_ID: "space_id",
+  ORGANIZATION_NAME: "organization_name",
+  ORGANIZATION_ID: "organization_id",
+  STACKTRACE: "stacktrace",
+
+  LAYER: "layer", // AFC custom
+  ERROR_INFO: "error_info", // AFC custom
+
+  TENANT_ID: "tenant_id",
+  TENANT_SUBDOMAIN: "tenant_subdomain",
+  CORRELATION_ID: "correlation_id",
 });
 
 // NOTE: logger levels are a complete mess in node. looking at console, npm, winston, and cap there is not unity at all.
 //   I will offer the same levels as console and one "off" level.
 const LEVEL = Object.freeze({
-  OFF: "off", // SILENT: "silent"
-  ERROR: "error",
-  WARNING: "warning",
-  INFO: "info",
-  DEBUG: "debug", // VERBOSE: "verbose",
-  TRACE: "trace", // SILLY: "silly"
+  OFF: "OFF", // SILENT: "silent"
+  ERROR: "ERROR",
+  WARNING: "WARNING",
+  INFO: "INFO",
+  DEBUG: "DEBUG", // VERBOSE: "verbose",
+  TRACE: "TRACE", // SILLY: "silly"
 });
 
 const LEVEL_NUMBER = Object.freeze({
@@ -30,12 +48,26 @@ const LEVEL_NUMBER = Object.freeze({
   [LEVEL.TRACE]: 500,
 });
 
+const cfApp = cfEnv.cfApp();
+
 // this is for module server code without any request context
 class ServerLogger {
-  constructor(layer, level = LEVEL.INFO) {
+  constructor({ type = "log", level = LEVEL.INFO, layer } = {}) {
     this.__levelNumber = LEVEL_NUMBER[level];
     this.__data = {
+      [FIELD.TYPE]: type,
+      [FIELD.LEVEL]: level,
       [FIELD.LAYER]: layer,
+      ...(cfApp && {
+        [FIELD.COMPONENT_TYPE]: "application",
+        [FIELD.COMPONENT_NAME]: cfApp.application_name,
+        [FIELD.COMPONENT_ID]: cfApp.application_id,
+        [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
+        [FIELD.SPACE_NAME]: cfApp.space_name,
+        [FIELD.SPACE_ID]: cfApp.space_id,
+        [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
+        [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
+      }),
     };
   }
 
@@ -77,8 +109,8 @@ class ServerLogger {
 
 // this is for request handler code
 class RequestLogger extends ServerLogger {
-  constructor() {
-    super();
+  constructor({ type = "request" } = {}) {
+    super({ type });
   }
 }
 
