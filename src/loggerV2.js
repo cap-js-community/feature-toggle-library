@@ -4,15 +4,14 @@ const VError = require("verror");
 
 const { cfEnv } = require("./env");
 
+// NOTE: missing fields
 // "source_instance": 1, SAME AS component_instance
 // "response_time_ms": 100.33176499999999
 // "container_id": "10.36.133.5",
 const FIELD = Object.freeze({
   TYPE: "type",
   LEVEL: "level",
-  WRITTEN_AT: "written_at",
-  WRITTEN_TIME: "written_ts",
-  MESSAGE: "msg",
+  LAYER: "layer", // AFC custom
 
   COMPONENT_NAME: "component_name",
   COMPONENT_ID: "component_id",
@@ -22,10 +21,13 @@ const FIELD = Object.freeze({
   SPACE_ID: "space_id",
   ORGANIZATION_NAME: "organization_name",
   ORGANIZATION_ID: "organization_id",
-  STACKTRACE: "stacktrace",
 
-  LAYER: "layer", // AFC custom
+  STACKTRACE: "stacktrace",
   ERROR_INFO: "error_info", // AFC custom
+
+  WRITTEN_AT: "written_at",
+  WRITTEN_TIME: "written_ts",
+  MESSAGE: "msg",
 
   TENANT_ID: "tenant_id",
   TENANT_SUBDOMAIN: "tenant_subdomain",
@@ -56,7 +58,8 @@ const cfApp = cfEnv.cfApp();
 
 // this is for module server code without any request context
 class ServerLogger {
-  constructor({ type = "log", level = LEVEL.INFO, layer } = {}) {
+  constructor({ type = "log", level = LEVEL.INFO, layer, inspectOptions = { colors: false } } = {}) {
+    this.__inspectOptions = inspectOptions;
     this.__levelNumber = LEVEL_NUMBER[level];
     this.__data = {
       [FIELD.TYPE]: type,
@@ -80,18 +83,40 @@ class ServerLogger {
     if (LEVEL_NUMBER[level] <= this.__levelNumber) {
       return;
     }
-    if (args.length === 0) {
-      // TODO
-    }
-    const firstArg = args[0];
-    // check if args is a single VError
-    if (firstArg instanceof VError) {
-      const err = firstArg;
-      this.__data[FIELD.ERROR_INFO] = VError.info(err);
+    const now = new Date();
+    let message = "";
+    if (args.length > 0) {
+      const firstArg = args[0];
 
-      this.__logger.logMessage(level, VError.fullStack(err), err);
-      this._resetCustomFields();
+      // special handling if the only arg is a VError
+      if (firstArg instanceof VError) {
+        const err = firstArg;
+        Object.assign(this.__data, {
+          [FIELD.STACKTRACE]: VError.fullStack(err),
+          [FIELD.ERROR_INFO]: VError.info(err),
+        });
+        message = util.formatWithOptions(this.__inspectOptions, "%s", VError.fullStack(err));
+      }
+      // special handling if the only arg is an Error
+      else if (firstArg instanceof Error) {
+        const err = firstArg;
+        Object.assign(this.__data, {
+          [FIELD.STACKTRACE]: err.stack,
+        });
+        message = util.formatWithOptions(this.__inspectOptions, "%s", err.stack);
+      }
+      // normal handling
+      else {
+        message = util.formatWithOptions(this.__inspectOptions, ...args);
+      }
     }
+
+    Object.assign(this.__data, {
+      [FIELD.WRITTEN_AT]: now.toISOString(),
+      [FIELD.WRITTEN_TIME]: now.getTime(),
+      [FIELD.MESSAGE]: message,
+    });
+    process.stdout.write(JSON.stringify(this.__data) + "\n");
   }
 
   error(...args) {
