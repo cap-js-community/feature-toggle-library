@@ -4,10 +4,14 @@ const VError = require("verror");
 
 const { cfEnv } = require("./env");
 
+// "source_instance": 1, SAME AS component_instance
+// "response_time_ms": 100.33176499999999
+// "container_id": "10.36.133.5",
 const FIELD = Object.freeze({
   TYPE: "type",
   LEVEL: "level",
   WRITTEN_AT: "written_at",
+  WRITTEN_TIME: "written_ts",
   MESSAGE: "msg",
 
   COMPONENT_NAME: "component_name",
