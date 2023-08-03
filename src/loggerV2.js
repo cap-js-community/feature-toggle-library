@@ -92,6 +92,14 @@ class ServerLogger {
     this.__customData = customData;
   }
 
+  get serverData() {
+    return this.__serverData;
+  }
+
+  set requestData(requestData) {
+    this.__requestData = requestData;
+  }
+
   _log(level, args) {
     // check if level should be logged
     if (this.__levelNumber < LEVEL_NUMBER[level]) {
@@ -162,13 +170,16 @@ class ServerLogger {
 
 // this is for request handler code
 class RequestLogger extends ServerLogger {
-  constructor({ type = "request" } = {}) {
-    super({ type });
+  constructor(parent) {
+    super();
+    Object.assign(this, parent);
+    this.__serverData = Object.assign({}, this.__serverData, { [FIELD.TYPE]: "request" });
+    // TODO should other deep object data be cloned to be independent of parent: inspectOptions, customData
   }
 }
 
 module.exports = {
   LEVEL,
-  Logger: ServerLogger,
+  ServerLogger,
   RequestLogger,
 };
