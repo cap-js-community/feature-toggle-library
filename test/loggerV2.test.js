@@ -88,7 +88,7 @@ describe("loggerV2", () => {
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "{"component_type":"application","type":"log","level":"INFO","layer":"/test","stacktrace":"V","error_info":{},"msg":"VError: bla error"}",
+  "{"component_type":"application","type":"log","level":"INFO","layer":"/test","error_info":{},"msg":"VError: bla error"}",
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
@@ -101,7 +101,7 @@ describe("loggerV2", () => {
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "{"component_type":"application","type":"request","level":"INFO","layer":"/test","stacktrace":"V","error_info":{},"msg":"VError: bla error"}",
+  "{"component_type":"application","type":"request","level":"INFO","layer":"/test","error_info":{},"msg":"VError: bla error"}",
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);

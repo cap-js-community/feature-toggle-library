@@ -140,7 +140,7 @@ class ServerLogger {
     const level = data[FIELD.LEVEL];
     const layer = data[FIELD.LAYER];
     const message = data[FIELD.MESSAGE];
-    const parts = [timestamp, level, ...(layer ? layer : []), message];
+    const parts = [timestamp, level, ...(layer ? [layer] : []), message];
     return parts.join(" | ");
   }
 
