@@ -72,8 +72,16 @@ const cfAppData = {
 
 // this is for module server code without any request context
 class ServerLogger {
-  constructor({ layer, type = "log", level = LEVEL.INFO, inspectOptions = { colors: false }, customData } = {}) {
+  constructor({
+    layer,
+    type = "log",
+    level = LEVEL.INFO,
+    streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout,
+    inspectOptions = { colors: false },
+    customData,
+  } = {}) {
     this.__inspectOptions = inspectOptions;
+    this.__streamOut = streamOut;
     this.__levelNumber = LEVEL_NUMBER[level];
     this.__serverData = {
       [FIELD.TYPE]: type,
@@ -132,8 +140,7 @@ class ServerLogger {
       invocationData
     );
 
-    // TODO do we always write to stdout, or do we want to write to stderr for errors, what does console do?
-    process.stdout.write(JSON.stringify(data) + "\n");
+    this.__streamOut.write(JSON.stringify(data) + "\n");
   }
 
   error(...args) {
