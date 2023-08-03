@@ -59,27 +59,30 @@ const LEVEL_NUMBER = Object.freeze({
 });
 
 const cfApp = cfEnv.cfApp();
-const cfAppData = {
-  [FIELD.COMPONENT_TYPE]: "application",
-  [FIELD.COMPONENT_NAME]: cfApp.application_name,
-  [FIELD.COMPONENT_ID]: cfApp.application_id,
-  [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
-  [FIELD.SPACE_NAME]: cfApp.space_name,
-  [FIELD.SPACE_ID]: cfApp.space_id,
-  [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
-  [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
-};
+const cfAppData = cfApp
+  ? {
+      [FIELD.COMPONENT_TYPE]: "application",
+      [FIELD.COMPONENT_NAME]: cfApp.application_name,
+      [FIELD.COMPONENT_ID]: cfApp.application_id,
+      [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
+      [FIELD.SPACE_NAME]: cfApp.space_name,
+      [FIELD.SPACE_ID]: cfApp.space_id,
+      [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
+      [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
+    }
+  : undefined;
 
 // this is for module server code without any request context
 class ServerLogger {
   constructor({ type = "log", level = LEVEL.INFO, layer, inspectOptions = { colors: false } } = {}) {
     this.__inspectOptions = inspectOptions;
     this.__levelNumber = LEVEL_NUMBER[level];
-    this.__instanceData = {
+    this.__serverData = {
       [FIELD.TYPE]: type,
       [FIELD.LEVEL]: level,
       [FIELD.LAYER]: layer,
     };
+    this.__requestData = undefined;
   }
 
   _log(level, args) {
@@ -89,24 +92,25 @@ class ServerLogger {
     }
     const now = new Date();
     let message = "";
+    let invocationErrorData;
     if (args.length > 0) {
       const firstArg = args[0];
 
       // special handling if the only arg is a VError
       if (firstArg instanceof VError) {
         const err = firstArg;
-        Object.assign(this.__data, {
+        invocationErrorData = {
           [FIELD.STACKTRACE]: VError.fullStack(err),
           [FIELD.ERROR_INFO]: VError.info(err),
-        });
+        };
         message = util.formatWithOptions(this.__inspectOptions, "%s", VError.fullStack(err));
       }
       // special handling if the only arg is an Error
       else if (firstArg instanceof Error) {
         const err = firstArg;
-        Object.assign(this.__data, {
+        invocationErrorData = {
           [FIELD.STACKTRACE]: err.stack,
-        });
+        };
         message = util.formatWithOptions(this.__inspectOptions, "%s", err.stack);
       }
       // normal handling
@@ -115,12 +119,20 @@ class ServerLogger {
       }
     }
 
-    Object.assign(this.__data, {
+    const invocationData = {
       [FIELD.WRITTEN_AT]: now.toISOString(),
       [FIELD.WRITTEN_TIME]: now.getTime(),
       [FIELD.MESSAGE]: message,
-    });
-    process.stdout.write(JSON.stringify(this.__data) + "\n");
+    };
+    const data = Object.assign(
+      {},
+      cfAppData,
+      this.__serverData,
+      this.__requestData,
+      invocationErrorData,
+      invocationData
+    );
+    process.stdout.write(JSON.stringify(data) + "\n");
   }
 
   error(...args) {
