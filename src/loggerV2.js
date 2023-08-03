@@ -30,7 +30,7 @@ const FIELD = Object.freeze({
   CORRELATION_ID: "correlation_id",
 
   // ## LOG INVOCATION DATA
-  STACKTRACE: "stacktrace",
+  STACKTRACE: "stacktrace", // cf-nodejs-logging-support custom // TODO this has a weird format if we do it like the lib and we don't even use it...
   ERROR_INFO: "error_info", // AFC custom
 
   WRITTEN_AT: "written_at",
@@ -95,8 +95,7 @@ class ServerLogger {
   }
 
   _logData(args) {
-    const now = new Date();
-    let message = "";
+    let message;
     let invocationErrorData;
     if (args.length > 0) {
       const firstArg = args[0];
@@ -105,7 +104,6 @@ class ServerLogger {
       if (firstArg instanceof VError) {
         const err = firstArg;
         invocationErrorData = {
-          [FIELD.STACKTRACE]: VError.fullStack(err),
           [FIELD.ERROR_INFO]: VError.info(err),
         };
         message = util.formatWithOptions(this.__inspectOptions, "%s", VError.fullStack(err));
@@ -113,9 +111,6 @@ class ServerLogger {
       // special handling if the only arg is an Error
       else if (firstArg instanceof Error) {
         const err = firstArg;
-        invocationErrorData = {
-          [FIELD.STACKTRACE]: err.stack,
-        };
         message = util.formatWithOptions(this.__inspectOptions, "%s", err.stack);
       }
       // normal handling
@@ -124,10 +119,11 @@ class ServerLogger {
       }
     }
 
+    const now = new Date();
     const invocationData = {
       [FIELD.WRITTEN_AT]: now.toISOString(),
       [FIELD.WRITTEN_TIME]: now.getTime(),
-      [FIELD.MESSAGE]: message,
+      [FIELD.MESSAGE]: message ?? "",
     };
     return Object.assign({}, cfAppData, this.__serverData, this.__requestData, invocationErrorData, invocationData);
   }
@@ -144,13 +140,8 @@ class ServerLogger {
     const level = data[FIELD.LEVEL];
     const layer = data[FIELD.LAYER];
     const message = data[FIELD.MESSAGE];
-    const logLineParts = Object.values({
-      timestamp,
-      level,
-      ...(layer && { layer }),
-      message,
-    });
-    return logLineParts.join(" | ");
+    const parts = [timestamp, level, ...(layer ? layer : []), message];
+    return parts.join(" | ");
   }
 
   _log(level, args) {
