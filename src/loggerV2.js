@@ -59,22 +59,20 @@ const LEVEL_NUMBER = Object.freeze({
 });
 
 const cfApp = cfEnv.cfApp();
-const cfAppData = cfApp
-  ? {
-      [FIELD.COMPONENT_TYPE]: "application",
-      [FIELD.COMPONENT_NAME]: cfApp.application_name,
-      [FIELD.COMPONENT_ID]: cfApp.application_id,
-      [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
-      [FIELD.SPACE_NAME]: cfApp.space_name,
-      [FIELD.SPACE_ID]: cfApp.space_id,
-      [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
-      [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
-    }
-  : undefined;
+const cfAppData = {
+  [FIELD.COMPONENT_TYPE]: "application",
+  [FIELD.COMPONENT_NAME]: cfApp.application_name,
+  [FIELD.COMPONENT_ID]: cfApp.application_id,
+  [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
+  [FIELD.SPACE_NAME]: cfApp.space_name,
+  [FIELD.SPACE_ID]: cfApp.space_id,
+  [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
+  [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
+};
 
 // this is for module server code without any request context
 class ServerLogger {
-  constructor({ type = "log", level = LEVEL.INFO, layer, inspectOptions = { colors: false } } = {}) {
+  constructor({ layer, type = "log", level = LEVEL.INFO, inspectOptions = { colors: false }, customData } = {}) {
     this.__inspectOptions = inspectOptions;
     this.__levelNumber = LEVEL_NUMBER[level];
     this.__serverData = {
@@ -83,11 +81,12 @@ class ServerLogger {
       [FIELD.LAYER]: layer,
     };
     this.__requestData = undefined;
+    this.__customData = customData;
   }
 
   _log(level, args) {
     // check if level should be logged
-    if (LEVEL_NUMBER[level] <= this.__levelNumber) {
+    if (this.__levelNumber < LEVEL_NUMBER[level]) {
       return;
     }
     const now = new Date();
@@ -132,6 +131,8 @@ class ServerLogger {
       invocationErrorData,
       invocationData
     );
+
+    // TODO do we always write to stdout, or do we want to write to stderr for errors, what does console do?
     process.stdout.write(JSON.stringify(data) + "\n");
   }
 
@@ -160,6 +161,7 @@ class RequestLogger extends ServerLogger {
 }
 
 module.exports = {
-  ServerLogger,
+  LEVEL,
+  Logger: ServerLogger,
   RequestLogger,
 };
