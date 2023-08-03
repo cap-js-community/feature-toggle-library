@@ -4,7 +4,7 @@ const VError = require("verror");
 
 const { cfEnv } = require("./env");
 
-// NOTE: missing fields
+// TODO: missing fields
 // "source_instance": 1, SAME AS component_instance
 // "response_time_ms": 100.33176499999999
 // "container_id": "10.36.133.5",
@@ -76,35 +76,25 @@ class ServerLogger {
     layer,
     type = "log",
     level = LEVEL.INFO,
+    readable = false,
     streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout,
     inspectOptions = { colors: false },
     customData,
   } = {}) {
-    this.__inspectOptions = inspectOptions;
-    this.__streamOut = streamOut;
-    this.__levelNumber = LEVEL_NUMBER[level];
     this.__serverData = {
       [FIELD.TYPE]: type,
       [FIELD.LEVEL]: level,
       [FIELD.LAYER]: layer,
     };
-    this.__requestData = undefined;
+    this.__readable = readable;
+    this.__streamOut = streamOut;
+    this.__inspectOptions = inspectOptions;
     this.__customData = customData;
+    this.__levelNumber = LEVEL_NUMBER[level];
+    this.__requestData = undefined;
   }
 
-  get serverData() {
-    return this.__serverData;
-  }
-
-  set requestData(requestData) {
-    this.__requestData = requestData;
-  }
-
-  _log(level, args) {
-    // check if level should be logged
-    if (this.__levelNumber < LEVEL_NUMBER[level]) {
-      return;
-    }
+  _logData(args) {
     const now = new Date();
     let message = "";
     let invocationErrorData;
@@ -139,16 +129,41 @@ class ServerLogger {
       [FIELD.WRITTEN_TIME]: now.getTime(),
       [FIELD.MESSAGE]: message,
     };
-    const data = Object.assign(
-      {},
-      cfAppData,
-      this.__serverData,
-      this.__requestData,
-      invocationErrorData,
-      invocationData
-    );
+    return Object.assign({}, cfAppData, this.__serverData, this.__requestData, invocationErrorData, invocationData);
+  }
 
-    this.__streamOut.write(JSON.stringify(data) + "\n");
+  static _readableOutput(data) {
+    const writtenTime = new Date(data[FIELD.WRITTEN_TIME]);
+    const timestamp = util.format(
+      "%s:%s:%s.%s",
+      ("0" + writtenTime.getHours()).slice(-2),
+      ("0" + writtenTime.getMinutes()).slice(-2),
+      ("0" + writtenTime.getSeconds()).slice(-2),
+      ("00" + writtenTime.getMilliseconds()).slice(-3)
+    );
+    const level = data[FIELD.LEVEL];
+    const layer = data[FIELD.LAYER];
+    const message = data[FIELD.MESSAGE];
+    const logLineParts = Object.values({
+      timestamp,
+      level,
+      ...(layer && { layer }),
+      message,
+    });
+    return logLineParts.join(" | ");
+  }
+
+  _log(level, args) {
+    // check if level should be logged
+    if (this.__levelNumber < LEVEL_NUMBER[level]) {
+      return;
+    }
+    const data = this._logData(args);
+    if (this.__readable) {
+      this.__streamOut.write(ServerLogger._readableOutput(data) + "\n");
+    } else {
+      this.__streamOut.write(JSON.stringify(data) + "\n");
+    }
   }
 
   error(...args) {
