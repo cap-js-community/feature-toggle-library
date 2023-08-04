@@ -91,7 +91,6 @@ class Logger {
       [FIELD.TYPE]: type,
       [FIELD.LAYER]: layer,
     };
-    this.__cdsContext = cds?.context;
     this.__dataList = customData ? [customData] : [];
     this.__readable = readable;
     this.__inspectOptions = inspectOptions;
@@ -133,10 +132,11 @@ class Logger {
       }
     }
 
-    const cdsData = this.__cdsContext
+    const cdsContext = cds?.context;
+    const cdsData = cdsContext
       ? {
-          [FIELD.CORRELATION_ID]: this.__cdsContext.id,
-          [FIELD.TENANT_ID]: this.__cdsContext.tenant,
+          [FIELD.CORRELATION_ID]: cdsContext.id,
+          [FIELD.TENANT_ID]: cdsContext.tenant,
         }
       : undefined;
     const now = new Date();
