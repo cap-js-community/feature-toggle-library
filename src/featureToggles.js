@@ -24,7 +24,7 @@ const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redisWrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
-const { Logger } = require("./logger");
+const { Logger } = require("./loggerV2");
 const { isOnCF, cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { ENV, isObject } = require("./shared/static");
@@ -97,7 +97,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 ];
 
 const readFileAsync = promisify(readFile);
-let logger = new Logger(COMPONENT_NAME, isOnCF);
+let logger = new Logger({ layer: COMPONENT_NAME, readable: !isOnCF });
 
 const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
   const fileData = await readFileAsync(configFilepath);

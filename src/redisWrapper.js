@@ -5,7 +5,7 @@
 
 const redis = require("redis");
 const VError = require("verror");
-const { Logger } = require("./logger");
+const { Logger } = require("./loggerV2");
 const { isOnCF, cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { Semaphore } = require("./shared/semaphore");
@@ -19,7 +19,7 @@ const INTEGRATION_MODE = Object.freeze({
   NO_REDIS: "NO_REDIS",
 });
 
-const logger = new Logger(COMPONENT_NAME, isOnCF);
+const logger = new Logger({ layer: COMPONENT_NAME, readable: !isOnCF });
 
 const MODE = Object.freeze({
   RAW: "raw",
