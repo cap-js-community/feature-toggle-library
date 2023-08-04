@@ -2,7 +2,7 @@
 const util = require("util");
 const VError = require("verror");
 
-const { cfEnv } = require("./env");
+const { cfEnv, isOnCF } = require("./env");
 
 // TODO: missing fields
 // "source_instance": 1, SAME AS component_instance
@@ -59,16 +59,18 @@ const LEVEL_NUMBER = Object.freeze({
 });
 
 const cfApp = cfEnv.cfApp();
-const cfAppData = {
-  [FIELD.COMPONENT_TYPE]: "application",
-  [FIELD.COMPONENT_NAME]: cfApp.application_name,
-  [FIELD.COMPONENT_ID]: cfApp.application_id,
-  [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
-  [FIELD.SPACE_NAME]: cfApp.space_name,
-  [FIELD.SPACE_ID]: cfApp.space_id,
-  [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
-  [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
-};
+const cfAppData = isOnCF
+  ? {
+      [FIELD.COMPONENT_TYPE]: "application",
+      [FIELD.COMPONENT_NAME]: cfApp.application_name,
+      [FIELD.COMPONENT_ID]: cfApp.application_id,
+      [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
+      [FIELD.SPACE_NAME]: cfApp.space_name,
+      [FIELD.SPACE_ID]: cfApp.space_id,
+      [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
+      [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
+    }
+  : undefined;
 
 // this is for module server code without any request context
 class ServerLogger {
