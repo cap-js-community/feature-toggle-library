@@ -13,8 +13,15 @@ const isNull = (...args) => args.reduce((result, arg) => result || arg === undef
 
 const isObject = (input) => typeof input === "object" && input !== null;
 
+const tryRequire = (module) => {
+  try {
+    return require(module);
+  } catch (err) {} // eslint-disable-line no-empty
+};
+
 module.exports = {
   ENV,
   isNull,
   isObject,
+  tryRequire,
 };

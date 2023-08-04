@@ -3,6 +3,7 @@ const util = require("util");
 const VError = require("verror");
 
 const { cfEnv, isOnCF } = require("./env");
+const { tryRequire } = require("./shared/static");
 
 // TODO: missing fields
 // "source_instance": 1, SAME AS component_instance
@@ -19,18 +20,19 @@ const FIELD = Object.freeze({
   ORGANIZATION_NAME: "organization_name",
   ORGANIZATION_ID: "organization_id",
 
-  // ## SERVER LOGGER INSTANCE DATA
+  // ## BASE DATA
   TYPE: "type",
   LAYER: "layer", // AFC custom
 
-  // ## REQUEST LOGGER INSTANCE DATA
+  // ## ASYNC_LOCAL_STORAGE CDS CONTEXT
   CORRELATION_ID: "correlation_id",
   TENANT_ID: "tenant_id",
-  TENANT_SUBDOMAIN: "tenant_subdomain",
+  TENANT_SUBDOMAIN: "tenant_subdomain", // TODO cannot get this through cds context, so that's nonsense
+  // TODO we could add cds context user here, but does that would probably open a data privacy problem
 
   // ## LOG INVOCATION DATA
   STACKTRACE: "stacktrace", // cf-nodejs-logging-support custom // TODO this has a weird format if we do it like the lib and we don't even use it...
-  ERROR_INFO: "error_info", // AFC custom
+  ERROR_INFO: "error_info", // AFC custom // TODO changed the naming here to be consistent, is that a problem?
 
   LEVEL: "level",
   WRITTEN_AT: "written_at",
@@ -58,6 +60,7 @@ const LEVEL_NUMBER = Object.freeze({
   [LEVEL.TRACE]: 500,
 });
 
+const cds = tryRequire("@sap/cds");
 const cfApp = cfEnv.cfApp();
 const cfAppData = isOnCF
   ? {
@@ -88,6 +91,7 @@ class Logger {
       [FIELD.TYPE]: type,
       [FIELD.LAYER]: layer,
     };
+    this.__cdsContext = cds?.context;
     this.__dataList = customData ? [customData] : [];
     this.__readable = readable;
     this.__inspectOptions = inspectOptions;
@@ -103,20 +107,6 @@ class Logger {
     child.__dataList.push(data);
     return child;
   }
-
-  // TODO this is very similar to a generic child logger, where you pass in additional props for mixing in.
-  // this is for request handler code
-  // requestLogger({ correlationId, tenantId, tenantSubdomain }) {
-  //   const requestData = {
-  //     [FIELD.TYPE]: "request", // TODO this may be completely unimportant
-  //     [FIELD.CORRELATION_ID]: correlationId,
-  //     [FIELD.TENANT_ID]: tenantId,
-  //     [FIELD.TENANT_SUBDOMAIN]: tenantSubdomain,
-  //   };
-  //   // NOTE: Object assign only does a shallow copy, so changes to __baseData would propagate to the children, but
-  //   //   we don't offer an API to change it, so that should be alright.
-  //   Object.assign(child, this);
-  // }
 
   _logData(level, args) {
     let message;
@@ -143,6 +133,12 @@ class Logger {
       }
     }
 
+    const cdsData = this.__cdsContext
+      ? {
+          [FIELD.CORRELATION_ID]: this.__cdsContext.id,
+          [FIELD.TENANT_ID]: this.__cdsContext.tenant,
+        }
+      : undefined;
     const now = new Date();
     const invocationData = {
       [FIELD.LEVEL]: level,
@@ -150,7 +146,15 @@ class Logger {
       [FIELD.WRITTEN_TIME]: now.getTime(),
       [FIELD.MESSAGE]: message ?? "",
     };
-    return Object.assign({}, cfAppData, ...this.__dataList, this.__baseData, invocationErrorData, invocationData);
+    return Object.assign(
+      {},
+      cfAppData,
+      ...this.__dataList,
+      invocationErrorData,
+      invocationData,
+      this.__baseData,
+      cdsData
+    );
   }
 
   static _readableOutput(data) {
