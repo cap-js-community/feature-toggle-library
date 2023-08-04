@@ -1,130 +1,212 @@
-// https://sap.github.io/cf-nodejs-logging-support/
 "use strict";
 const util = require("util");
 const VError = require("verror");
-const globalLogger = require("cf-nodejs-logging-support");
 
-const CUSTOM_FIELD_LAYER = "layer";
-const CUSTOM_FIELD_ERROR_INFO = "errInfo";
+const { cfEnv, isOnCF } = require("./env");
+const { tryRequire } = require("./shared/static");
 
-const LEVEL = Object.freeze({
-  OFF: "off", // SILENT: "silent"
-  ERROR: "error",
-  WARNING: "warn",
-  INFO: "info",
-  DEBUG: "debug", // VERBOSE: "verbose",
-  TRACE: "trace", // SILLY: "silly"
+// TODO: missing fields
+// "source_instance": 1, SAME AS component_instance
+// "response_time_ms": 100.33176499999999
+// "container_id": "10.36.133.5",
+const FIELD = Object.freeze({
+  // ## CF APP DATA
+  COMPONENT_NAME: "component_name",
+  COMPONENT_ID: "component_id",
+  COMPONENT_INSTANCE: "component_instance",
+  COMPONENT_TYPE: "component_type",
+  SPACE_NAME: "space_name",
+  SPACE_ID: "space_id",
+  ORGANIZATION_NAME: "organization_name",
+  ORGANIZATION_ID: "organization_id",
+
+  // ## BASE DATA
+  TYPE: "type",
+  LAYER: "layer", // AFC custom
+
+  // ## ASYNC_LOCAL_STORAGE CDS CONTEXT
+  CORRELATION_ID: "correlation_id",
+  TENANT_ID: "tenant_id",
+  TENANT_SUBDOMAIN: "tenant_subdomain", // TODO cannot get this through cds context, so that's nonsense
+  // TODO we could add cds context user here, but does that would probably open a data privacy problem
+
+  // ## LOG INVOCATION DATA
+  STACKTRACE: "stacktrace", // cf-nodejs-logging-support custom // TODO this has a weird format if we do it like the lib and we don't even use it...
+  ERROR_INFO: "error_info", // AFC custom // TODO changed the naming here to be consistent, is that a problem?
+
+  LEVEL: "level",
+  WRITTEN_AT: "written_at",
+  WRITTEN_TIME: "written_ts",
+  MESSAGE: "msg",
 });
 
-const noopLogger = () => {};
+// NOTE: logger levels are a complete mess in node. looking at console, npm, winston, and cap there is not unity at all.
+//   I will offer the same levels as console and one "off" level.
+const LEVEL = Object.freeze({
+  OFF: "OFF", // SILENT: "silent"
+  ERROR: "ERROR",
+  WARNING: "WARNING",
+  INFO: "INFO",
+  DEBUG: "DEBUG", // VERBOSE: "verbose",
+  TRACE: "TRACE", // SILLY: "silly"
+});
 
-globalLogger.registerCustomFields([CUSTOM_FIELD_LAYER, CUSTOM_FIELD_ERROR_INFO]);
+const LEVEL_NUMBER = Object.freeze({
+  [LEVEL.OFF]: 0,
+  [LEVEL.ERROR]: 100,
+  [LEVEL.WARNING]: 200,
+  [LEVEL.INFO]: 300,
+  [LEVEL.DEBUG]: 400,
+  [LEVEL.TRACE]: 500,
+});
 
-// Readable logger for running locally
-class ReadableLogger {
-  constructor() {
-    this.__fields = {};
+const cds = tryRequire("@sap/cds");
+const cfApp = cfEnv.cfApp();
+const cfAppData = isOnCF
+  ? {
+      [FIELD.COMPONENT_TYPE]: "application",
+      [FIELD.COMPONENT_NAME]: cfApp.application_name,
+      [FIELD.COMPONENT_ID]: cfApp.application_id,
+      [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
+      [FIELD.SPACE_NAME]: cfApp.space_name,
+      [FIELD.SPACE_ID]: cfApp.space_id,
+      [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
+      [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
+    }
+  : undefined;
+
+// TODO: readable feels off, but it's tricky. kibana calls it json layout if it's machine readable. and pattern if
+//       https://www.elastic.co/guide/en/kibana/8.9/log-settings-examples.html
+// this is for module server code without any request context
+class Logger {
+  constructor({
+    layer,
+    type = "log",
+    level = LEVEL.INFO,
+    customData,
+    readable = false,
+    inspectOptions = { colors: false },
+  } = {}) {
+    this.__baseData = {
+      [FIELD.TYPE]: type,
+      [FIELD.LAYER]: layer,
+    };
+    this.__cdsContext = cds?.context;
+    this.__dataList = customData ? [customData] : [];
+    this.__readable = readable;
+    this.__inspectOptions = inspectOptions;
+    this.__levelNumber = LEVEL_NUMBER[level];
   }
 
-  setCustomFields(fields) {
-    this.__fields = fields;
+  child(data) {
+    const child = new Logger();
+    Object.assign(child, this);
+    // NOTE: Object assign only does a shallow copy, so changes to __dataList would propagate to the children, but
+    //   we don't offer an API to change it, so that should be alright.
+    child.__dataList = child.__dataList.slice();
+    child.__dataList.push(data);
+    return child;
   }
 
-  logMessage(level, ...args) {
-    const logger =
-      level === LEVEL.OFF
-        ? noopLogger
-        : level === LEVEL.ERROR
-        ? // eslint-disable-next-line no-console
-          console.error
-        : level === LEVEL.WARNING
-        ? // eslint-disable-next-line no-console
-          console.warn
-        : // eslint-disable-next-line no-console
-          console.info;
-    const { [CUSTOM_FIELD_LAYER]: layer, [CUSTOM_FIELD_ERROR_INFO]: errInfo } = this.__fields;
+  _logData(level, args) {
+    let message;
+    let invocationErrorData;
+    if (args.length > 0) {
+      const firstArg = args[0];
 
-    const lastArg = args.length > 0 ? args[args.length - 1] : null;
-    // NOTE: cf-nodejs-logging-support removes lastArg errors with .stack fields from the msg field output, so we
-    //   emulate this behavior here
-    const formatArgs = lastArg instanceof VError ? args.slice(0, -1) : args;
-    const formattedMessage = util.format(...formatArgs);
+      // special handling if the only arg is a VError
+      if (firstArg instanceof VError) {
+        const err = firstArg;
+        invocationErrorData = {
+          [FIELD.ERROR_INFO]: JSON.stringify(VError.info(err)),
+        };
+        message = util.formatWithOptions(this.__inspectOptions, "%s", VError.fullStack(err));
+      }
+      // special handling if the only arg is an Error
+      else if (firstArg instanceof Error) {
+        const err = firstArg;
+        message = util.formatWithOptions(this.__inspectOptions, "%s", err.stack);
+      }
+      // normal handling
+      else {
+        message = util.formatWithOptions(this.__inspectOptions, ...args);
+      }
+    }
+
+    const cdsData = this.__cdsContext
+      ? {
+          [FIELD.CORRELATION_ID]: this.__cdsContext.id,
+          [FIELD.TENANT_ID]: this.__cdsContext.tenant,
+        }
+      : undefined;
     const now = new Date();
+    const invocationData = {
+      [FIELD.LEVEL]: level,
+      [FIELD.WRITTEN_AT]: now.toISOString(),
+      [FIELD.WRITTEN_TIME]: now.getTime(),
+      [FIELD.MESSAGE]: message ?? "",
+    };
+    return Object.assign(
+      {},
+      cfAppData,
+      ...this.__dataList,
+      invocationErrorData,
+      invocationData,
+      this.__baseData,
+      cdsData
+    );
+  }
+
+  static _readableOutput(data) {
+    const writtenTime = new Date(data[FIELD.WRITTEN_TIME]);
     const timestamp = util.format(
       "%s:%s:%s.%s",
-      ("0" + now.getHours()).slice(-2),
-      ("0" + now.getMinutes()).slice(-2),
-      ("0" + now.getSeconds()).slice(-2),
-      ("00" + now.getMilliseconds()).slice(-3)
+      ("0" + writtenTime.getHours()).slice(-2),
+      ("0" + writtenTime.getMinutes()).slice(-2),
+      ("0" + writtenTime.getSeconds()).slice(-2),
+      ("00" + writtenTime.getMilliseconds()).slice(-3)
     );
-    const logLineParts = Object.values({
-      timestamp,
-      level,
-      ...(layer && { layer }),
-      formattedMessage,
-    });
-    const logParts = Object.values({
-      logLineParts: logLineParts.join(" | "),
-      ...(errInfo && { errInfo: util.format("error info: %O", errInfo) }),
-    });
-    logger(logParts.join("\n"));
+    const level = data[FIELD.LEVEL];
+    const layer = data[FIELD.LAYER];
+    const message = data[FIELD.MESSAGE];
+    const errorInfo = data[FIELD.ERROR_INFO];
+    const parts = [timestamp, level, ...(layer ? [layer] : []), ...(errorInfo ? [errorInfo] : []), message];
+    return parts.join(" | ");
   }
-}
 
-// General logger wrapper
-class Logger {
-  constructor(layer, doJSONOutput = true) {
-    this.__layer = layer;
-    this.__doJSONOutput = doJSONOutput;
-    if (this.__doJSONOutput) {
-      this.__logger = globalLogger.createLogger();
-    } else {
-      this.__logger = new ReadableLogger();
+  _log(level, args) {
+    // check if level should be logged
+    if (this.__levelNumber < LEVEL_NUMBER[level]) {
+      return;
     }
-    this._resetCustomFields();
-  }
-
-  _resetCustomFields() {
-    this.__logger.setCustomFields({ [CUSTOM_FIELD_LAYER]: this.__layer });
-  }
-
-  // NOTE: cf-nodejs-logging-support does not handle VErrors properly. We fill the layer and errorInfo custom fields
-  // with the related information and then pass the error twice to logMessage, first as VError.fullStack(err), which
-  // ends up in the msg field and second as err itself, which ends up in the stacktrace field. See "check json logging"
-  // test.
-  _log(level, ...args) {
-    if (args.length === 1 && args[0] instanceof VError) {
-      const err = args[0];
-      const errInfo = VError.info(err);
-      this.__logger.setCustomFields({
-        [CUSTOM_FIELD_LAYER]: this.__layer,
-        [CUSTOM_FIELD_ERROR_INFO]: errInfo,
-      });
-      this.__logger.logMessage(level, VError.fullStack(err), err);
-      this._resetCustomFields();
+    const streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout;
+    const data = this._logData(level, args);
+    if (this.__readable) {
+      streamOut.write(Logger._readableOutput(data) + "\n");
     } else {
-      this.__logger.logMessage(level, ...args);
+      streamOut.write(JSON.stringify(data) + "\n");
     }
   }
 
   error(...args) {
-    return this._log(LEVEL.ERROR, ...args);
+    return this._log(LEVEL.ERROR, args);
   }
   warning(...args) {
-    return this._log(LEVEL.WARNING, ...args);
+    return this._log(LEVEL.WARNING, args);
   }
   info(...args) {
-    return this._log(LEVEL.INFO, ...args);
-  }
-  verbose(...args) {
-    return this._log(LEVEL.VERBOSE, ...args);
+    return this._log(LEVEL.INFO, args);
   }
   debug(...args) {
-    return this._log(LEVEL.DEBUG, ...args);
+    return this._log(LEVEL.DEBUG, args);
   }
-  silly(...args) {
-    return this._log(LEVEL.SILLY, ...args);
+  trace(...args) {
+    return this._log(LEVEL.TRACE, args);
   }
 }
 
-module.exports = { Logger, ReadableLogger };
+module.exports = {
+  LEVEL,
+
+  Logger,
+};

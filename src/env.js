@@ -1,17 +1,9 @@
 "use strict";
 
-const VError = require("verror");
-
-const { Logger } = require("./loggerV2");
 const { ENV } = require("./shared/static");
-
-const COMPONENT_NAME = "/Env";
-const VERROR_CLUSTER_NAME = "Env";
 
 const isLocal = process.env[ENV.USER] !== "vcap";
 const isOnCF = !isLocal;
-
-const logger = new Logger({ layer: COMPONENT_NAME, readable: isLocal });
 
 class CfEnv {
   static parseEnvVar(env, envVar) {
@@ -19,20 +11,7 @@ class CfEnv {
       if (Object.prototype.hasOwnProperty.call(env, envVar)) {
         return JSON.parse(process.env[envVar]);
       }
-    } catch (err) {
-      logger.error(
-        new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            cause: err,
-            info: {
-              envVar,
-            },
-          },
-          "environment variable is not valid JSON"
-        )
-      );
-    }
+    } catch (err) {} // eslint-disable-line no-empty
   }
 
   constructor(env = process.env) {

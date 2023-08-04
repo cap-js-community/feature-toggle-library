@@ -11,12 +11,6 @@ const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require(
 
 let featureToggles = null;
 
-const consoleSpy = {
-  info: jest.spyOn(console, "info"),
-  warn: jest.spyOn(console, "warn"),
-  error: jest.spyOn(console, "error"),
-};
-
 const processStreamSpy = {
   stdout: jest.spyOn(process.stdout, "write"),
   stderr: jest.spyOn(process.stderr, "write"),
@@ -41,9 +35,6 @@ const cleanupJSONLogCalls = (args) =>
           ([key, value]) => !["written_at", "written_ts", "correlation_id"].includes(key) && !["-", "0"].includes(value)
         )
         .map(([key, value]) => {
-          if (["stacktrace"].includes(key)) {
-            return [key, value.slice(0, 1)];
-          }
           if (["msg"].includes(key)) {
             return [key, value.replace(/\n.*$/gm, "")];
           }
@@ -64,72 +55,66 @@ describe("logger test", () => {
   });
 
   it("check readable logging for invalid fallback values during initialization", async () => {
-    featureTogglesModule._._setLogger(new Logger("Testing", false));
+    featureTogglesModule._._setLogger(new Logger({ layer: "Testing", readable: true }));
     const error = new Error("bad validator");
     const validator = jest.fn().mockRejectedValue(error);
 
     featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
     await featureToggles.initializeFeatures({ config: mockConfig });
 
-    expect(consoleSpy.info.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
-      [
-        [
-          "88:88:88.888 | info | Testing | finished initialization with 9 feature toggles with CF_REDIS",
-        ],
-      ]
-    `);
-    expect(consoleSpy.warn.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
-      [
-        [
-          "88:88:88.888 | warn | Testing | FeatureTogglesError: found invalid fallback values during initialization
-      error info: {
-        validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
-      }",
-        ],
-      ]
-    `);
-    expect(consoleSpy.error.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
-      [
-        [
-          "88:88:88.888 | error | Testing | FeatureTogglesError: error during registered validator: bad validator
-      caused by: Error: bad validator
-      error info: {
-        validator: 'mockConstructor',
-        featureKey: 'test/feature_b',
-        value: 1
-      }",
-        ],
-      ]
-    `);
+    expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
+[
+  [
+    "88:88:88.888 | WARNING | Testing | {"validationErrors":"[{\\"featureKey\\":\\"test/feature_b\\",\\"errorMessage\\":\\"registered validator \\\\\\"{0}\\\\\\" failed for value \\\\\\"{1}\\\\\\" with error {2}\\",\\"errorMessageValues\\":[\\"mockConstructor\\",1,\\"bad validator\\"]}]"} | FeatureTogglesError: found invalid fallback values during initialization
+",
+  ],
+  [
+    "88:88:88.888 | INFO | Testing | finished initialization with 9 feature toggles with CF_REDIS
+",
+  ],
+]
+`);
+    expect(processStreamSpy.stderr.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
+[
+  [
+    "88:88:88.888 | ERROR | Testing | {"validator":"mockConstructor","featureKey":"test/feature_b","value":1} | FeatureTogglesError: error during registered validator: bad validator
+caused by: Error: bad validator
+",
+  ],
+]
+`);
   });
 
   it("check json logging for invalid fallback values during initialization", async () => {
-    featureTogglesModule._._setLogger(new Logger("Testing", true));
+    featureTogglesModule._._setLogger(new Logger({ layer: "Testing", readable: false }));
     const error = new Error("bad validator");
     const validator = jest.fn().mockRejectedValue(error);
 
     featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
     await featureToggles.initializeFeatures({ config: mockConfig });
 
-    const logCalls = processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls);
-    expect(logCalls).toMatchInlineSnapshot(`
-      [
-        [
-          "{"logger":"nodejs-logger","type":"log","msg":"FeatureTogglesError: error during registered validator: bad validator","level":"error","stacktrace":["FeatureTogglesError: error during registered validator: bad validator"],"layer":"Testing","errInfo":"{\\"validator\\":\\"mockConstructor\\",\\"featureKey\\":\\"test/feature_b\\",\\"value\\":1}"}",
-        ],
-        [
-          "{"logger":"nodejs-logger","type":"log","msg":"FeatureTogglesError: found invalid fallback values during initialization","level":"warn","stacktrace":["FeatureTogglesError: found invalid fallback values during initialization"],"layer":"Testing","errInfo":"{\\"validationErrors\\":\\"[{\\\\\\"featureKey\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}"}",
-        ],
-        [
-          "{"logger":"nodejs-logger","type":"log","msg":"finished initialization with 9 feature toggles with CF_REDIS","level":"info","layer":"Testing"}",
-        ],
-      ]
-    `);
-    const [registerValidatorError, initializeError] = logCalls.map(([log]) => JSON.parse(log));
+    const logStderrCalls = processStreamSpy.stderr.mock.calls.map(cleanupJSONLogCalls);
+    const logStdoutCalls = processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls);
+    expect(logStderrCalls).toMatchInlineSnapshot(`
+[
+  [
+    "{"error_info":"{\\"validator\\":\\"mockConstructor\\",\\"featureKey\\":\\"test/feature_b\\",\\"value\\":1}","level":"ERROR","msg":"FeatureTogglesError: error during registered validator: bad validator","type":"log","layer":"Testing"}",
+  ],
+]
+`);
+    expect(logStdoutCalls).toMatchInlineSnapshot(`
+[
+  [
+    "{"error_info":"{\\"validationErrors\\":\\"[{\\\\\\"featureKey\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}","level":"WARNING","msg":"FeatureTogglesError: found invalid fallback values during initialization","type":"log","layer":"Testing"}",
+  ],
+  [
+    "{"level":"INFO","msg":"finished initialization with 9 feature toggles with CF_REDIS","type":"log","layer":"Testing"}",
+  ],
+]
+`);
+    const [registerValidatorError] = logStderrCalls.map(([log]) => JSON.parse(log));
+    const [initializeError] = logStdoutCalls.map(([log]) => JSON.parse(log));
     expect(registerValidatorError.msg).toContain("bad validator");
-    expect(registerValidatorError.stacktrace).toBeDefined();
     expect(initializeError.msg).toContain("invalid");
-    expect(initializeError.stacktrace).toBeDefined();
-    expect(processStreamSpy.stderr).toHaveBeenCalledTimes(0);
   });
 });
