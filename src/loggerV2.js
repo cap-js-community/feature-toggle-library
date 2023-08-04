@@ -25,9 +25,9 @@ const FIELD = Object.freeze({
   LAYER: "layer", // AFC custom
 
   // ## REQUEST LOGGER INSTANCE DATA
+  CORRELATION_ID: "correlation_id",
   TENANT_ID: "tenant_id",
   TENANT_SUBDOMAIN: "tenant_subdomain",
-  CORRELATION_ID: "correlation_id",
 
   // ## LOG INVOCATION DATA
   STACKTRACE: "stacktrace", // cf-nodejs-logging-support custom // TODO this has a weird format if we do it like the lib and we don't even use it...
@@ -72,28 +72,32 @@ const cfAppData = isOnCF
     }
   : undefined;
 
+// TODO: readable feels off, but it's tricky. kibana calls it json layout if it's machine readable. and pattern if
+//       https://www.elastic.co/guide/en/kibana/8.9/log-settings-examples.html
 // this is for module server code without any request context
-class ServerLogger {
+class Logger {
   constructor({
     layer,
     type = "log",
     level = LEVEL.INFO,
+    customData,
+    requestData,
     readable = false,
     streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout,
     inspectOptions = { colors: false },
-    customData,
   } = {}) {
-    this.__serverData = {
+    const baseData = {
       [FIELD.TYPE]: type,
       [FIELD.LEVEL]: level,
       [FIELD.LAYER]: layer,
     };
+    this.__baseData = Object.assign({}, customData, baseData);
+    this.__requestData = requestData;
+
     this.__readable = readable;
     this.__streamOut = streamOut;
     this.__inspectOptions = inspectOptions;
-    this.__customData = customData;
     this.__levelNumber = LEVEL_NUMBER[level];
-    this.__requestData = undefined;
   }
 
   _logData(args) {
@@ -127,7 +131,7 @@ class ServerLogger {
       [FIELD.WRITTEN_TIME]: now.getTime(),
       [FIELD.MESSAGE]: message ?? "",
     };
-    return Object.assign({}, cfAppData, this.__serverData, this.__requestData, invocationErrorData, invocationData);
+    return Object.assign({}, cfAppData, this.__baseData, this.__requestData, invocationErrorData, invocationData);
   }
 
   static _readableOutput(data) {
@@ -153,7 +157,7 @@ class ServerLogger {
     }
     const data = this._logData(args);
     if (this.__readable) {
-      this.__streamOut.write(ServerLogger._readableOutput(data) + "\n");
+      this.__streamOut.write(Logger._readableOutput(data) + "\n");
     } else {
       this.__streamOut.write(JSON.stringify(data) + "\n");
     }
@@ -174,20 +178,23 @@ class ServerLogger {
   trace(...args) {
     return this._log(LEVEL.TRACE, args);
   }
-}
 
-// this is for request handler code
-class RequestLogger extends ServerLogger {
-  constructor(parent) {
-    super();
-    Object.assign(this, parent);
-    this.__serverData = Object.assign({}, this.__serverData, { [FIELD.TYPE]: "request" });
-    // TODO should other deep object data be cloned to be independent of parent: inspectOptions, customData
+  // this is for request handler code
+  requestLogger({ correlationId, tenantId, tenantSubdomain }) {
+    const requestData = {
+      [FIELD.TYPE]: "request",
+      [FIELD.CORRELATION_ID]: correlationId,
+      [FIELD.TENANT_ID]: tenantId,
+      [FIELD.TENANT_SUBDOMAIN]: tenantSubdomain,
+    };
+    const child = new Logger({ requestData });
+    // NOTE: Object assign only does a shallow copy, so changes to __baseData would propagate to the children, but
+    //   we don't offer an API to change it, so that should be alright.
+    Object.assign(child, this);
   }
 }
 
 module.exports = {
   LEVEL,
-  ServerLogger,
-  RequestLogger,
+  Logger,
 };
