@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@cap-js-community/feature-toggle-library)](https://www.npmjs.com/package/@cap-js-community/feature-toggle-library)
 [![monthly downloads](https://img.shields.io/npm/dm/@cap-js-community/feature-toggle-library)](https://www.npmjs.com/package/@cap-js-community/feature-toggle-library)
 [![REUSE status](https://api.reuse.software/badge/github.com/cap-js-community/feature-toggle-library)](https://api.reuse.software/info/github.com/cap-js-community/feature-toggle-library)
-[![CI Main](https://github.com/cap-js-community/feature-toggle-library/actions/workflows/ci-main.yml/badge.svg)](https://github.com/cap-js-community/feature-toggle-library/commits/main)
+[![Main CI](https://github.com/cap-js-community/feature-toggle-library/actions/workflows/main-ci.yml/badge.svg)](https://github.com/cap-js-community/feature-toggle-library/commits/main)
 
 SAP BTP feature toggle library enables Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.
 
