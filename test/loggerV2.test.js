@@ -65,7 +65,7 @@ describe("loggerV2", () => {
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "{"type":"log","level":"INFO","layer":"/test","msg":"some info"}",
+  "{"level":"INFO","msg":"some info","type":"log","layer":"/test"}",
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
@@ -86,12 +86,12 @@ describe("loggerV2", () => {
     it("bla error with verror", async () => {
       logger = new Logger({ layer });
       logger.error(new VError("bla error"));
-      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
+      expect(processStreamSpy.stderr.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "{"type":"log","level":"INFO","layer":"/test","error_info":{},"msg":"VError: bla error"}",
+  "{"error_info":{},"level":"ERROR","msg":"VError: bla error","type":"log","layer":"/test"}",
 ]
 `);
-      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
     });
   });
 
@@ -106,25 +106,25 @@ describe("loggerV2", () => {
       logger.info("base");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
 [
-  "{"type":"log","layer":"/test","level":"INFO","msg":"base"}",
+  "{"level":"INFO","msg":"base","type":"log","layer":"/test"}",
 ]
 `);
       childLogger.info("child");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
 [
-  "{"isChild":true,"type":"log","layer":"/test","level":"INFO","msg":"child"}",
+  "{"isChild":true,"level":"INFO","msg":"child","type":"log","layer":"/test"}",
 ]
 `);
       siblingLogger.info("sibling");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
 [
-  "{"isSibling":true,"type":"log","layer":"/test","level":"INFO","msg":"sibling"}",
+  "{"isSibling":true,"level":"INFO","msg":"sibling","type":"log","layer":"/test"}",
 ]
 `);
       childChildLogger.info("child child");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
 [
-  "{"isChild":true,"isChildChild":true,"type":"log","layer":"/test","level":"INFO","msg":"child child"}",
+  "{"isChild":true,"isChildChild":true,"level":"INFO","msg":"child child","type":"log","layer":"/test"}",
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(i);
