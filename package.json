@@ -23,7 +23,6 @@
     "npm": ">=8.19.0"
   },
   "dependencies": {
-    "cf-nodejs-logging-support": "^7.1.0",
     "redis": "^4.6.7",
     "verror": "^1.10.1",
     "yaml": "^2.3.1"
