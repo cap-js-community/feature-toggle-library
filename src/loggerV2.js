@@ -21,7 +21,6 @@ const FIELD = Object.freeze({
 
   // ## SERVER LOGGER INSTANCE DATA
   TYPE: "type",
-  LEVEL: "level",
   LAYER: "layer", // AFC custom
 
   // ## REQUEST LOGGER INSTANCE DATA
@@ -33,6 +32,7 @@ const FIELD = Object.freeze({
   STACKTRACE: "stacktrace", // cf-nodejs-logging-support custom // TODO this has a weird format if we do it like the lib and we don't even use it...
   ERROR_INFO: "error_info", // AFC custom
 
+  LEVEL: "level",
   WRITTEN_AT: "written_at",
   WRITTEN_TIME: "written_ts",
   MESSAGE: "msg",
@@ -81,26 +81,44 @@ class Logger {
     type = "log",
     level = LEVEL.INFO,
     customData,
-    requestData,
     readable = false,
-    streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout,
     inspectOptions = { colors: false },
   } = {}) {
-    const baseData = {
+    this.__baseData = {
       [FIELD.TYPE]: type,
-      [FIELD.LEVEL]: level,
       [FIELD.LAYER]: layer,
     };
-    this.__baseData = Object.assign({}, customData, baseData);
-    this.__requestData = requestData;
-
+    this.__dataList = customData ? [customData] : [];
     this.__readable = readable;
-    this.__streamOut = streamOut;
     this.__inspectOptions = inspectOptions;
     this.__levelNumber = LEVEL_NUMBER[level];
   }
 
-  _logData(args) {
+  child(data) {
+    const child = new Logger();
+    Object.assign(child, this);
+    // NOTE: Object assign only does a shallow copy, so changes to __dataList would propagate to the children, but
+    //   we don't offer an API to change it, so that should be alright.
+    child.__dataList = child.__dataList.slice();
+    child.__dataList.push(data);
+    return child;
+  }
+
+  // TODO this is very similar to a generic child logger, where you pass in additional props for mixing in.
+  // this is for request handler code
+  // requestLogger({ correlationId, tenantId, tenantSubdomain }) {
+  //   const requestData = {
+  //     [FIELD.TYPE]: "request", // TODO this may be completely unimportant
+  //     [FIELD.CORRELATION_ID]: correlationId,
+  //     [FIELD.TENANT_ID]: tenantId,
+  //     [FIELD.TENANT_SUBDOMAIN]: tenantSubdomain,
+  //   };
+  //   // NOTE: Object assign only does a shallow copy, so changes to __baseData would propagate to the children, but
+  //   //   we don't offer an API to change it, so that should be alright.
+  //   Object.assign(child, this);
+  // }
+
+  _logData(level, args) {
     let message;
     let invocationErrorData;
     if (args.length > 0) {
@@ -127,11 +145,12 @@ class Logger {
 
     const now = new Date();
     const invocationData = {
+      [FIELD.LEVEL]: level,
       [FIELD.WRITTEN_AT]: now.toISOString(),
       [FIELD.WRITTEN_TIME]: now.getTime(),
       [FIELD.MESSAGE]: message ?? "",
     };
-    return Object.assign({}, cfAppData, this.__baseData, this.__requestData, invocationErrorData, invocationData);
+    return Object.assign({}, cfAppData, ...this.__dataList, this.__baseData, invocationErrorData, invocationData);
   }
 
   static _readableOutput(data) {
@@ -155,11 +174,12 @@ class Logger {
     if (this.__levelNumber < LEVEL_NUMBER[level]) {
       return;
     }
-    const data = this._logData(args);
+    const streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout;
+    const data = this._logData(level, args);
     if (this.__readable) {
-      this.__streamOut.write(Logger._readableOutput(data) + "\n");
+      streamOut.write(Logger._readableOutput(data) + "\n");
     } else {
-      this.__streamOut.write(JSON.stringify(data) + "\n");
+      streamOut.write(JSON.stringify(data) + "\n");
     }
   }
 
@@ -177,20 +197,6 @@ class Logger {
   }
   trace(...args) {
     return this._log(LEVEL.TRACE, args);
-  }
-
-  // this is for request handler code
-  requestLogger({ correlationId, tenantId, tenantSubdomain }) {
-    const requestData = {
-      [FIELD.TYPE]: "request",
-      [FIELD.CORRELATION_ID]: correlationId,
-      [FIELD.TENANT_ID]: tenantId,
-      [FIELD.TENANT_SUBDOMAIN]: tenantSubdomain,
-    };
-    const child = new Logger({ requestData });
-    // NOTE: Object assign only does a shallow copy, so changes to __baseData would propagate to the children, but
-    //   we don't offer an API to change it, so that should be alright.
-    Object.assign(child, this);
   }
 }
 

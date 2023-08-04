@@ -1,7 +1,7 @@
 "use strict";
 
 const VError = require("verror");
-const { ServerLogger, RequestLogger } = require("../src/loggerV2");
+const { Logger } = require("../src/loggerV2");
 
 const processStreamSpy = {
   stdout: jest.spyOn(process.stdout, "write"),
@@ -49,7 +49,7 @@ describe("loggerV2", () => {
 
   describe("server logger", () => {
     it("info with text readable and no layer", async () => {
-      logger = new ServerLogger({ readable: true });
+      logger = new Logger({ readable: true });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -61,7 +61,7 @@ describe("loggerV2", () => {
     });
 
     it("info with text", async () => {
-      logger = new ServerLogger({ layer });
+      logger = new Logger({ layer });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -72,7 +72,7 @@ describe("loggerV2", () => {
     });
 
     it("info with text readable", async () => {
-      logger = new ServerLogger({ layer, readable: true });
+      logger = new Logger({ layer, readable: true });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -84,7 +84,7 @@ describe("loggerV2", () => {
     });
 
     it("bla error with verror", async () => {
-      logger = new ServerLogger({ layer });
+      logger = new Logger({ layer });
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -97,14 +97,37 @@ describe("loggerV2", () => {
 
   describe("request logger", () => {
     it("bla error with verror", async () => {
-      logger = new RequestLogger(new ServerLogger({ layer }));
-      logger.error(new VError("bla error"));
-      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
+      const logger = new Logger({ layer });
+      const childLogger = logger.child({ isChild: true });
+      const siblingLogger = logger.child({ isSibling: true });
+      const childChildLogger = childLogger.child({ isChildChild: true });
+      let i = 0;
+
+      logger.info("base");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
 [
-  "{"type":"request","level":"INFO","layer":"/test","error_info":{},"msg":"VError: bla error"}",
+  "{"type":"log","layer":"/test","level":"INFO","msg":"base"}",
 ]
 `);
-      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+      childLogger.info("child");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"isChild":true,"type":"log","layer":"/test","level":"INFO","msg":"child"}",
+]
+`);
+      siblingLogger.info("sibling");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"isSibling":true,"type":"log","layer":"/test","level":"INFO","msg":"sibling"}",
+]
+`);
+      childChildLogger.info("child child");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"isChild":true,"isChildChild":true,"type":"log","layer":"/test","level":"INFO","msg":"child child"}",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(i);
     });
   });
 });
