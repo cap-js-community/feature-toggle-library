@@ -60,6 +60,7 @@ const LEVEL_NUMBER = Object.freeze({
   [LEVEL.TRACE]: 500,
 });
 
+// TODO: cds does this weird, but is there a way to satisfy our use-case but allow future users to do it better?
 const LEVEL_NAME = Object.freeze({
   [LEVEL.ERROR]: "error",
   [LEVEL.WARNING]: "warn", // NOTE: cds started using warn instead of warning, and now we cannot change it
@@ -85,6 +86,7 @@ const cfAppData = isOnCF
 
 // TODO: readable feels off, but it's tricky. kibana calls it json layout if it's machine readable. and pattern if
 //       https://www.elastic.co/guide/en/kibana/8.9/log-settings-examples.html
+// TODO: interface layer feels a little off
 // this is for module server code without any request context
 class Logger {
   constructor({

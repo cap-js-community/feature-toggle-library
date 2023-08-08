@@ -1,5 +1,6 @@
 "use strict";
 
+const VError = require("verror");
 const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles } = featureTogglesModule;
 const { Logger } = require("../src/logger");
@@ -43,6 +44,9 @@ const cleanupJSONLogCalls = (args) =>
     );
     return JSON.stringify(newData);
   });
+
+let logger;
+let layer = "/test";
 
 describe("logger test", () => {
   beforeEach(() => {
@@ -116,5 +120,87 @@ caused by: Error: bad validator
     const [initializeError] = logStdoutCalls.map(([log]) => JSON.parse(log));
     expect(registerValidatorError.msg).toContain("bad validator");
     expect(initializeError.msg).toContain("invalid");
+  });
+
+  describe("logger v2", () => {
+    it("info with text readable and no layer", async () => {
+      logger = new Logger({ readable: true });
+      logger.info("some info");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "88:88:88.888 | info | some info
+",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+    });
+
+    it("info with text", async () => {
+      logger = new Logger({ layer });
+      logger.info("some info");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "{"level":"info","msg":"some info","type":"log","layer":"/test"}",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+    });
+
+    it("info with text readable", async () => {
+      logger = new Logger({ layer, readable: true });
+      logger.info("some info");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "88:88:88.888 | info | /test | some info
+",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+    });
+
+    it("error basic usage", async () => {
+      logger = new Logger({ layer });
+      logger.error(new VError("bla error"));
+      expect(processStreamSpy.stderr.mock.calls.map(cleanupJSONLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "{"error_info":"{}","level":"error","msg":"VError: bla error","type":"log","layer":"/test"}",
+]
+`);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
+    });
+
+    it("error with children", async () => {
+      const logger = new Logger({ layer });
+      const childLogger = logger.child({ isChild: true });
+      const siblingLogger = logger.child({ isSibling: true });
+      const childChildLogger = childLogger.child({ isChildChild: true });
+      let i = 0;
+
+      logger.info("base");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"level":"info","msg":"base","type":"log","layer":"/test"}",
+]
+`);
+      childLogger.info("child");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"isChild":true,"level":"info","msg":"child","type":"log","layer":"/test"}",
+]
+`);
+      siblingLogger.info("sibling");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"isSibling":true,"level":"info","msg":"sibling","type":"log","layer":"/test"}",
+]
+`);
+      childChildLogger.info("child child");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)[i++]).toMatchInlineSnapshot(`
+[
+  "{"isChild":true,"isChildChild":true,"level":"info","msg":"child child","type":"log","layer":"/test"}",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(i);
+    });
   });
 });
