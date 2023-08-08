@@ -2,6 +2,7 @@
 
 const mockCfEnv = {
   cfServiceCredentialsForLabel: jest.fn(),
+  cfApp: jest.fn(),
 };
 jest.mock("../src/env", () => ({
   isOnCF: false,
