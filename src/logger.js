@@ -7,10 +7,10 @@ const { tryRequire } = require("./shared/static");
 
 // TODO: missing fields
 // "source_instance": 1, SAME AS component_instance
-// "response_time_ms": 100.33176499999999
-// "container_id": "10.36.133.5",
+// "container_id": "10.36.133.5", // TODO get via cfEnv
 const FIELD = Object.freeze({
   // ## CF APP DATA
+  CONTAINER_ID: "container_id",
   COMPONENT_NAME: "component_name",
   COMPONENT_ID: "component_id",
   COMPONENT_INSTANCE: "component_instance",
@@ -22,21 +22,18 @@ const FIELD = Object.freeze({
 
   // ## BASE DATA
   TYPE: "type",
-  LAYER: "layer", // AFC custom
+  LAYER: "layer",
 
   // ## ASYNC_LOCAL_STORAGE CDS CONTEXT
   CORRELATION_ID: "correlation_id",
+  REMOTE_USER: "remote_user",
   TENANT_ID: "tenant_id",
-  TENANT_SUBDOMAIN: "tenant_subdomain", // TODO cannot get this through cds context, so that's nonsense
-  // TODO we could add cds context user here, but does that would probably open a data privacy problem
+  TENANT_SUBDOMAIN: "tenant_subdomain",
 
   // ## LOG INVOCATION DATA
-  STACKTRACE: "stacktrace", // cf-nodejs-logging-support custom // TODO this has a weird format if we do it like the lib and we don't even use it...
-  ERROR_INFO: "error_info", // AFC custom // TODO changed the naming here to be consistent, is that a problem?
-
   LEVEL: "level",
   WRITTEN_AT: "written_at",
-  WRITTEN_TIME: "written_ts",
+  WRITTEN_TIME: "written_ts", // TODO nanoseconds
   MESSAGE: "msg",
 });
 
@@ -60,10 +57,9 @@ const LEVEL_NUMBER = Object.freeze({
   [LEVEL.TRACE]: 500,
 });
 
-// TODO: cds does this weird, but is there a way to satisfy our use-case but allow future users to do it better?
 const LEVEL_NAME = Object.freeze({
   [LEVEL.ERROR]: "error",
-  [LEVEL.WARNING]: "warn", // NOTE: cds started using warn instead of warning, and now we cannot change it
+  [LEVEL.WARNING]: "warn", // NOTE: cf-nodejs-logging-support started using warn instead of warning, and now we cannot change it
   [LEVEL.INFO]: "info",
   [LEVEL.DEBUG]: "debug",
   [LEVEL.TRACE]: "trace",
@@ -73,6 +69,7 @@ const cds = tryRequire("@sap/cds");
 const cfApp = cfEnv.cfApp();
 const cfAppData = isOnCF
   ? {
+      [FIELD.CONTAINER_ID]: process.env["CF_INSTANCE_IP"],
       [FIELD.COMPONENT_TYPE]: "application",
       [FIELD.COMPONENT_NAME]: cfApp.application_name,
       [FIELD.COMPONENT_ID]: cfApp.application_id,
@@ -86,17 +83,13 @@ const cfAppData = isOnCF
 
 // TODO: readable feels off, but it's tricky. kibana calls it json layout if it's machine readable. and pattern if
 //       https://www.elastic.co/guide/en/kibana/8.9/log-settings-examples.html
-// TODO: interface layer feels a little off
+// rename to format and add an enum
 // this is for module server code without any request context
 class Logger {
-  constructor({
+  constructor(
     layer,
-    type = "log",
-    level = LEVEL.INFO,
-    customData,
-    readable = false,
-    inspectOptions = { colors: false },
-  } = {}) {
+    { type = "log", maxLevel = LEVEL.INFO, customData, readable = !isOnCF, inspectOptions = { colors: false } } = {}
+  ) {
     this.__baseData = {
       [FIELD.TYPE]: type,
       [FIELD.LAYER]: layer,
@@ -104,7 +97,7 @@ class Logger {
     this.__dataList = customData ? [customData] : [];
     this.__readable = readable;
     this.__inspectOptions = inspectOptions;
-    this.__levelNumber = LEVEL_NUMBER[level];
+    this.__maxLevelNumber = LEVEL_NUMBER[maxLevel];
   }
 
   child(data) {
@@ -126,10 +119,7 @@ class Logger {
       // special handling if the only arg is a VError
       if (firstArg instanceof VError) {
         const err = firstArg;
-        invocationErrorData = {
-          [FIELD.ERROR_INFO]: JSON.stringify(VError.info(err)),
-        };
-        message = util.formatWithOptions(this.__inspectOptions, "%s", VError.fullStack(err));
+        message = util.formatWithOptions(this.__inspectOptions, "%s\n%O", VError.fullStack(err), VError.info(err));
       }
       // special handling if the only arg is an Error
       else if (firstArg instanceof Error) {
@@ -143,19 +133,21 @@ class Logger {
     }
 
     const cdsContext = cds?.context;
-    const req = cdsContext?.req;
+    const req = cdsContext?.http?.req;
     const cdsData = cdsContext
       ? {
           [FIELD.CORRELATION_ID]: cdsContext.id,
+          [FIELD.REMOTE_USER]: cdsContext.user?.id,
           [FIELD.TENANT_ID]: cdsContext.tenant,
           [FIELD.TENANT_SUBDOMAIN]: req?.authInfo?.getSubdomain?.(),
         }
       : undefined;
+    // process.hrtime()
     const now = new Date();
     const invocationData = {
       [FIELD.LEVEL]: LEVEL_NAME[level],
       [FIELD.WRITTEN_AT]: now.toISOString(),
-      [FIELD.WRITTEN_TIME]: now.getTime(),
+      [FIELD.WRITTEN_TIME]: now.getTime(), // TODO nanos
       [FIELD.MESSAGE]: message ?? "",
     };
     return Object.assign(
@@ -181,14 +173,13 @@ class Logger {
     const level = data[FIELD.LEVEL];
     const layer = data[FIELD.LAYER];
     const message = data[FIELD.MESSAGE];
-    const errorInfo = data[FIELD.ERROR_INFO];
-    const parts = [timestamp, level, ...(layer ? [layer] : []), ...(errorInfo ? [errorInfo] : []), message];
+    const parts = [timestamp, level, ...(layer ? [layer] : []), message];
     return parts.join(" | ");
   }
 
   _log(level, args) {
     // check if level should be logged
-    if (this.__levelNumber < LEVEL_NUMBER[level]) {
+    if (this.__maxLevelNumber < LEVEL_NUMBER[level]) {
       return;
     }
     const streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout;
