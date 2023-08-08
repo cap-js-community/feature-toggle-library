@@ -60,6 +60,14 @@ const LEVEL_NUMBER = Object.freeze({
   [LEVEL.TRACE]: 500,
 });
 
+const LEVEL_NAME = Object.freeze({
+  [LEVEL.ERROR]: "error",
+  [LEVEL.WARNING]: "warn", // NOTE: cds started using warn instead of warning, and now we cannot change it
+  [LEVEL.INFO]: "info",
+  [LEVEL.DEBUG]: "debug",
+  [LEVEL.TRACE]: "trace",
+});
+
 const cds = tryRequire("@sap/cds");
 const cfApp = cfEnv.cfApp();
 const cfAppData = isOnCF
@@ -133,15 +141,17 @@ class Logger {
     }
 
     const cdsContext = cds?.context;
+    const req = cdsContext?.req;
     const cdsData = cdsContext
       ? {
           [FIELD.CORRELATION_ID]: cdsContext.id,
           [FIELD.TENANT_ID]: cdsContext.tenant,
+          [FIELD.TENANT_SUBDOMAIN]: req?.authInfo?.getSubdomain?.(),
         }
       : undefined;
     const now = new Date();
     const invocationData = {
-      [FIELD.LEVEL]: level,
+      [FIELD.LEVEL]: LEVEL_NAME[level],
       [FIELD.WRITTEN_AT]: now.toISOString(),
       [FIELD.WRITTEN_TIME]: now.getTime(),
       [FIELD.MESSAGE]: message ?? "",
