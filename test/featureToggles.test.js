@@ -6,7 +6,7 @@ const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
 const { CONFIG_KEY, CONFIG_INFO_KEY } = featureTogglesModule._;
 
-const { cfEnv } = require("../src/env");
+const { CfEnv } = require("../src/env");
 const { FEATURE, mockConfig, redisKey, redisChannel } = require("./mockdata");
 
 const { readFile: readFileSpy } = require("fs");
@@ -816,7 +816,9 @@ describe("feature toggles test", () => {
     });
 
     it("FeatureValueValidation and appUrl working", async () => {
-      jest.spyOn(cfEnv, "cfApp").mockReturnValueOnce({ uris: ["https://it.cfapps.sap.hana.ondemand.com"] });
+      jest
+        .spyOn(CfEnv.prototype, "cfApp", "get")
+        .mockReturnValueOnce({ uris: ["https://it.cfapps.sap.hana.ondemand.com"] });
       const newValue = "newValue";
       await featureToggles.initializeFeatures({ config: mockConfig });
       const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
@@ -828,7 +830,7 @@ describe("feature toggles test", () => {
     });
 
     it("FeatureValueValidation and appUrl failing", async () => {
-      jest.spyOn(cfEnv, "cfApp").mockReturnValueOnce({ uris: ["https://not-it.com"] });
+      jest.spyOn(CfEnv.prototype, "cfApp", "get").mockReturnValueOnce({ uris: ["https://not-it.com"] });
       const newValue = "newValue";
       await featureToggles.initializeFeatures({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.H);

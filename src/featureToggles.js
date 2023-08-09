@@ -125,7 +125,7 @@ class FeatureToggles {
    * Populate this.__config.
    */
   _processConfig(config) {
-    const { uris: cfAppUris } = cfEnv.cfApp();
+    const { uris: cfAppUris } = cfEnv.cfApp;
 
     const configEntries = Object.entries(config);
     for (const [featureKey, { type, active, appUrl, validation, fallbackValue, allowedScopes }] of configEntries) {
@@ -221,7 +221,7 @@ class FeatureToggles {
     }
     let cfApp;
     try {
-      cfApp = cfEnv.cfApp();
+      cfApp = cfEnv.cfApp;
       if (cfApp.application_name) {
         return cfApp.application_name;
       }

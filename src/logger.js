@@ -5,12 +5,8 @@ const VError = require("verror");
 const { cfEnv, isOnCF } = require("./env");
 const { tryRequire } = require("./shared/static");
 
-// TODO: missing fields
-// "source_instance": 1, SAME AS component_instance
-// "container_id": "10.36.133.5", // TODO get via cfEnv
 const FIELD = Object.freeze({
   // ## CF APP DATA
-  CONTAINER_ID: "container_id",
   COMPONENT_NAME: "component_name",
   COMPONENT_ID: "component_id",
   COMPONENT_INSTANCE: "component_instance",
@@ -19,6 +15,7 @@ const FIELD = Object.freeze({
   SPACE_ID: "space_id",
   ORGANIZATION_NAME: "organization_name",
   ORGANIZATION_ID: "organization_id",
+  CONTAINER_ID: "container_id",
 
   // ## BASE DATA
   TYPE: "type",
@@ -66,10 +63,9 @@ const LEVEL_NAME = Object.freeze({
 });
 
 const cds = tryRequire("@sap/cds");
-const cfApp = cfEnv.cfApp();
+const cfApp = cfEnv.cfApp;
 const cfAppData = isOnCF
   ? {
-      [FIELD.CONTAINER_ID]: process.env["CF_INSTANCE_IP"],
       [FIELD.COMPONENT_TYPE]: "application",
       [FIELD.COMPONENT_NAME]: cfApp.application_name,
       [FIELD.COMPONENT_ID]: cfApp.application_id,
@@ -78,6 +74,7 @@ const cfAppData = isOnCF
       [FIELD.SPACE_ID]: cfApp.space_id,
       [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
       [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
+      [FIELD.CONTAINER_ID]: cfEnv.cfInstanceIp,
     }
   : undefined;
 

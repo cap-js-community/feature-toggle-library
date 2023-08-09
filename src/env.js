@@ -17,6 +17,7 @@ class CfEnv {
   constructor(env = process.env) {
     this.__cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
     this.__cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
+    this.__cfInstanceIp = process.env[ENV.CF_INSTANCE_IP];
     this.__cfServiceList = [].concat(...Object.values(this.__cfServices));
     this.__cfServiceLabelMap = this.__cfServiceList.reduce((result, service) => {
       if (service.label && !result[service.label]) {
@@ -33,12 +34,16 @@ class CfEnv {
     return CfEnv.__instance;
   }
 
-  cfApp() {
+  get cfApp() {
     return this.__cfApp;
   }
 
-  cfServices() {
+  get cfServices() {
     return this.__cfServices;
+  }
+
+  get cfInstanceIp() {
+    return this.__cfInstanceIp;
   }
 
   cfServiceCredentials(options) {
@@ -55,6 +60,8 @@ class CfEnv {
 }
 
 module.exports = {
+  CfEnv,
+
   isLocal,
   isOnCF,
   cfEnv: CfEnv.getInstance(),
