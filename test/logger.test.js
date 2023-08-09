@@ -37,7 +37,7 @@ const cleanupJSONLogCalls = (args) =>
         )
         .map(([key, value]) => {
           if (["msg"].includes(key)) {
-            return [key, value.replace(/\n.*$/gm, "")];
+            return [key, value.replace(/\n\s+at.*$/gm, "")];
           }
           return [key, value];
         })
@@ -59,7 +59,7 @@ describe("logger test", () => {
   });
 
   it("check readable logging for invalid fallback values during initialization", async () => {
-    featureTogglesModule._._setLogger(new Logger({ layer: "Testing", readable: true }));
+    featureTogglesModule._._setLogger(new Logger(layer, { readable: true }));
     const error = new Error("bad validator");
     const validator = jest.fn().mockRejectedValue(error);
 
@@ -69,11 +69,14 @@ describe("logger test", () => {
     expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
 [
   [
-    "88:88:88.888 | warn | Testing | {"validationErrors":"[{\\"featureKey\\":\\"test/feature_b\\",\\"errorMessage\\":\\"registered validator \\\\\\"{0}\\\\\\" failed for value \\\\\\"{1}\\\\\\" with error {2}\\",\\"errorMessageValues\\":[\\"mockConstructor\\",1,\\"bad validator\\"]}]"} | FeatureTogglesError: found invalid fallback values during initialization
+    "88:88:88.888 | warn | /test | FeatureTogglesError: found invalid fallback values during initialization
+{
+  validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
+}
 ",
   ],
   [
-    "88:88:88.888 | info | Testing | finished initialization with 9 feature toggles with CF_REDIS
+    "88:88:88.888 | info | /test | finished initialization with 9 feature toggles with CF_REDIS
 ",
   ],
 ]
@@ -81,8 +84,13 @@ describe("logger test", () => {
     expect(processStreamSpy.stderr.mock.calls.map(cleanupReadableLogCalls)).toMatchInlineSnapshot(`
 [
   [
-    "88:88:88.888 | error | Testing | {"validator":"mockConstructor","featureKey":"test/feature_b","value":1} | FeatureTogglesError: error during registered validator: bad validator
+    "88:88:88.888 | error | /test | FeatureTogglesError: error during registered validator: bad validator
 caused by: Error: bad validator
+{
+  validator: 'mockConstructor',
+  featureKey: 'test/feature_b',
+  value: 1
+}
 ",
   ],
 ]
@@ -90,7 +98,7 @@ caused by: Error: bad validator
   });
 
   it("check json logging for invalid fallback values during initialization", async () => {
-    featureTogglesModule._._setLogger(new Logger({ layer: "Testing", readable: false }));
+    featureTogglesModule._._setLogger(new Logger(layer, { readable: false }));
     const error = new Error("bad validator");
     const validator = jest.fn().mockRejectedValue(error);
 
@@ -102,17 +110,17 @@ caused by: Error: bad validator
     expect(logStderrCalls).toMatchInlineSnapshot(`
 [
   [
-    "{"error_info":"{\\"validator\\":\\"mockConstructor\\",\\"featureKey\\":\\"test/feature_b\\",\\"value\\":1}","level":"error","msg":"FeatureTogglesError: error during registered validator: bad validator","type":"log","layer":"Testing"}",
+    "{"level":"error","msg":"FeatureTogglesError: error during registered validator: bad validator\\ncaused by: Error: bad validator\\n{\\n  validator: 'mockConstructor',\\n  featureKey: 'test/feature_b',\\n  value: 1\\n}","type":"log","layer":"/test"}",
   ],
 ]
 `);
     expect(logStdoutCalls).toMatchInlineSnapshot(`
 [
   [
-    "{"error_info":"{\\"validationErrors\\":\\"[{\\\\\\"featureKey\\\\\\":\\\\\\"test/feature_b\\\\\\",\\\\\\"errorMessage\\\\\\":\\\\\\"registered validator \\\\\\\\\\\\\\"{0}\\\\\\\\\\\\\\" failed for value \\\\\\\\\\\\\\"{1}\\\\\\\\\\\\\\" with error {2}\\\\\\",\\\\\\"errorMessageValues\\\\\\":[\\\\\\"mockConstructor\\\\\\",1,\\\\\\"bad validator\\\\\\"]}]\\"}","level":"warn","msg":"FeatureTogglesError: found invalid fallback values during initialization","type":"log","layer":"Testing"}",
+    "{"level":"warn","msg":"FeatureTogglesError: found invalid fallback values during initialization\\n{\\n  validationErrors: '[{\\"featureKey\\":\\"test/feature_b\\",\\"errorMessage\\":\\"registered validator \\\\\\\\\\"{0}\\\\\\\\\\" failed for value \\\\\\\\\\"{1}\\\\\\\\\\" with error {2}\\",\\"errorMessageValues\\":[\\"mockConstructor\\",1,\\"bad validator\\"]}]'\\n}","type":"log","layer":"/test"}",
   ],
   [
-    "{"level":"info","msg":"finished initialization with 9 feature toggles with CF_REDIS","type":"log","layer":"Testing"}",
+    "{"level":"info","msg":"finished initialization with 9 feature toggles with CF_REDIS","type":"log","layer":"/test"}",
   ],
 ]
 `);
@@ -124,7 +132,7 @@ caused by: Error: bad validator
 
   describe("logger v2", () => {
     it("info with text readable and no layer", async () => {
-      logger = new Logger({ readable: true });
+      logger = new Logger("", { readable: true });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -136,7 +144,7 @@ caused by: Error: bad validator
     });
 
     it("info with text", async () => {
-      logger = new Logger({ layer });
+      logger = new Logger(layer, { readable: false });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJSONLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -147,7 +155,7 @@ caused by: Error: bad validator
     });
 
     it("info with text readable", async () => {
-      logger = new Logger({ layer, readable: true });
+      logger = new Logger(layer, { readable: true });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupReadableLogCalls)[0]).toMatchInlineSnapshot(`
 [
@@ -159,18 +167,18 @@ caused by: Error: bad validator
     });
 
     it("error basic usage", async () => {
-      logger = new Logger({ layer });
+      logger = new Logger(layer, { readable: false });
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stderr.mock.calls.map(cleanupJSONLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "{"error_info":"{}","level":"error","msg":"VError: bla error","type":"log","layer":"/test"}",
+  "{"level":"error","msg":"VError: bla error\\n{}","type":"log","layer":"/test"}",
 ]
 `);
       expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
     });
 
     it("error with children", async () => {
-      const logger = new Logger({ layer });
+      const logger = new Logger(layer, { readable: false });
       const childLogger = logger.child({ isChild: true });
       const siblingLogger = logger.child({ isSibling: true });
       const childChildLogger = childLogger.child({ isChildChild: true });

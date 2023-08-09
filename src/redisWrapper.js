@@ -19,7 +19,7 @@ const INTEGRATION_MODE = Object.freeze({
   NO_REDIS: "NO_REDIS",
 });
 
-const logger = new Logger({ layer: COMPONENT_NAME, readable: !isOnCF });
+const logger = new Logger(COMPONENT_NAME, { readable: !isOnCF });
 
 const MODE = Object.freeze({
   RAW: "raw",
