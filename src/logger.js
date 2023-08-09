@@ -5,6 +5,34 @@ const VError = require("verror");
 const { cfEnv, isOnCF } = require("./env");
 const { tryRequire } = require("./shared/static");
 
+// NOTE: logger levels are a complete mess in node. looking at console, npm, winston, and cap there is not unity at all.
+//   I will offer the same levels as console and one "off" level.
+const LEVEL = Object.freeze({
+  OFF: "OFF", // SILENT: "silent"
+  ERROR: "ERROR",
+  WARNING: "WARNING",
+  INFO: "INFO",
+  DEBUG: "DEBUG", // VERBOSE: "verbose",
+  TRACE: "TRACE", // SILLY: "silly"
+});
+
+const LEVEL_NUMBER = Object.freeze({
+  [LEVEL.OFF]: 0,
+  [LEVEL.ERROR]: 100,
+  [LEVEL.WARNING]: 200,
+  [LEVEL.INFO]: 300,
+  [LEVEL.DEBUG]: 400,
+  [LEVEL.TRACE]: 500,
+});
+
+const LEVEL_NAME = Object.freeze({
+  [LEVEL.ERROR]: "error",
+  [LEVEL.WARNING]: "warn", // NOTE: cf-nodejs-logging-support started using warn instead of warning, and now we cannot change it
+  [LEVEL.INFO]: "info",
+  [LEVEL.DEBUG]: "debug",
+  [LEVEL.TRACE]: "trace",
+});
+
 const FIELD = Object.freeze({
   // ## CF APP DATA
   COMPONENT_NAME: "component_name",
@@ -34,33 +62,12 @@ const FIELD = Object.freeze({
   MESSAGE: "msg",
 });
 
-// NOTE: logger levels are a complete mess in node. looking at console, npm, winston, and cap there is not unity at all.
-//   I will offer the same levels as console and one "off" level.
-const LEVEL = Object.freeze({
-  OFF: "OFF", // SILENT: "silent"
-  ERROR: "ERROR",
-  WARNING: "WARNING",
-  INFO: "INFO",
-  DEBUG: "DEBUG", // VERBOSE: "verbose",
-  TRACE: "TRACE", // SILLY: "silly"
+const FORMAT = Object.freeze({
+  JSON: "JSON",
+  TEXT: "TEXT",
 });
 
-const LEVEL_NUMBER = Object.freeze({
-  [LEVEL.OFF]: 0,
-  [LEVEL.ERROR]: 100,
-  [LEVEL.WARNING]: 200,
-  [LEVEL.INFO]: 300,
-  [LEVEL.DEBUG]: 400,
-  [LEVEL.TRACE]: 500,
-});
-
-const LEVEL_NAME = Object.freeze({
-  [LEVEL.ERROR]: "error",
-  [LEVEL.WARNING]: "warn", // NOTE: cf-nodejs-logging-support started using warn instead of warning, and now we cannot change it
-  [LEVEL.INFO]: "info",
-  [LEVEL.DEBUG]: "debug",
-  [LEVEL.TRACE]: "trace",
-});
+const MILLIS_IN_NANOS = 1000000n;
 
 const cds = tryRequire("@sap/cds");
 const cfApp = cfEnv.cfApp;
@@ -78,23 +85,24 @@ const cfAppData = isOnCF
     }
   : undefined;
 
-const MILLIS_IN_NANOS = 1000000n;
-
-// TODO: readable feels off, but it's tricky. kibana calls it json layout if it's machine readable. and pattern if
-//       https://www.elastic.co/guide/en/kibana/8.9/log-settings-examples.html
-// rename to format and add an enum
 // this is for module server code without any request context
 class Logger {
   constructor(
     layer,
-    { type = "log", maxLevel = LEVEL.INFO, customData, readable = !isOnCF, inspectOptions = { colors: false } } = {}
+    {
+      type = "log",
+      maxLevel = LEVEL.INFO,
+      customData,
+      format = isOnCF ? FORMAT.JSON : FORMAT.TEXT,
+      inspectOptions = { colors: false },
+    } = {}
   ) {
     this.__baseData = {
       [FIELD.TYPE]: type,
       [FIELD.LAYER]: layer,
     };
     this.__dataList = customData ? [customData] : [];
-    this.__readable = readable;
+    this.__format = format;
     this.__inspectOptions = inspectOptions;
     this.__maxLevelNumber = LEVEL_NUMBER[maxLevel];
   }
@@ -141,9 +149,8 @@ class Logger {
           [FIELD.TENANT_SUBDOMAIN]: req?.authInfo?.getSubdomain?.(),
         }
       : undefined;
-    const someNanos = process.hrtime.bigint();
     const now = new Date();
-    const nowNanos = BigInt(now.getTime()) * MILLIS_IN_NANOS + (someNanos % MILLIS_IN_NANOS);
+    const nowNanos = BigInt(now.getTime()) * MILLIS_IN_NANOS + (process.hrtime.bigint() % MILLIS_IN_NANOS);
     const invocationData = {
       [FIELD.LEVEL]: LEVEL_NAME[level],
       [FIELD.WRITTEN_AT]: now.toISOString(),
@@ -184,10 +191,18 @@ class Logger {
     }
     const streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout;
     const data = this._logData(level, args);
-    if (this.__readable) {
-      streamOut.write(Logger._readableOutput(data) + "\n");
-    } else {
-      streamOut.write(JSON.stringify(data) + "\n");
+    switch (this.__format) {
+      case FORMAT.JSON: {
+        streamOut.write(JSON.stringify(data) + "\n");
+        break;
+      }
+      case FORMAT.TEXT: {
+        streamOut.write(Logger._readableOutput(data) + "\n");
+        break;
+      }
+      default: {
+        throw new VError({ info: { format: this.__format } }, "logger called with unknown format");
+      }
     }
   }
 
@@ -210,6 +225,7 @@ class Logger {
 
 module.exports = {
   LEVEL,
+  FORMAT,
 
   Logger,
 };

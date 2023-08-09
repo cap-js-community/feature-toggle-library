@@ -97,7 +97,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 ];
 
 const readFileAsync = promisify(readFile);
-let logger = new Logger(COMPONENT_NAME, { readable: !isOnCF });
+let logger = new Logger(COMPONENT_NAME);
 
 const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
   const fileData = await readFileAsync(configFilepath);
