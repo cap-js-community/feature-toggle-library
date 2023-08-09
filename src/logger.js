@@ -33,7 +33,7 @@ const FIELD = Object.freeze({
   // ## LOG INVOCATION DATA
   LEVEL: "level",
   WRITTEN_AT: "written_at",
-  WRITTEN_TIME: "written_ts", // TODO nanoseconds
+  WRITTEN_TIME: "written_ts",
   MESSAGE: "msg",
 });
 
@@ -80,6 +80,8 @@ const cfAppData = isOnCF
       [FIELD.ORGANIZATION_ID]: cfApp.organization_id,
     }
   : undefined;
+
+const MILLIS_IN_NANOS = 1000000n;
 
 // TODO: readable feels off, but it's tricky. kibana calls it json layout if it's machine readable. and pattern if
 //       https://www.elastic.co/guide/en/kibana/8.9/log-settings-examples.html
@@ -142,12 +144,13 @@ class Logger {
           [FIELD.TENANT_SUBDOMAIN]: req?.authInfo?.getSubdomain?.(),
         }
       : undefined;
-    // process.hrtime()
+    const someNanos = process.hrtime.bigint();
     const now = new Date();
+    const nowNanos = BigInt(now.getTime()) * MILLIS_IN_NANOS + (someNanos % MILLIS_IN_NANOS);
     const invocationData = {
       [FIELD.LEVEL]: LEVEL_NAME[level],
       [FIELD.WRITTEN_AT]: now.toISOString(),
-      [FIELD.WRITTEN_TIME]: now.getTime(), // TODO nanos
+      [FIELD.WRITTEN_TIME]: nowNanos.toString(),
       [FIELD.MESSAGE]: message ?? "",
     };
     return Object.assign(
@@ -162,7 +165,7 @@ class Logger {
   }
 
   static _readableOutput(data) {
-    const writtenTime = new Date(data[FIELD.WRITTEN_TIME]);
+    const writtenTime = new Date(Number(BigInt(data[FIELD.WRITTEN_TIME]) / MILLIS_IN_NANOS));
     const timestamp = util.format(
       "%s:%s:%s.%s",
       ("0" + writtenTime.getHours()).slice(-2),
