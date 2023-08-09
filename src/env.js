@@ -27,6 +27,9 @@ class CfEnv {
     }, {});
   }
 
+  /**
+   * @return CfEnv
+   */
   static getInstance() {
     if (!CfEnv.__instance) {
       CfEnv.__instance = new CfEnv();
