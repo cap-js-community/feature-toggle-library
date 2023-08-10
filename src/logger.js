@@ -76,7 +76,7 @@ const cfAppData = isOnCF
       [FIELD.COMPONENT_TYPE]: "application",
       [FIELD.COMPONENT_NAME]: cfApp.application_name,
       [FIELD.COMPONENT_ID]: cfApp.application_id,
-      [FIELD.COMPONENT_INSTANCE]: cfApp.instance_index,
+      [FIELD.COMPONENT_INSTANCE]: cfEnv.cfInstanceIndex,
       [FIELD.SPACE_NAME]: cfApp.space_name,
       [FIELD.SPACE_ID]: cfApp.space_id,
       [FIELD.ORGANIZATION_NAME]: cfApp.organization_name,
