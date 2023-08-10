@@ -85,10 +85,9 @@ const cfAppData = isOnCF
     }
   : undefined;
 
-// this is for module server code without any request context
 class Logger {
   constructor(
-    layer,
+    layer = undefined,
     {
       type = "log",
       maxLevel = LEVEL.INFO,
@@ -185,7 +184,6 @@ class Logger {
   }
 
   _log(level, args) {
-    // check if level should be logged
     if (this.__maxLevelNumber < LEVEL_NUMBER[level]) {
       return;
     }
@@ -199,9 +197,6 @@ class Logger {
       case FORMAT.TEXT: {
         streamOut.write(Logger._readableOutput(data) + "\n");
         break;
-      }
-      default: {
-        throw new VError({ info: { format: this.__format } }, "logger called with unknown format");
       }
     }
   }
