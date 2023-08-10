@@ -19,7 +19,7 @@ class CfEnv {
     this.__cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
     this.__cfInstanceGuid = env[ENV.CF_INSTANCE_GUID];
     this.__cfInstanceIp = env[ENV.CF_INSTANCE_IP];
-    this.__cfInstanceIndex = env[ENV.CF_INSTANCE_INDEX];
+    this.__cfInstanceIndex = env[ENV.CF_INSTANCE_INDEX] ? parseInt(env[ENV.CF_INSTANCE_INDEX]) : undefined;
     this.__cfServiceList = [].concat(...Object.values(this.__cfServices));
     this.__cfServiceLabelMap = this.__cfServiceList.reduce((result, service) => {
       if (service.label && !result[service.label]) {
