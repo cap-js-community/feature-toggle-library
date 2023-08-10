@@ -69,14 +69,14 @@ describe("logger test", () => {
     expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)).toMatchInlineSnapshot(`
 [
   [
-    "88:88:88.888 | warn | /test | FeatureTogglesError: found invalid fallback values during initialization
+    "88:88:88.888 | WARN | /test | FeatureTogglesError: found invalid fallback values during initialization
 {
   validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
 }
 ",
   ],
   [
-    "88:88:88.888 | info | /test | finished initialization with 9 feature toggles with CF_REDIS
+    "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles with CF_REDIS
 ",
   ],
 ]
@@ -84,7 +84,7 @@ describe("logger test", () => {
     expect(processStreamSpy.stderr.mock.calls.map(cleanupTextLogCalls)).toMatchInlineSnapshot(`
 [
   [
-    "88:88:88.888 | error | /test | FeatureTogglesError: error during registered validator: bad validator
+    "88:88:88.888 | ERROR | /test | FeatureTogglesError: error during registered validator: bad validator
 caused by: Error: bad validator
 {
   validator: 'mockConstructor',
@@ -136,7 +136,7 @@ caused by: Error: bad validator
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "88:88:88.888 | info | some info
+  "88:88:88.888 | INFO | some info
 ",
 ]
 `);
@@ -159,7 +159,7 @@ caused by: Error: bad validator
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "88:88:88.888 | info | /test | some info
+  "88:88:88.888 | INFO | /test | some info
 ",
 ]
 `);
