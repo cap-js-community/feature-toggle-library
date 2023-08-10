@@ -171,7 +171,7 @@ caused by: Error: bad validator
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stderr.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "{"level":"error","msg":"VError: bla error\\n{}","type":"log","layer":"/test"}",
+  "{"level":"error","msg":"VError: bla error","type":"log","layer":"/test"}",
 ]
 `);
       expect(processStreamSpy.stderr.mock.calls.length).toBe(1);

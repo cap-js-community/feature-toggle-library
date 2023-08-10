@@ -126,7 +126,12 @@ class Logger {
       // special handling if the only arg is a VError
       if (firstArg instanceof VError) {
         const err = firstArg;
-        message = util.formatWithOptions(this.__inspectOptions, "%s\n%O", VError.fullStack(err), VError.info(err));
+        const errInfo = VError.info(err);
+        if (errInfo && Object.keys(errInfo).length > 0) {
+          message = util.formatWithOptions(this.__inspectOptions, "%s\n%O", VError.fullStack(err), errInfo);
+        } else {
+          message = util.formatWithOptions(this.__inspectOptions, "%s", VError.fullStack(err));
+        }
       }
       // special handling if the only arg is an Error
       else if (firstArg instanceof Error) {
