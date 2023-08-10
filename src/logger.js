@@ -149,6 +149,9 @@ class Logger {
           [FIELD.TENANT_SUBDOMAIN]: req?.authInfo?.getSubdomain?.(),
         }
       : undefined;
+    // NOTE: the start time of Date's milliseconds is the epoch and the start time for hrtime is an arbitrary time
+    //   close to the process startup, so it may look odd to add them here. however, we can use the sub-millisecond
+    //   offset of hrtime to keep logs with the same Date-millisecond in chronological order.
     const now = new Date();
     const nowNanos = now.getTime() * MILLIS_IN_NANOS_NUMBER + Number(process.hrtime.bigint() % MILLIS_IN_NANOS_BIGINT);
     const invocationData = {
