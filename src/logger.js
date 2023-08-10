@@ -34,7 +34,7 @@ const LEVEL_NAME = Object.freeze({
 });
 
 const FIELD = Object.freeze({
-  // ## CF APP DATA
+  // CF ENV DATA
   COMPONENT_NAME: "component_name",
   COMPONENT_ID: "component_id",
   COMPONENT_INSTANCE: "component_instance",
@@ -45,17 +45,17 @@ const FIELD = Object.freeze({
   ORGANIZATION_ID: "organization_id",
   CONTAINER_ID: "container_id",
 
-  // ## BASE DATA
+  // BASE DATA
   TYPE: "type",
   LAYER: "layer",
 
-  // ## ASYNC_LOCAL_STORAGE CDS CONTEXT
+  // ASYNC_LOCAL_STORAGE CDS CONTEXT DATA
   CORRELATION_ID: "correlation_id",
   REMOTE_USER: "remote_user",
   TENANT_ID: "tenant_id",
   TENANT_SUBDOMAIN: "tenant_subdomain",
 
-  // ## LOG INVOCATION DATA
+  // LOG INVOCATION DATA
   LEVEL: "level",
   WRITTEN_AT: "written_at",
   WRITTEN_TIME: "written_ts",
@@ -110,8 +110,8 @@ class Logger {
   child(data) {
     const child = new Logger();
     Object.assign(child, this);
-    // NOTE: Object assign only does a shallow copy, so changes to __dataList would propagate to the children, but
-    //   we don't offer an API to change it, so that should be alright.
+    // NOTE: object.assign only does a shallow copy, so changes to __dataList would propagate to the children. to avoid
+    //   this it needs to be cloned here.
     child.__dataList = child.__dataList.slice();
     child.__dataList.push(data);
     return child;
