@@ -176,7 +176,7 @@ class Logger {
       ("0" + writtenTime.getSeconds()).slice(-2),
       ("00" + writtenTime.getMilliseconds()).slice(-3)
     );
-    const level = data[FIELD.LEVEL];
+    const level = data[FIELD.LEVEL].toUpperCase();
     const layer = data[FIELD.LAYER];
     const message = data[FIELD.MESSAGE];
     const parts = [timestamp, level, ...(layer ? [layer] : []), message];
