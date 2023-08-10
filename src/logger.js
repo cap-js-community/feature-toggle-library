@@ -67,7 +67,8 @@ const FORMAT = Object.freeze({
   TEXT: "TEXT",
 });
 
-const MILLIS_IN_NANOS = 1000000n;
+const MILLIS_IN_NANOS_NUMBER = 1000000;
+const MILLIS_IN_NANOS_BIGINT = BigInt(MILLIS_IN_NANOS_NUMBER);
 
 const cds = tryRequire("@sap/cds");
 const cfApp = cfEnv.cfApp;
@@ -149,11 +150,11 @@ class Logger {
         }
       : undefined;
     const now = new Date();
-    const nowNanos = BigInt(now.getTime()) * MILLIS_IN_NANOS + (process.hrtime.bigint() % MILLIS_IN_NANOS);
+    const nowNanos = now.getTime() * MILLIS_IN_NANOS_NUMBER + Number(process.hrtime.bigint() % MILLIS_IN_NANOS_BIGINT);
     const invocationData = {
       [FIELD.LEVEL]: LEVEL_NAME[level],
       [FIELD.WRITTEN_AT]: now.toISOString(),
-      [FIELD.WRITTEN_TIME]: nowNanos.toString(),
+      [FIELD.WRITTEN_TIME]: nowNanos,
       [FIELD.MESSAGE]: message ?? "",
     };
     return Object.assign(
@@ -168,7 +169,7 @@ class Logger {
   }
 
   static _readableOutput(data) {
-    const writtenTime = new Date(Number(BigInt(data[FIELD.WRITTEN_TIME]) / MILLIS_IN_NANOS));
+    const writtenTime = new Date(Math.floor(data[FIELD.WRITTEN_TIME] / MILLIS_IN_NANOS_NUMBER));
     const timestamp = util.format(
       "%s:%s:%s.%s",
       ("0" + writtenTime.getHours()).slice(-2),
