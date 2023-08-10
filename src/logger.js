@@ -5,15 +5,15 @@ const VError = require("verror");
 const { cfEnv, isOnCF } = require("./env");
 const { tryRequire } = require("./shared/static");
 
-// NOTE: logger levels are a complete mess in node. looking at console, npm, winston, and cap there is not unity at all.
-//   I will offer the same levels as console and one "off" level.
+// NOTE: logger levels are tricky. looking at console, npm, winston, and cap there is no real consistency. we will
+//   offer the same levels as console and an additional "off" level.
 const LEVEL = Object.freeze({
-  OFF: "OFF", // SILENT: "silent"
+  OFF: "OFF", // SILENT: "SILENT"
   ERROR: "ERROR",
   WARNING: "WARNING",
   INFO: "INFO",
-  DEBUG: "DEBUG", // VERBOSE: "verbose",
-  TRACE: "TRACE", // SILLY: "silly"
+  DEBUG: "DEBUG", // VERBOSE: "VERBOSE",
+  TRACE: "TRACE", // SILLY: "SILLY"
 });
 
 const LEVEL_NUMBER = Object.freeze({
