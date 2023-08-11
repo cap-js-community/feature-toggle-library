@@ -4,6 +4,7 @@ const VError = require("verror");
 
 const { cfEnv, isOnCF } = require("./env");
 const { tryRequire } = require("./shared/static");
+const cds = tryRequire("@sap/cds");
 
 // NOTE: logger levels are tricky. looking at console, npm, winston, and cap there is no real consistency. we will
 //   offer the same levels as console and an additional "off" level.
@@ -70,7 +71,6 @@ const FORMAT = Object.freeze({
 const MILLIS_IN_NANOS_NUMBER = 1000000;
 const MILLIS_IN_NANOS_BIGINT = BigInt(MILLIS_IN_NANOS_NUMBER);
 
-const cds = tryRequire("@sap/cds");
 const cfApp = cfEnv.cfApp;
 const cfAppData = isOnCF
   ? {
