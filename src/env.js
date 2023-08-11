@@ -2,8 +2,7 @@
 
 const { ENV } = require("./shared/static");
 
-const isLocal = process.env[ENV.USER] !== "vcap";
-const isOnCF = !isLocal;
+const isOnCF = process.env[ENV.USER] === "vcap";
 
 class CfEnv {
   static parseEnvVar(env, envVar) {
@@ -15,12 +14,12 @@ class CfEnv {
   }
 
   constructor(env = process.env) {
-    this.__cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
-    this.__cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
-    this.__cfInstanceGuid = env[ENV.CF_INSTANCE_GUID];
-    this.__cfInstanceIp = env[ENV.CF_INSTANCE_IP];
-    this.__cfInstanceIndex = env[ENV.CF_INSTANCE_INDEX] ? parseInt(env[ENV.CF_INSTANCE_INDEX]) : undefined;
-    this.__cfServiceList = [].concat(...Object.values(this.__cfServices));
+    this.cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
+    this.cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
+    this.cfInstanceGuid = env[ENV.CF_INSTANCE_GUID];
+    this.cfInstanceIp = env[ENV.CF_INSTANCE_IP];
+    this.cfInstanceIndex = env[ENV.CF_INSTANCE_INDEX] ? parseInt(env[ENV.CF_INSTANCE_INDEX]) : undefined;
+    this.__cfServiceList = [].concat(...Object.values(this.cfServices));
     this.__cfServiceLabelMap = this.__cfServiceList.reduce((result, service) => {
       if (service.label && !result[service.label]) {
         result[service.label] = service;
@@ -39,30 +38,6 @@ class CfEnv {
     return CfEnv.__instance;
   }
 
-  // NOTE: we have these getters just for mocking, which violates the principle to not change production code just for
-  //   tests. Instead of using class getters, you could also do the getters in an Object.defineProperty(), but that
-  //   violates the same principle. With object properties that have values without getters, the jest.spyOn approach
-  //   does not work. So, you would have to mock the whole class instance for tests.
-  get cfApp() {
-    return this.__cfApp;
-  }
-
-  get cfServices() {
-    return this.__cfServices;
-  }
-
-  get cfInstanceGuid() {
-    return this.__cfInstanceGuid;
-  }
-
-  get cfInstanceIp() {
-    return this.__cfInstanceIp;
-  }
-
-  get cfInstanceIndex() {
-    return this.__cfInstanceIndex;
-  }
-
   cfServiceCredentials(options) {
     const service = this.__cfServiceList.find((service) =>
       Object.entries(options).reduce((result, [key, value]) => result && service[key] === value, true)
@@ -79,7 +54,6 @@ class CfEnv {
 module.exports = {
   CfEnv,
 
-  isLocal,
   isOnCF,
   cfEnv: CfEnv.getInstance(),
 };
