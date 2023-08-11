@@ -14,8 +14,6 @@
 // TODO locale for validation messages
 // TODO investigate how to turn library into a cds plugin similar to https://github.com/cap-js-community/event-queue
 //      this would incorporate a ready-made feature-service interface copied from example-cap-server
-// TODO remove dependency on cf-nodejs-logging-support. the way request level information are handled in there is
-//      not good. either we build our own logging, or hook into cds.log and make cds a full dependency...
 
 const { promisify } = require("util");
 const path = require("path");
@@ -97,7 +95,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 ];
 
 const readFileAsync = promisify(readFile);
-let logger = new Logger(COMPONENT_NAME, isOnCF);
+let logger = new Logger(COMPONENT_NAME);
 
 const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
   const fileData = await readFileAsync(configFilepath);
@@ -125,7 +123,7 @@ class FeatureToggles {
    * Populate this.__config.
    */
   _processConfig(config) {
-    const { uris: cfAppUris } = cfEnv.cfApp();
+    const { uris: cfAppUris } = cfEnv.cfApp;
 
     const configEntries = Object.entries(config);
     for (const [featureKey, { type, active, appUrl, validation, fallbackValue, allowedScopes }] of configEntries) {
@@ -221,7 +219,7 @@ class FeatureToggles {
     }
     let cfApp;
     try {
-      cfApp = cfEnv.cfApp();
+      cfApp = cfEnv.cfApp;
       if (cfApp.application_name) {
         return cfApp.application_name;
       }

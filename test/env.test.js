@@ -126,11 +126,11 @@ describe("cfenv test", () => {
   });
 
   it("cfApp", () => {
-    expect(cfEnv.cfApp()).toStrictEqual(mockCfAppEnv);
+    expect(cfEnv.cfApp).toStrictEqual(mockCfAppEnv);
   });
 
   it("cfServices", () => {
-    expect(cfEnv.cfServices()).toStrictEqual(mockCfServicesEnv);
+    expect(cfEnv.cfServices).toStrictEqual(mockCfServicesEnv);
   });
 
   it("cfServiceCredentials", () => {
