@@ -4,7 +4,8 @@
   "description": "SAP BTP feature toggle library enables Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.",
   "main": "src/index.js",
   "files": [
-    "src"
+    "src",
+    "cds-plugin.js"
   ],
   "scripts": {
     "test": "jest",
@@ -51,5 +52,12 @@
     "cloud-foundry"
   ],
   "author": "Richard Lindner <richard.lindner@sap.com>",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "cds": {
+    "requires": {
+      "feature-toggles": {
+        "model": "@cap-js-community/feature-toggles"
+      }
+    }
+  }
 }
