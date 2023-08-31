@@ -14,6 +14,7 @@
 // TODO locale for validation messages
 // TODO investigate how to turn library into a cds plugin similar to https://github.com/cap-js-community/event-queue
 //      this would incorporate a ready-made feature-service interface copied from example-cap-server
+// TODO custom validation should be configurable in yaml file
 
 const { promisify } = require("util");
 const path = require("path");
