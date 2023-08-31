@@ -57,7 +57,7 @@
   "cds": {
     "requires": {
       "feature-toggles": {
-        "model": "@cap-js-community/feature-toggles"
+        "model": "@cap-js-community/feature-toggle-library"
       }
     }
   }
