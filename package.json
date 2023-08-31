@@ -56,7 +56,7 @@
   "license": "Apache-2.0",
   "cds": {
     "requires": {
-      "feature-toggles": {
+      "@cap-js-community/feature-toggle-library": {
         "model": "@cap-js-community/feature-toggle-library"
       }
     }
