@@ -3,8 +3,8 @@
   "name": "example-cap-server",
   "version": "1.0.0",
   "scripts": {
-    "start": "npm run copy-feature-toggle-library && npm run serve",
-    "copy-feature-toggle-library": "npx shx rm -rf node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src node_modules/@cap-js-community/feature-toggle-library",
+    "start": "npm run copy-library && npm run serve",
+    "copy-library": "npx shx rm -rf node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src node_modules/@cap-js-community/feature-toggle-library",
     "serve": "cds-serve",
     "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def .",
     "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
