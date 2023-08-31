@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "files": [
     "src",
-    "cds-plugin.js"
+    "cds-plugin.js",
+    "index.cds"
   ],
   "scripts": {
     "test": "jest",

@@ -6,7 +6,7 @@ const cds = require("@sap/cds");
 const { initializeFeatures } = require("./src/singleton");
 
 if (cds.env.featureToggles && cds.env.featureToggles.plugin) {
-  cds.before("bootstrap", async () => {
+  cds.on("bootstrap", async () => {
     await initializeFeatures({ configFile: cds.env.featureToggles.configFile });
   });
 }
