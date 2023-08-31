@@ -7,7 +7,10 @@ const { initializeFeatures } = require("./src/singleton");
 module.exports = {
   activate: async () => {
     if (cds.env.featureToggles && cds.env.featureToggles.plugin) {
-      await initializeFeatures({ configFile: cds.env.featureToggles.configFile });
+      await initializeFeatures({
+        config: cds.env.featureToggles.config,
+        configFile: cds.env.featureToggles.configFile,
+      });
     }
   },
 };
