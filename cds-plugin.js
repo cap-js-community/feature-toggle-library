@@ -2,11 +2,12 @@
 "use strict";
 
 const cds = require("@sap/cds");
-
 const { initializeFeatures } = require("./src/singleton");
 
-if (cds.env.featureToggles && cds.env.featureToggles.plugin) {
-  cds.on("bootstrap", async () => {
-    await initializeFeatures({ configFile: cds.env.featureToggles.configFile });
-  });
-}
+module.exports = {
+  activate: async () => {
+    if (cds.env.featureToggles && cds.env.featureToggles.plugin) {
+      await initializeFeatures({ configFile: cds.env.featureToggles.configFile });
+    }
+  },
+};
