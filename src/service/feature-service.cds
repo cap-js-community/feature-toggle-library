@@ -1,5 +1,5 @@
 @protocol: 'rest'
-@impl: './../handler/feature-service.js'
+@impl: './feature-service.js'
 @(requires: 'authenticated-user')
 // NOTE: in practice this needs proper security restrictions
 service FeatureService {

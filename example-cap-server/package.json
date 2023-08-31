@@ -3,12 +3,18 @@
   "name": "example-cap-server",
   "version": "1.0.0",
   "scripts": {
-    "start": "cds-serve",
+    "start": "node --preserve-symlinks ./node_modules/.bin/cds-serve",
     "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def ."
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "file:..",
     "@sap/cds": "^7.0.0",
     "express": "^4.18.2"
+  },
+  "cds": {
+    "eventQueue": {
+      "plugin": true,
+      "configFilePath": "./srv/feature/features.yaml"
+    }
   }
 }

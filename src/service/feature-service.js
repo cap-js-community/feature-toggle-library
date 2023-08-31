@@ -1,10 +1,8 @@
 "use strict";
 
-const {
-  redis,
-  singleton: { getFeaturesInfos, refreshFeatureValues, changeFeatureValue },
-} = require("@cap-js-community/feature-toggle-library");
 const cds = require("@sap/cds");
+const redis = require("../redisWrapper");
+const { getFeaturesInfos, refreshFeatureValues, changeFeatureValue } = require("../singleton");
 
 const COMPONENT_NAME = "featureService";
 const VALIDATION_ERROR_HTTP_CODE = 422;
