@@ -10,7 +10,7 @@
     "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
   },
   "dependencies": {
-    "@cap-js-community/feature-toggle-library": "",
+    "@cap-js-community/feature-toggle-library": "*",
     "@sap/cds": "^7.1.2",
     "express": "^4.18.2"
   },
