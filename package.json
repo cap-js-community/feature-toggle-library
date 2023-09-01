@@ -53,12 +53,5 @@
     "cloud-foundry"
   ],
   "author": "Richard Lindner <richard.lindner@sap.com>",
-  "license": "Apache-2.0",
-  "cds": {
-    "requires": {
-      "@cap-js-community/feature-toggle-library": {
-        "model": "@cap-js-community/feature-toggle-library"
-      }
-    }
-  }
+  "license": "Apache-2.0"
 }
