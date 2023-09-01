@@ -5,7 +5,7 @@ const cds = require("@sap/cds");
 const { initializeFeatures } = require("./src/singleton");
 
 const activate = async () => {
-  if (cds.env.featureToggles && cds.env.featureToggles.plugin) {
+  if (cds.env.featureToggles?.config || cds.env.featureToggles?.configFile) {
     cds.env.requires = Object.assign(cds.env.requires, {
       "@cap-js-community/feature-toggle-library": { model: "@cap-js-community/feature-toggle-library" },
     });

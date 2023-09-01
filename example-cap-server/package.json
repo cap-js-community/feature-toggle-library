@@ -16,7 +16,6 @@
   },
   "cds": {
     "featureToggles": {
-      "plugin": true,
       "configFile": "./srv/feature/features.yaml"
     }
   }
