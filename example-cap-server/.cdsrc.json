@@ -3,6 +3,12 @@
     "auth": {
       "kind": "mocked-auth",
       "users": {
+        "system": {
+          "tenant": "system",
+          "password": "system",
+          "id": "system-user",
+          "roles": ["system-user"]
+        },
         "alice": {
           "tenant": "people",
           "password": "alice",

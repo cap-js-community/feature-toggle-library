@@ -1,10 +1,10 @@
 ### state
 GET {{base_url}}/rest/feature/state
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 
 ### redis_update | check 1
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 Content-Type: application/json
 
 {
@@ -14,7 +14,7 @@ Content-Type: application/json
 
 ### redis_update | check 2
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 Content-Type: application/json
 
 {
@@ -25,7 +25,7 @@ Content-Type: application/json
 
 ### redis_update | check 3
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 Content-Type: application/json
 
 {
@@ -37,7 +37,7 @@ Content-Type: application/json
 
 ### redis_update | memory 1
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 Content-Type: application/json
 
 {
@@ -47,7 +47,7 @@ Content-Type: application/json
 
 ### redis_update | memory 2
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 Content-Type: application/json
 
 {
@@ -57,7 +57,7 @@ Content-Type: application/json
 
 ### redis_update | reset
 POST {{base_url}}/rest/feature/redisUpdate
-Authorization: Basic {{username}} {{password}}
+Authorization: Basic system system
 Content-Type: application/json
 
 [
