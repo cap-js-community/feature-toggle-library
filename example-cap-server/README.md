@@ -1,9 +1,11 @@
 # Example CAP Server
 
-## Node and local dependencies
+## CDS and local dependencies
 
-In [package.json](./package.json), we declare our library as a local `file:` dependency. There is a bug in node where
-such local dependencies cause imports _from the local dependency's code_ to fail, because of the way symlinks are
-handled. For details see https://github.com/nodejs/node/issues/3402.
+Ideally, we would want to mount our library as a `file:` dependency in this sample project. Unfortunately CDS does not
+handle `file:` dependencies correctly, because they are realized through symlinks.
+https://github.tools.sap/cap/issues/issues/14395
 
-To fix this behavior, you need to run `node` with the option `--preserve-symlinks`.
+To circumvent this, we now copy the required file at runtime into the dependencies of the sample project. See the
+`copy-library` task in [package.json](./package.json). This step is not necessary when installing our library normally.
+We do it here, so that new library code can be manually tested in this little sample project, without being released.
