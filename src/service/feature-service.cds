@@ -1,7 +1,6 @@
 @protocol: 'rest'
 @impl: './feature-service.js'
-@(requires: 'authenticated-user')
-// NOTE: in practice this needs proper security restrictions
+@(requires: ['system-user'])
 service FeatureService {
     type JSON {};
     function state() returns JSON;

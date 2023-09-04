@@ -10,6 +10,12 @@ const activate = async () => {
       "@cap-js-community/feature-toggle-library": { model: "@cap-js-community/feature-toggle-library" },
     });
 
+    if (Array.isArray(cds.env.featureToggles.roles)) {
+      cds.on("loaded", (csn) => {
+        csn.definitions.FeatureService["@requires"] = cds.env.featureToggles.roles;
+      });
+    }
+
     await initializeFeatures({
       config: cds.env.featureToggles.config,
       configFile: cds.env.featureToggles.configFile,
