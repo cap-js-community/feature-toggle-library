@@ -38,10 +38,82 @@ back all toggles to their fallback values.
 
 ## Configuration
 
-### Initialization
-
 We recommend maintaining the configuration in a _version-tracked_, YAML- or JSON-file, which only changes during
-deployments. You will need to use the corresponding filepath, in order to initialize the feature toggles instance.
+deployments. The configuration is a key-value map describing each individual feature toggle. Here is an example in YAML.
+
+```yaml
+/srv/util/logger/logLevel:
+  type: string
+  fallbackValue: info
+  appUrl: \.cfapps\.sap\.hana\.ondemand\.com$
+  validation: ^(?:error|warn|info|verbose|debug)$
+```
+
+The semantics of these properties are as follows.
+
+| property      | required | meaning                                                          |
+| :------------ | :------- | :--------------------------------------------------------------- |
+| active        |          | if this is `false`, the corresponding feature toggle is inactive |
+| type          | true     | one of the allowed types `boolean`, `number`, `string`           |
+| fallbackValue | true     | see below                                                        |
+| appUrl        |          | see below                                                        |
+| validation    |          | regex for input validation                                       |
+| allowedScopes |          | see below                                                        |
+
+_fallbackValue_<br>
+This value gets set initially when the feature toggle is introduced, and it is also used as a fallback when
+communication with Redis is interrupted during startup.
+
+_appUrl_<br>
+Regex for activating feature toggle _only_ if the cf app's url matches
+
+- for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`
+- for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`
+- specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`
+
+_allowedScopes_<br>
+This is an additional form of change validation. AllowedScopes can be set to a list of strings, for example
+`allowedScopes: [tenant, user]`. With this configuration only matching scopes can be used when setting feature toggle
+values.
+
+{: .info }
+You can use the type `string` to encode more complex data types, like arrays or objects, but need to take care of the
+serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
+so that new values can be deserialized correctly.
+
+{: .warn }
+When using _active_ or _appUrl_ to block activation of a feature toggle, then user code accessing the
+feature toggle value will always get the fallback value.
+
+## Initialization for CAP Projects
+
+You will use this library as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). So your initialization
+settings are in `package.json`.
+
+For example:
+
+```json
+{
+  ...,
+  "cds": {
+    "featureToggles": {
+      "configFile": "./srv/feature/features.yaml"
+    }
+  }
+}
+```
+
+In this example, the path `./srv/feature/feature.yaml` points to the previously discussed configuration file. With
+these settings in place, the `singleton` instance of the library will be initialized and is ready for usage at and
+after the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstrap) event.
+
+{: .info }
+Using the feature toggles in CAP projects also enables a [REST service]({{ site.baseurl }}/service/), where toggles can
+be read and manipulated.
+
+## Initialization for Non-CAP Projects
+
+You will need to use the corresponding filepath, in order to initialize the feature toggles instance.
 
 ```javascript
 const pathlib = require("path");
@@ -92,54 +164,6 @@ const config = await readConfigFromFile(FEATURES_FILEPATH);
 // ... manipulate
 await initializeFeatures({ config });
 ```
-
-### Format
-
-The configuration is a key-value map describing each individual feature toggle. Here is an example in YAML.
-
-```yaml
-/srv/util/logger/logLevel:
-  type: string
-  fallbackValue: info
-  appUrl: \.cfapps\.sap\.hana\.ondemand\.com$
-  validation: ^(?:error|warn|info|verbose|debug)$
-```
-
-The semantics of these properties are as follows.
-
-| property      | required | meaning                                                          |
-| :------------ | :------- | :--------------------------------------------------------------- |
-| active        |          | if this is `false`, the corresponding feature toggle is inactive |
-| type          | true     | one of the allowed types `boolean`, `number`, `string`           |
-| fallbackValue | true     | see below                                                        |
-| appUrl        |          | see below                                                        |
-| validation    |          | regex for input validation                                       |
-| allowedScopes |          | see below                                                        |
-
-_fallbackValue_<br>
-This value gets set initially when the feature toggle is introduced, and it is also used as a fallback when
-communication with Redis is blocked during startup.
-
-_appUrl_<br>
-Regex for activating feature toggle _only_ if the cf app's url matches
-
-- for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`
-- for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`
-- specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`
-
-_allowedScopes_<br>
-This is an additional form of change validation. AllowedScopes can be set to a list of strings, for example
-`allowedScopes: [tenant, user]`. With this configuration only matching scopes can be used when setting feature toggle
-values.
-
-{: .info }
-You can use the type `string` to encode more complex data types, like arrays or objects, but need to take care of the
-serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
-so that new values can be deserialized correctly.
-
-{: .warn }
-When using active or appUrl to block activation of a feature toggle, then user code accessing the
-feature toggle value will _always_ get the fallback value.
 
 ## Environment Variables
 
