@@ -31,3 +31,133 @@ role preferences, so this setting allows them to set a list of strings, which re
 the service. For details see [@requires](https://cap.cloud.sap/docs/guides/authorization#requires).
 
 ## Service Endpoints
+
+These service endpoints will enable operations teams to understand and modify toggle states. For practical requests,
+check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http)
+in our example CAP Server.
+
+### Read Server Memory State
+
+Get all information about the current in-memory state of all toggles.
+
+##### Example Request/Response
+
+- Request
+  ```http
+  GET /rest/feature/state
+  Authorization: ...
+  ```
+- Response
+  ```
+  HTTP/1.1 200 OK
+  ...
+  ```
+  ```json
+  {
+    "/check/priority": {
+      "fallbackValue": 0,
+      "config": {
+        "TYPE": "number",
+        "VALIDATION": "^\\d+$",
+        "ALLOWED_SCOPES": ["user", "tenant"]
+      }
+    },
+    "/memory/logInterval": {
+      "fallbackValue": 0,
+      "config": {
+        "TYPE": "number",
+        "VALIDATION": "^\\d+$"
+      }
+    }
+  }
+  ```
+
+---
+
+### Update Toggle
+
+Update the toggle state on Redis, which in turn is published to all server instances.
+
+##### Example Request/Responses
+
+- Valid Request
+  ```http
+  POST /rest/feature/redisUpdate
+  Authorization: ...
+  Content-Type: application/json
+  ```
+  ```json
+  {
+    "key": "/check/priority",
+    "value": 10,
+    "scope": { "tenant": "people" }
+  }
+  ```
+- Response
+
+  ```
+  HTTP/1.1 204 No Content
+  ...
+  ```
+
+- Invalid Request
+  ```http
+  POST /rest/feature/redisUpdate
+  Authorization: ...
+  Content-Type: application/json
+  ```
+  ```json
+  {
+    "key": "/check/priority",
+    "value": "test"
+  }
+  ```
+- Response
+  ```
+  HTTP/1.1 422 Unprocessable Entity
+  ...
+  ```
+  ```json
+  {
+    "error": {
+      "message": "value \"test\" has invalid type string, must be number",
+      "code": "422",
+      "@Common.numericSeverity": 4
+    }
+  }
+  ```
+
+## Service Endpoints for Debugging
+
+The service also offers additional endpoints to analyze problems.
+
+### Re-Sync Server with Redis
+
+Force server to re-sync with Redis, this should never be necessary. It returns the same JSON structure as
+`/state`, after re-syncing.
+
+##### Example Request/Response
+
+- Request
+  ```http
+  POST /rest/feature/redisRead
+  Authorization: ...
+  ```
+- Response<br>
+  Same as [Read Server Memory State](#read-server-memory-state).
+
+---
+
+### Send Redis Command
+
+Send an arbitrary command to Redis.
+
+##### Example Request/Response
+
+- Request
+  ```http
+  POST /rest/feature/redisRead
+  Authorization: ...
+  ```
+- Response<br>
+  Same as [Read Server Memory State](#read-server-memory-state).

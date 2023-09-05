@@ -1,4 +1,4 @@
-### state
+### read state
 GET {{base_url}}/rest/feature/state
 Authorization: Basic system system
 
