@@ -195,8 +195,5 @@ Send an arbitrary command to Redis. [https://redis.io/commands/](https://redis.i
   ...
   ```
   ```json
-  [
-    "features-...",
-    ...
-  ]
+  ["features-...", "..."]
   ```
