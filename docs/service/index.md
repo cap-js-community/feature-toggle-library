@@ -40,7 +40,7 @@ in our example CAP Server.
 
 Get all information about the current in-memory state of all toggles.
 
-##### Example Request/Response
+<b>Example Request/Response</b>
 
 - Request
   ```http
@@ -78,7 +78,7 @@ Get all information about the current in-memory state of all toggles.
 
 Update the toggle state on Redis, which in turn is published to all server instances.
 
-##### Example Request/Responses
+<b>Example Request/Responses</b>
 
 - Valid Request
   ```http
@@ -136,7 +136,7 @@ The service also offers additional endpoints to analyze problems.
 Force server to re-sync with Redis, this should never be necessary. It returns the same JSON structure as
 `/state`, after re-syncing.
 
-##### Example Request/Response
+<b>Example Request/Response</b>
 
 - Request
   ```http
@@ -150,14 +150,53 @@ Force server to re-sync with Redis, this should never be necessary. It returns t
 
 ### Send Redis Command
 
-Send an arbitrary command to Redis.
+Send an arbitrary command to Redis. [https://redis.io/commands/](https://redis.io/commands/)
 
-##### Example Request/Response
+<b>Example Request/Responses</b>
 
-- Request
+- Request INFO
   ```http
-  POST /rest/feature/redisRead
+  POST /rest/feature/redisSendCommand
   Authorization: ...
+  Content-Type: application/json
   ```
-- Response<br>
-  Same as [Read Server Memory State](#read-server-memory-state).
+  ```json
+  {
+    "command": ["INFO"]
+  }
+  ```
+- Response
+  ```
+  HTTP/1.1 200 OK
+  ...
+  ```
+  ```
+  # Server
+  redis_version:4.0.10
+  redis_git_sha1:0
+  redis_git_dirty:0
+  redis_build_id:0
+  ...
+  ```
+- Request KEYS
+  ```http
+  POST /rest/feature/redisSendCommand
+  Authorization: ...
+  Content-Type: application/json
+  ```
+  ```json
+  {
+    "command": ["KEYS", "features-*"]
+  }
+  ```
+- Response
+  ```
+  HTTP/1.1 200 OK
+  ...
+  ```
+  ```json
+  [
+    "features-...",
+    ...
+  ]
+  ```
