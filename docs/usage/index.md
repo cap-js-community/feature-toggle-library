@@ -87,10 +87,8 @@ feature toggle value will always get the fallback value.
 
 ## Initialization for CAP Projects
 
-You will use this library as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). So your initialization
-settings are in `package.json`.
-
-For example:
+CAP projects, will use the library as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). Their
+initialization settings are in `package.json`. For example:
 
 ```json
 {
@@ -113,7 +111,7 @@ be read and manipulated.
 
 ## Initialization for Non-CAP Projects
 
-You will need to use the corresponding filepath, in order to initialize the feature toggles instance.
+Other projects will need to use the corresponding filepath, in order to initialize the feature toggles instance in code.
 
 ```javascript
 const pathlib = require("path");
