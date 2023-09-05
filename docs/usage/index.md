@@ -92,7 +92,6 @@ initialization settings are in `package.json`. For example:
 
 ```json
 {
-  ...,
   "cds": {
     "featureToggles": {
       "configFile": "./srv/feature/features.yaml"
