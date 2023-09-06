@@ -156,6 +156,43 @@ describe("local integration test", () => {
 `);
       expect(await changeFeatureValue(FEATURE.A, "foobar")).toBeUndefined();
     });
+
+    it("custom module validations just module", async () => {
+      jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
+      const mockValidator = require("./virtual-validator-just-module");
+      await initializeFeatures({
+        config: {
+          [FEATURE.A]: {
+            fallbackValue: "fallback",
+            type: "string",
+            validations: [{ module: "./test-mocked-just-module" }],
+          },
+        },
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator.mock.calls[0]).toMatchInlineSnapshot();
+    });
+
+    it("custom module validations with call", async () => {
+      jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator } = require("./virtual-validator-with-call");
+      await initializeFeatures({
+        config: {
+          [FEATURE.A]: {
+            fallbackValue: "fallback",
+            type: "string",
+            validations: [{ module: "./test-mocked-with-call", call: "validator" }],
+          },
+        },
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator.mock.calls[0]).toMatchInlineSnapshot();
+    });
+
+    // it("custom module validations from CONFIG_DIR", async () => {
+    // });
   });
 
   describe("common config init", () => {
