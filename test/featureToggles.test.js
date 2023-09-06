@@ -48,7 +48,7 @@ describe("feature toggles test", () => {
 
   describe("enums", () => {
     it("config info consistency", () => {
-      const internalKeys = [CONFIG_KEY.VALIDATION_REG_EXP, CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
+      const internalKeys = [CONFIG_KEY.VALIDATIONS_REG_EXP, CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
 
@@ -333,17 +333,17 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
-        [
-          {
-            "errorMessage": "value "{0}" does not match validation regular expression {1}",
-            "errorMessageValues": [
-              10,
-              "^\\d{1}$",
-            ],
-            "featureKey": "test/feature_e",
-          },
-        ]
-      `);
+[
+  {
+    "errorMessage": "value "{0}" does not match validation regular expression {1}",
+    "errorMessageValues": [
+      10,
+      "/^\\d{1}$/",
+    ],
+    "featureKey": "test/feature_e",
+  },
+]
+`);
       expect(i).toBe(inputArgsList.length);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
@@ -993,18 +993,18 @@ describe("feature toggles test", () => {
 
     it("changeFeatureValues and invalid state and invalid fallback with delete", async () => {
       expect(await featureToggles.changeFeatureValue(FEATURE.B, "fallout")).toMatchInlineSnapshot(`
-        [
-          {
-            "errorMessage": "value "{0}" does not match validation regular expression {1}",
-            "errorMessageValues": [
-              "fallout",
-              "^xxx",
-            ],
-            "featureKey": "test/feature_b",
-            "scopeKey": "//",
-          },
-        ]
-      `);
+[
+  {
+    "errorMessage": "value "{0}" does not match validation regular expression {1}",
+    "errorMessageValues": [
+      "fallout",
+      "/^xxx/",
+    ],
+    "featureKey": "test/feature_b",
+    "scopeKey": "//",
+  },
+]
+`);
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
 
       expect(await featureToggles.changeFeatureValue(FEATURE.B, null)).toBeUndefined();
