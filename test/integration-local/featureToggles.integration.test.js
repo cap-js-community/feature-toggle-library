@@ -158,37 +158,37 @@ describe("local integration test", () => {
     });
 
     it("custom module validations just module", async () => {
-      jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
-      const mockValidator = require("./virtual-validator-just-module");
+      jest.mock("virtual-validator-just-module", () => jest.fn(), { virtual: true });
+      const mockValidator = require("virtual-validator-just-module");
       await initializeFeatures({
         config: {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "./virtual-validator-just-module" }],
+            validations: [{ module: "virtual-validator-just-module" }],
           },
         },
       });
 
       expect(mockValidator).toHaveBeenCalledTimes(1);
-      expect(mockValidator.mock.calls[0]).toMatchInlineSnapshot();
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
     it("custom module validations with call", async () => {
-      jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
-      const { validator: mockValidator } = require("./virtual-validator-with-call");
+      jest.mock("virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator } = require("virtual-validator-with-call");
       await initializeFeatures({
         config: {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "./virtual-validator-with-call", call: "validator" }],
+            validations: [{ module: "virtual-validator-with-call", call: "validator" }],
           },
         },
       });
 
       expect(mockValidator).toHaveBeenCalledTimes(1);
-      expect(mockValidator.mock.calls[0]).toMatchInlineSnapshot();
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
     // it("custom module validations from CONFIG_DIR", async () => {
