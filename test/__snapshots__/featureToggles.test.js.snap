@@ -63,21 +63,33 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   "test/feature_d": {
     "config": {
       "TYPE": "boolean",
-      "VALIDATION": "^(?:true)$",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:true)$",
+        },
+      ],
     },
     "fallbackValue": true,
   },
   "test/feature_e": {
     "config": {
       "TYPE": "number",
-      "VALIDATION": "^\\d{1}$",
+      "VALIDATIONS": [
+        {
+          "regex": "^\\d{1}$",
+        },
+      ],
     },
     "fallbackValue": 5,
   },
   "test/feature_f": {
     "config": {
       "TYPE": "string",
-      "VALIDATION": "^(?:best|worst)$",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:best|worst)$",
+        },
+      ],
     },
     "fallbackValue": "best",
   },
@@ -123,18 +135,36 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
   },
   "test/feature_d": {
     "TYPE": "boolean",
-    "VALIDATION": "^(?:true)$",
-    "VALIDATION_REG_EXP": /\\^\\(\\?:true\\)\\$/,
+    "VALIDATIONS": [
+      {
+        "regex": "^(?:true)$",
+      },
+    ],
+    "VALIDATIONS_REG_EXP": [
+      /\\^\\(\\?:true\\)\\$/,
+    ],
   },
   "test/feature_e": {
     "TYPE": "number",
-    "VALIDATION": "^\\d{1}$",
-    "VALIDATION_REG_EXP": /\\^\\\\d\\{1\\}\\$/,
+    "VALIDATIONS": [
+      {
+        "regex": "^\\d{1}$",
+      },
+    ],
+    "VALIDATIONS_REG_EXP": [
+      /\\^\\\\d\\{1\\}\\$/,
+    ],
   },
   "test/feature_f": {
     "TYPE": "string",
-    "VALIDATION": "^(?:best|worst)$",
-    "VALIDATION_REG_EXP": /\\^\\(\\?:best\\|worst\\)\\$/,
+    "VALIDATIONS": [
+      {
+        "regex": "^(?:best|worst)$",
+      },
+    ],
+    "VALIDATIONS_REG_EXP": [
+      /\\^\\(\\?:best\\|worst\\)\\$/,
+    ],
   },
   "test/feature_g": {
     "ACTIVE": false,

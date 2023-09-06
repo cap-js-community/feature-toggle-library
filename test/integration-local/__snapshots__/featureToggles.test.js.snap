@@ -6,7 +6,7 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
     "errorMessage": "value "{0}" does not match validation regular expression {1}",
     "errorMessageValues": [
       10,
-      "^\\d{1}$",
+      "/^\\d{1}$/",
     ],
     "featureKey": "test/feature_e",
     "scopeKey": "component::c1##tenant::t1",
@@ -44,7 +44,7 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
     "errorMessage": "value "{0}" does not match validation regular expression {1}",
     "errorMessageValues": [
       10,
-      "^\\d{1}$",
+      "/^\\d{1}$/",
     ],
     "featureKey": "test/feature_e",
     "scopeKey": "//",
@@ -87,7 +87,11 @@ exports[`local integration test after init getFeatureValues, getFeaturesInfos 1`
   "test/feature_d": {
     "config": {
       "TYPE": "boolean",
-      "VALIDATION": "^(?:true)$",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:true)$",
+        },
+      ],
     },
     "fallbackValue": true,
   },
@@ -99,14 +103,22 @@ exports[`local integration test after init getFeatureValues, getFeaturesInfos 1`
         "tenant",
       ],
       "TYPE": "number",
-      "VALIDATION": "^\\d{1}$",
+      "VALIDATIONS": [
+        {
+          "regex": "^\\d{1}$",
+        },
+      ],
     },
     "fallbackValue": 5,
   },
   "test/feature_f": {
     "config": {
       "TYPE": "string",
-      "VALIDATION": "^(?:best|worst)$",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:best|worst)$",
+        },
+      ],
     },
     "fallbackValue": "best",
   },
