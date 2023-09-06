@@ -117,7 +117,48 @@ describe("local integration test", () => {
     });
   });
 
-  describe("after init", () => {
+  describe("validations", () => {
+    it("two regex validations", async () => {
+      await initializeFeatures({
+        config: {
+          [FEATURE.A]: {
+            fallbackValue: "",
+            type: "string",
+            validations: [{ regex: "^foo" }, { regex: "bar$" }],
+          },
+        },
+      });
+      expect(await changeFeatureValue(FEATURE.A, "foo")).toMatchInlineSnapshot(`
+[
+  {
+    "errorMessage": "value "{0}" does not match validation regular expression {1}",
+    "errorMessageValues": [
+      "foo",
+      "/bar$/",
+    ],
+    "featureKey": "test/feature_a",
+    "scopeKey": "//",
+  },
+]
+`);
+      expect(await changeFeatureValue(FEATURE.A, "bar")).toMatchInlineSnapshot(`
+[
+  {
+    "errorMessage": "value "{0}" does not match validation regular expression {1}",
+    "errorMessageValues": [
+      "bar",
+      "/^foo/",
+    ],
+    "featureKey": "test/feature_a",
+    "scopeKey": "//",
+  },
+]
+`);
+      expect(await changeFeatureValue(FEATURE.A, "foobar")).toBeUndefined();
+    });
+  });
+
+  describe("common config init", () => {
     beforeEach(async () => {
       await initializeFeatures({ config });
     });
