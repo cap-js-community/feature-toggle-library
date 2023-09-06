@@ -122,7 +122,7 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig(config) {
+  _processConfig(config, configFilepath) {
     const { uris: cfAppUris } = cfEnv.cfApp;
 
     const configEntries = Object.entries(config);
@@ -141,12 +141,21 @@ class FeatureToggles {
 
       if (validations) {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
+
+        const workingDir = process.cwd();
+        const configDir = configFilepath ? path.dirname(configFilepath) : undefined;
+
         const [validationsRegExp, validationsCode] = validations.reduce(
           (acc, validation) => {
             if (validation.regex) {
               acc[0].push(new RegExp(validation.regex));
             } else if (validation.module) {
-              const validatorModule = tryRequire(validation.module);
+              let moduleName = validation.module.replace("$CWD", workingDir);
+              if (configDir) {
+                moduleName = moduleName.replace("$CONFIG_DIR", configDir);
+              }
+
+              const validatorModule = tryRequire(moduleName);
               if (validatorModule) {
                 const validator = validation.call ? validatorModule[validation.call] : validatorModule;
                 acc[1].push(validator);
@@ -629,7 +638,7 @@ class FeatureToggles {
 
     let toggleCount;
     try {
-      toggleCount = this._processConfig(config);
+      toggleCount = this._processConfig(config, configFilepath);
     } catch (err) {
       throw new VError(
         {

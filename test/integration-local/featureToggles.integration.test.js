@@ -158,14 +158,14 @@ describe("local integration test", () => {
     });
 
     it("custom module validations just module", async () => {
-      jest.mock("virtual-validator-just-module", () => jest.fn(), { virtual: true });
-      const mockValidator = require("virtual-validator-just-module");
+      jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
+      const mockValidator = require("./virtual-validator-just-module");
       await initializeFeatures({
         config: {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "virtual-validator-just-module" }],
+            validations: [{ module: "$CWD/test/integration-local/virtual-validator-just-module" }],
           },
         },
       });
@@ -175,14 +175,14 @@ describe("local integration test", () => {
     });
 
     it("custom module validations with call", async () => {
-      jest.mock("virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
-      const { validator: mockValidator } = require("virtual-validator-with-call");
+      jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator } = require("./virtual-validator-with-call");
       await initializeFeatures({
         config: {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "virtual-validator-with-call", call: "validator" }],
+            validations: [{ module: "$CWD/test/integration-local/virtual-validator-with-call", call: "validator" }],
           },
         },
       });
