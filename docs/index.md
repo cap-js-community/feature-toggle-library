@@ -27,6 +27,6 @@ npm install --save @cap-js-community/feature-toggle-library
 ## Further topics
 
 - Configuration and code snippets: [Usage](usage)
-- REST service for CAP projects: [Service](service)
+- Plugin and REST service for CAP projects: [Plugin and Service](service)
 - Architecture and related concepts: [Architecture](architecture)
 - Example CAP server: [CAP Example](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server)

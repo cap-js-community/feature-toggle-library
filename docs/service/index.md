@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Service
+title: Plugin and Service
 nav_order: 3
 ---
 
@@ -13,7 +13,7 @@ nav_order: 3
 - TOC
 {: toc}
 
-## CDS-Plugin Settings
+## Plugin Settings
 
 Here is a list of all plugin settings that can be used in `package.json` under this library's node
 `cds.featureToggles`. At least one of _configFile_ or _config_ needs to be set, for the initialization to work.
