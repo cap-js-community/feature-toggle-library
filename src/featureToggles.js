@@ -13,6 +13,7 @@
 
 // TODO locale for validation messages
 // TODO custom validation should be configurable in yaml file
+// TODO document clearSubScopes option
 
 const { promisify } = require("util");
 const path = require("path");
