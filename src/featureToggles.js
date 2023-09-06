@@ -25,7 +25,7 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isObject } = require("./shared/static");
+const { ENV, isObject, tryRequire } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
@@ -141,12 +141,23 @@ class FeatureToggles {
 
       if (validations) {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
-        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validations.reduce((acc, validation) => {
-          if (validation.regex) {
-            acc.push(new RegExp(validation.regex));
-          }
-          return acc;
-        }, []);
+        const [validationsRegExp, validationsCode] = validations.reduce(
+          (acc, validation) => {
+            if (validation.regex) {
+              acc[0].push(new RegExp(validation.regex));
+            } else if (validation.module) {
+              const validatorModule = tryRequire(validation.module);
+              if (validatorModule) {
+                const validator = validation.call ? validatorModule[validation.call] : validatorModule;
+                acc[1].push(validator);
+              }
+            }
+            return acc;
+          },
+          [[], []]
+        );
+        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validationsRegExp;
+        validationsCode.forEach((validator) => this.registerFeatureValueValidation(featureKey, validator));
       }
 
       if (appUrl) {

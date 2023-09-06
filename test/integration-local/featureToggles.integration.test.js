@@ -165,7 +165,7 @@ describe("local integration test", () => {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "./test-mocked-just-module" }],
+            validations: [{ module: "./virtual-validator-just-module" }],
           },
         },
       });
@@ -182,7 +182,7 @@ describe("local integration test", () => {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "./test-mocked-with-call", call: "validator" }],
+            validations: [{ module: "./virtual-validator-with-call", call: "validator" }],
           },
         },
       });
