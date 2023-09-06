@@ -913,8 +913,8 @@ describe("feature toggles test", () => {
     const fallbackValue = "fallback";
     const fallbackValues = { [FEATURE.A]: fallbackValue, [FEATURE.B]: fallbackValue };
     const config = {
-      [FEATURE.A]: { fallbackValue, type: "string", validation: "^fall" },
-      [FEATURE.B]: { fallbackValue, type: "string", validation: "^xxx" },
+      [FEATURE.A]: { fallbackValue, type: "string", validations: [{ regex: "^fall" }] },
+      [FEATURE.B]: { fallbackValue, type: "string", validations: [{ regex: "^xxx" }] },
     };
 
     beforeEach(async () => {

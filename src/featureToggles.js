@@ -43,8 +43,8 @@ const SCOPE_ROOT_KEY = "//";
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
-  VALIDATION: "VALIDATION",
-  VALIDATION_REG_EXP: "VALIDATION_REG_EXP",
+  VALIDATIONS: "VALIDATIONS",
+  VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
   ALLOWED_SCOPES: "ALLOWED_SCOPES",
@@ -54,7 +54,7 @@ const CONFIG_KEY = Object.freeze({
 const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
   [CONFIG_KEY.ACTIVE]: true,
-  [CONFIG_KEY.VALIDATION]: true,
+  [CONFIG_KEY.VALIDATIONS]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
   [CONFIG_KEY.ALLOWED_SCOPES]: true,
@@ -126,7 +126,7 @@ class FeatureToggles {
     const { uris: cfAppUris } = cfEnv.cfApp;
 
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, validation, fallbackValue, allowedScopes }] of configEntries) {
+    for (const [featureKey, { type, active, appUrl, validations, fallbackValue, allowedScopes }] of configEntries) {
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
@@ -139,9 +139,14 @@ class FeatureToggles {
         this.__config[featureKey][CONFIG_KEY.ACTIVE] = active;
       }
 
-      if (validation) {
-        this.__config[featureKey][CONFIG_KEY.VALIDATION] = validation;
-        this.__config[featureKey][CONFIG_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
+      if (validations) {
+        this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
+        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validations.reduce((acc, validation) => {
+          if (validation.regex) {
+            acc.push(new RegExp(validation.regex));
+          }
+          return acc;
+        }, []);
       }
 
       if (appUrl) {
@@ -360,16 +365,19 @@ class FeatureToggles {
       ];
     }
 
-    const validationRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATION_REG_EXP];
-    if (validationRegExp && !validationRegExp.test(value)) {
-      return [
-        {
-          featureKey,
-          ...(scopeKey && { scopeKey }),
-          errorMessage: 'value "{0}" does not match validation regular expression {1}',
-          errorMessageValues: [value, this.__config[featureKey][CONFIG_KEY.VALIDATION]],
-        },
-      ];
+    const validationsRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP];
+    if (validationsRegExp) {
+      const failingRegExp = validationsRegExp.find((validationRegExp) => !validationRegExp.test(value));
+      if (failingRegExp) {
+        return [
+          {
+            featureKey,
+            ...(scopeKey && { scopeKey }),
+            errorMessage: 'value "{0}" does not match validation regular expression {1}',
+            errorMessageValues: [value, failingRegExp.toString()],
+          },
+        ];
+      }
     }
 
     const validators = this.__featureValueValidators.getHandlers(featureKey);

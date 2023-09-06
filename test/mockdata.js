@@ -36,17 +36,17 @@ const mockConfig = {
   [FEATURE.D]: {
     fallbackValue: true,
     type: "boolean",
-    validation: "^(?:true)$",
+    validations: [{ regex: "^(?:true)$" }],
   },
   [FEATURE.E]: {
     fallbackValue: 5,
     type: "number",
-    validation: "^\\d{1}$",
+    validations: [{ regex: "^\\d{1}$" }],
   },
   [FEATURE.F]: {
     fallbackValue: "best",
     type: "string",
-    validation: "^(?:best|worst)$",
+    validations: [{ regex: "^(?:best|worst)$" }],
   },
   [FEATURE.G]: {
     active: false,
