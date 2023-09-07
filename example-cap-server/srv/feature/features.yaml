@@ -4,9 +4,9 @@
   type: number
   fallbackValue: 0
   validations:
+    - scopes: [user, tenant]
     - regex: '^\d+$'
     - { module: "$CONFIG_DIR/validators.js", call: validateTenantScope }
-  allowedScopes: [user, tenant]
 
 # info: memory statistics logging interval (in milliseconds); 0 means disabled
 /memory/logInterval:
@@ -14,3 +14,4 @@
   fallbackValue: 0
   validations:
     - regex: '^\d+$'
+    - { module: "./srv/feature/validators.js", call: validateTenantScope }
