@@ -12,7 +12,8 @@
 "use strict";
 
 // TODO locale for validation messages
-// TODO custom validation should be configurable in yaml file
+// TODO document all validations scopes, regex, and module and remove allowedScopes
+// TODO document clearSubScopes option
 
 const { promisify } = require("util");
 const path = require("path");
@@ -24,7 +25,7 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const { isOnCF, cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isObject } = require("./shared/static");
+const { ENV, isObject, tryRequire } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 
@@ -42,21 +43,19 @@ const SCOPE_ROOT_KEY = "//";
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
-  VALIDATION: "VALIDATION",
-  VALIDATION_REG_EXP: "VALIDATION_REG_EXP",
+  VALIDATIONS: "VALIDATIONS",
+  VALIDATIONS_SCOPES_MAP: "VALIDATIONS_SCOPES_MAP",
+  VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
-  ALLOWED_SCOPES: "ALLOWED_SCOPES",
-  ALLOWED_SCOPES_CHECK_MAP: "ALLOWED_SCOPES_CHECK_MAP",
 });
 
 const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
   [CONFIG_KEY.ACTIVE]: true,
-  [CONFIG_KEY.VALIDATION]: true,
+  [CONFIG_KEY.VALIDATIONS]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
-  [CONFIG_KEY.ALLOWED_SCOPES]: true,
 };
 
 const COMPONENT_NAME = "/FeatureToggles";
@@ -121,11 +120,11 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig(config) {
+  _processConfig(config, configFilepath) {
     const { uris: cfAppUris } = cfEnv.cfApp;
 
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, validation, fallbackValue, allowedScopes }] of configEntries) {
+    for (const [featureKey, { type, active, appUrl, validations, fallbackValue }] of configEntries) {
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
@@ -138,9 +137,76 @@ class FeatureToggles {
         this.__config[featureKey][CONFIG_KEY.ACTIVE] = active;
       }
 
-      if (validation) {
-        this.__config[featureKey][CONFIG_KEY.VALIDATION] = validation;
-        this.__config[featureKey][CONFIG_KEY.VALIDATION_REG_EXP] = new RegExp(validation);
+      if (validations) {
+        this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
+
+        const workingDir = process.cwd();
+        const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
+        const { validationsScopesMap, validationsRegExp, validationsCode } = validations.reduce(
+          (acc, validation) => {
+            if (Array.isArray(validation.scopes)) {
+              for (const scope of validation.scopes) {
+                acc.validationsScopesMap[scope] = true;
+              }
+              return acc;
+            }
+
+            if (validation.regex) {
+              acc.validationsRegExp.push(new RegExp(validation.regex));
+              return acc;
+            }
+
+            if (validation.module) {
+              let modulePath = validation.module.replace("$CONFIG_DIR", configDir);
+              if (!path.isAbsolute(modulePath)) {
+                modulePath = path.join(workingDir, modulePath);
+              }
+              let validator = tryRequire(modulePath);
+
+              if (validation.call) {
+                validator = validator?.[validation.call];
+              }
+
+              const validatorType = typeof validator;
+              if (validatorType === "function") {
+                acc.validationsCode.push(validator);
+              } else {
+                logger.warning(
+                  new VError(
+                    {
+                      name: VERROR_CLUSTER_NAME,
+                      info: {
+                        featureKey,
+                        validation: JSON.stringify(validation),
+                        modulePath,
+                        validatorType,
+                      },
+                    },
+                    "could not load module validation"
+                  )
+                );
+              }
+              return acc;
+            }
+
+            throw new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                info: {
+                  featureKey,
+                  validation: JSON.stringify(validation),
+                },
+              },
+              "found invalid validation, only scopes, regex, and module validations are supported"
+            );
+          },
+          { validationsScopesMap: {}, validationsRegExp: [], validationsCode: [] }
+        );
+        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP] = validationsScopesMap;
+        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validationsRegExp;
+        for (const validator of validationsCode) {
+          this.registerFeatureValueValidation(featureKey, validator);
+        }
       }
 
       if (appUrl) {
@@ -150,14 +216,6 @@ class FeatureToggles {
         this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] =
           !Array.isArray(cfAppUris) ||
           cfAppUris.reduce((accumulator, cfAppUri) => accumulator && appUrlRegex.test(cfAppUri), true);
-      }
-
-      if (Array.isArray(allowedScopes)) {
-        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES] = allowedScopes;
-        this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP] = allowedScopes.reduce((acc, scope) => {
-          acc[scope] = true;
-          return acc;
-        }, {});
       }
     }
 
@@ -287,7 +345,7 @@ class FeatureToggles {
           },
         ];
       }
-      const allowedScopesCheckMap = this.__config[featureKey][CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
+      const validationsScopesMap = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP];
       for (const [scope, value] of Object.entries(scopeMap)) {
         if (!FeatureToggles._isValidScopeMapValue(value)) {
           return [
@@ -298,7 +356,7 @@ class FeatureToggles {
             },
           ];
         }
-        if (allowedScopesCheckMap && !allowedScopesCheckMap[scope]) {
+        if (validationsScopesMap && !validationsScopesMap[scope]) {
           return [
             {
               featureKey,
@@ -359,16 +417,19 @@ class FeatureToggles {
       ];
     }
 
-    const validationRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATION_REG_EXP];
-    if (validationRegExp && !validationRegExp.test(value)) {
-      return [
-        {
-          featureKey,
-          ...(scopeKey && { scopeKey }),
-          errorMessage: 'value "{0}" does not match validation regular expression {1}',
-          errorMessageValues: [value, this.__config[featureKey][CONFIG_KEY.VALIDATION]],
-        },
-      ];
+    const validationsRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP];
+    if (Array.isArray(validationsRegExp) && validationsRegExp.length > 0) {
+      const failingRegExp = validationsRegExp.find((validationRegExp) => !validationRegExp.test(value));
+      if (failingRegExp) {
+        return [
+          {
+            featureKey,
+            ...(scopeKey && { scopeKey }),
+            errorMessage: 'value "{0}" does not match validation regular expression {1}',
+            errorMessageValues: [value, failingRegExp.toString()],
+          },
+        ];
+      }
     }
 
     const validators = this.__featureValueValidators.getHandlers(featureKey);
@@ -609,7 +670,7 @@ class FeatureToggles {
 
     let toggleCount;
     try {
-      toggleCount = this._processConfig(config);
+      toggleCount = this._processConfig(config, configFilepath);
     } catch (err) {
       throw new VError(
         {

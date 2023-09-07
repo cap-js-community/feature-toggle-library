@@ -48,7 +48,7 @@ describe("feature toggles test", () => {
 
   describe("enums", () => {
     it("config info consistency", () => {
-      const internalKeys = [CONFIG_KEY.VALIDATION_REG_EXP, CONFIG_KEY.ALLOWED_SCOPES_CHECK_MAP];
+      const internalKeys = [CONFIG_KEY.VALIDATIONS_SCOPES_MAP, CONFIG_KEY.VALIDATIONS_REG_EXP];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
 
@@ -338,7 +338,7 @@ describe("feature toggles test", () => {
             "errorMessage": "value "{0}" does not match validation regular expression {1}",
             "errorMessageValues": [
               10,
-              "^\\d{1}$",
+              "/^\\d{1}$/",
             ],
             "featureKey": "test/feature_e",
           },
@@ -913,8 +913,8 @@ describe("feature toggles test", () => {
     const fallbackValue = "fallback";
     const fallbackValues = { [FEATURE.A]: fallbackValue, [FEATURE.B]: fallbackValue };
     const config = {
-      [FEATURE.A]: { fallbackValue, type: "string", validation: "^fall" },
-      [FEATURE.B]: { fallbackValue, type: "string", validation: "^xxx" },
+      [FEATURE.A]: { fallbackValue, type: "string", validations: [{ regex: "^fall" }] },
+      [FEATURE.B]: { fallbackValue, type: "string", validations: [{ regex: "^xxx" }] },
     };
 
     beforeEach(async () => {
@@ -998,7 +998,7 @@ describe("feature toggles test", () => {
             "errorMessage": "value "{0}" does not match validation regular expression {1}",
             "errorMessageValues": [
               "fallout",
-              "^xxx",
+              "/^xxx/",
             ],
             "featureKey": "test/feature_b",
             "scopeKey": "//",

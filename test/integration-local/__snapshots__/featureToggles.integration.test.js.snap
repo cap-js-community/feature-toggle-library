@@ -1,12 +1,12 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`local integration test after init getFeatureValue, changeFeatureValue with scopes 1`] = `
+exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 1`] = `
 [
   {
     "errorMessage": "value "{0}" does not match validation regular expression {1}",
     "errorMessageValues": [
       10,
-      "^\\d{1}$",
+      "/^\\d{1}$/",
     ],
     "featureKey": "test/feature_e",
     "scopeKey": "component::c1##tenant::t1",
@@ -14,7 +14,7 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
 ]
 `;
 
-exports[`local integration test after init getFeatureValue, changeFeatureValue with scopes 8`] = `
+exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 8`] = `
 [
   [
     "%s | %O",
@@ -26,7 +26,7 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
 ]
 `;
 
-exports[`local integration test after init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
+exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
 [
   [
     "%s | %O",
@@ -38,13 +38,13 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
 ]
 `;
 
-exports[`local integration test after init getFeatureValue, changeFeatureValue without scopes 1`] = `
+exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 1`] = `
 [
   {
     "errorMessage": "value "{0}" does not match validation regular expression {1}",
     "errorMessageValues": [
       10,
-      "^\\d{1}$",
+      "/^\\d{1}$/",
     ],
     "featureKey": "test/feature_e",
     "scopeKey": "//",
@@ -52,7 +52,7 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
 ]
 `;
 
-exports[`local integration test after init getFeatureValue, changeFeatureValue without scopes 4`] = `
+exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 4`] = `
 [
   [
     "%s | %O",
@@ -64,7 +64,7 @@ exports[`local integration test after init getFeatureValue, changeFeatureValue w
 ]
 `;
 
-exports[`local integration test after init getFeatureValues, getFeaturesInfos 1`] = `
+exports[`local integration test common config init getFeatureValues, getFeaturesInfos 1`] = `
 {
   "test/feature_a": {
     "config": {
@@ -87,26 +87,40 @@ exports[`local integration test after init getFeatureValues, getFeaturesInfos 1`
   "test/feature_d": {
     "config": {
       "TYPE": "boolean",
-      "VALIDATION": "^(?:true)$",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:true)$",
+        },
+      ],
     },
     "fallbackValue": true,
   },
   "test/feature_e": {
     "config": {
-      "ALLOWED_SCOPES": [
-        "component",
-        "layer",
-        "tenant",
-      ],
       "TYPE": "number",
-      "VALIDATION": "^\\d{1}$",
+      "VALIDATIONS": [
+        {
+          "scopes": [
+            "component",
+            "layer",
+            "tenant",
+          ],
+        },
+        {
+          "regex": "^\\d{1}$",
+        },
+      ],
     },
     "fallbackValue": 5,
   },
   "test/feature_f": {
     "config": {
       "TYPE": "string",
-      "VALIDATION": "^(?:best|worst)$",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:best|worst)$",
+        },
+      ],
     },
     "fallbackValue": "best",
   },

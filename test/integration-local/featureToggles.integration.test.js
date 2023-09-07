@@ -3,17 +3,21 @@
 //NOTE: if a local redis is running when these integration tests are performed, then they will not work. we rely on
 // and test only the local mode here.
 
+const fs = jest.requireActual("fs");
+jest.mock("fs", () => ({ readFile: jest.fn() }));
+
 const { stateFromInfo } = require("../__common__/fromInfo");
 
-let featureTogglesLoggerSpy, redisWrapperLoggerSpy;
-let initializeFeatures,
-  getFeatureInfo,
-  getFeaturesInfos,
-  getFeatureValue,
-  changeFeatureValue,
-  resetFeatureValue,
-  registerFeatureValueValidation,
-  validateFeatureValue;
+let featureTogglesLoggerSpy;
+let redisWrapperLoggerSpy;
+let initializeFeatures;
+let getFeatureInfo;
+let getFeaturesInfos;
+let getFeatureValue;
+let changeFeatureValue;
+let resetFeatureValue;
+let registerFeatureValueValidation;
+let validateFeatureValue;
 
 const FEATURE = {
   A: "test/feature_a",
@@ -42,18 +46,17 @@ const config = {
   [FEATURE.D]: {
     fallbackValue: true,
     type: "boolean",
-    validation: "^(?:true)$",
+    validations: [{ regex: "^(?:true)$" }],
   },
   [FEATURE.E]: {
     fallbackValue: 5,
     type: "number",
-    validation: "^\\d{1}$",
-    allowedScopes: ["component", "layer", "tenant"],
+    validations: [{ scopes: ["component", "layer", "tenant"] }, { regex: "^\\d{1}$" }],
   },
   [FEATURE.F]: {
     fallbackValue: "best",
     type: "string",
-    validation: "^(?:best|worst)$",
+    validations: [{ regex: "^(?:best|worst)$" }],
   },
   [FEATURE.G]: {
     active: false,
@@ -104,6 +107,8 @@ describe("local integration test", () => {
 
   describe("init", () => {
     it("init fails resolving for bad config paths", async () => {
+      const { readFile: readFileSpy } = require("fs");
+      readFileSpy.mockImplementationOnce(fs.readFile);
       await expect(initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
         `[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`
       );
@@ -117,7 +122,126 @@ describe("local integration test", () => {
     });
   });
 
-  describe("after init", () => {
+  describe("validations", () => {
+    it("two regex validations", async () => {
+      await initializeFeatures({
+        config: {
+          [FEATURE.A]: {
+            fallbackValue: "fallback",
+            type: "string",
+            validations: [{ regex: "^foo" }, { regex: "bar$" }],
+          },
+        },
+      });
+      expect(await changeFeatureValue(FEATURE.A, "foo")).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "value "{0}" does not match validation regular expression {1}",
+            "errorMessageValues": [
+              "foo",
+              "/bar$/",
+            ],
+            "featureKey": "test/feature_a",
+            "scopeKey": "//",
+          },
+        ]
+      `);
+      expect(await changeFeatureValue(FEATURE.A, "bar")).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "value "{0}" does not match validation regular expression {1}",
+            "errorMessageValues": [
+              "bar",
+              "/^foo/",
+            ],
+            "featureKey": "test/feature_a",
+            "scopeKey": "//",
+          },
+        ]
+      `);
+      expect(await changeFeatureValue(FEATURE.A, "foobar")).toBeUndefined();
+    });
+
+    it("custom module validations just module from CWD", async () => {
+      jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
+      const mockValidator = require("./virtual-validator-just-module");
+      await initializeFeatures({
+        config: {
+          [FEATURE.A]: {
+            fallbackValue: "fallback",
+            type: "string",
+            validations: [{ module: "./test/integration-local/virtual-validator-just-module" }],
+          },
+        },
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
+
+    it("custom module validations with call from CWD", async () => {
+      jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator } = require("./virtual-validator-with-call");
+      await initializeFeatures({
+        config: {
+          [FEATURE.A]: {
+            fallbackValue: "fallback",
+            type: "string",
+            validations: [{ module: "./test/integration-local/virtual-validator-with-call", call: "validator" }],
+          },
+        },
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
+
+    it("custom module validations just module from CONFIG_DIR", async () => {
+      jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
+      const mockValidator = require("./virtual-validator-just-module");
+      const { readFile: readFileSpy } = require("fs");
+
+      const config = {
+        [FEATURE.A]: {
+          fallbackValue: "fallback",
+          type: "string",
+          validations: [{ module: "$CONFIG_DIR/virtual-validator-just-module" }],
+        },
+      };
+      const configBuffer = Buffer.from(JSON.stringify(config));
+      readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
+      await initializeFeatures({
+        configFile: "./test/integration-local/virtual-config.json",
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
+
+    it("custom module validations with call from CONFIG_DIR", async () => {
+      jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator } = require("./virtual-validator-with-call");
+      const { readFile: readFileSpy } = require("fs");
+
+      const config = {
+        [FEATURE.A]: {
+          fallbackValue: "fallback",
+          type: "string",
+          validations: [{ module: "$CONFIG_DIR/virtual-validator-with-call", call: "validator" }],
+        },
+      };
+      const configBuffer = Buffer.from(JSON.stringify(config));
+      readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
+      await initializeFeatures({
+        configFile: "./test/integration-local/virtual-config.json",
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
+  });
+
+  describe("common config init", () => {
     beforeEach(async () => {
       await initializeFeatures({ config });
     });

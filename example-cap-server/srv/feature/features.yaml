@@ -3,11 +3,15 @@
 /check/priority:
   type: number
   fallbackValue: 0
-  validation: '^\d+$'
-  allowedScopes: [user, tenant]
+  validations:
+    - scopes: [user, tenant]
+    - regex: '^\d+$'
+    - { module: "$CONFIG_DIR/validators.js", call: validateTenantScope }
 
 # info: memory statistics logging interval (in milliseconds); 0 means disabled
 /memory/logInterval:
   type: number
   fallbackValue: 0
-  validation: '^\d+$'
+  validations:
+    - regex: '^\d+$'
+    - { module: "./srv/feature/validators.js", call: validateTenantScope }
