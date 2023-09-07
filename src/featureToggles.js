@@ -204,7 +204,9 @@ class FeatureToggles {
         );
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP] = validationsScopesMap;
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validationsRegExp;
-        validationsCode.forEach((validator) => this.registerFeatureValueValidation(featureKey, validator));
+        for (const validator of validationsCode) {
+          this.registerFeatureValueValidation(featureKey, validator);
+        }
       }
 
       if (appUrl) {
