@@ -12,7 +12,6 @@
 "use strict";
 
 // TODO locale for validation messages
-// TODO custom validation should be configurable in yaml file
 // TODO document clearSubScopes option
 
 const { promisify } = require("util");
@@ -143,7 +142,7 @@ class FeatureToggles {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
 
         const workingDir = process.cwd();
-        const configDir = configFilepath ? path.dirname(configFilepath) : undefined;
+        const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
 
         const [validationsRegExp, validationsCode] = validations.reduce(
           (acc, validation) => {

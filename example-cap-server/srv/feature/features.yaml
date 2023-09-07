@@ -3,11 +3,11 @@
 /check/priority:
   type: number
   fallbackValue: 0
-  validation: '^\d+$'
+  validations: [{ regex: '^\d+$' }]
   allowedScopes: [user, tenant]
 
 # info: memory statistics logging interval (in milliseconds); 0 means disabled
 /memory/logInterval:
   type: number
   fallbackValue: 0
-  validation: '^\d+$'
+  validations: [{ regex: '^\d+$' }]
