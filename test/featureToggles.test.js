@@ -333,17 +333,17 @@ describe("feature toggles test", () => {
         ]
       `);
       expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
-[
-  {
-    "errorMessage": "value "{0}" does not match validation regular expression {1}",
-    "errorMessageValues": [
-      10,
-      "/^\\d{1}$/",
-    ],
-    "featureKey": "test/feature_e",
-  },
-]
-`);
+        [
+          {
+            "errorMessage": "value "{0}" does not match validation regular expression {1}",
+            "errorMessageValues": [
+              10,
+              "/^\\d{1}$/",
+            ],
+            "featureKey": "test/feature_e",
+          },
+        ]
+      `);
       expect(i).toBe(inputArgsList.length);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
