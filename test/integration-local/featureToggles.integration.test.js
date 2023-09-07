@@ -5,7 +5,6 @@
 
 jest.mock("fs", () => ({ readFile: jest.fn() }));
 
-const path = require("path");
 const { stateFromInfo } = require("../__common__/fromInfo");
 
 let featureTogglesLoggerSpy;
