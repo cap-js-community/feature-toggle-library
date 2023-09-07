@@ -12,6 +12,7 @@
 "use strict";
 
 // TODO locale for validation messages
+// TODO document all validations scopes, regex, and module and remove allowedScopes
 // TODO document clearSubScopes option
 
 const { promisify } = require("util");
