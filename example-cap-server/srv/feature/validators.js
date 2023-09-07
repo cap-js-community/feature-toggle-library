@@ -1,12 +1,12 @@
 "use strict";
 
-const UUID_REGEX = /\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b/;
+const TENANT_SCOPE_REGEX = /^(people|pets)$/;
 
 const validateTenantScope = (newValue, scopeMap) => {
   const tenant = scopeMap?.tenant;
-  if (tenant && !UUID_REGEX.test(tenant)) {
+  if (tenant && !TENANT_SCOPE_REGEX.test(tenant)) {
     return {
-      errorMessage: 'tenant scope is not a valid uuid: "{0}"',
+      errorMessage: 'tenant scope is invalid, only people and pets are allowed: "{0}"',
       errorMessageValues: [tenant],
     };
   }
