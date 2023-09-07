@@ -127,7 +127,7 @@ describe("local integration test", () => {
       await initializeFeatures({
         config: {
           [FEATURE.A]: {
-            fallbackValue: "",
+            fallbackValue: "fallback",
             type: "string",
             validations: [{ regex: "^foo" }, { regex: "bar$" }],
           },
