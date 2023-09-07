@@ -197,7 +197,7 @@ class FeatureToggles {
                   validation: JSON.stringify(validation),
                 },
               },
-              "found invalid validation, only regex and module validations are supported"
+              "found invalid validation, only scopes, regex, and module validations are supported"
             );
           },
           { validationsScopesMap: {}, validationsRegExp: [], validationsCode: [] }
