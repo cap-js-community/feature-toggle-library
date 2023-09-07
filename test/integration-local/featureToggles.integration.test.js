@@ -3,17 +3,21 @@
 //NOTE: if a local redis is running when these integration tests are performed, then they will not work. we rely on
 // and test only the local mode here.
 
+jest.mock("fs", () => ({ readFile: jest.fn() }));
+
+const path = require("path");
 const { stateFromInfo } = require("../__common__/fromInfo");
 
-let featureTogglesLoggerSpy, redisWrapperLoggerSpy;
-let initializeFeatures,
-  getFeatureInfo,
-  getFeaturesInfos,
-  getFeatureValue,
-  changeFeatureValue,
-  resetFeatureValue,
-  registerFeatureValueValidation,
-  validateFeatureValue;
+let featureTogglesLoggerSpy;
+let redisWrapperLoggerSpy;
+let initializeFeatures;
+let getFeatureInfo;
+let getFeaturesInfos;
+let getFeatureValue;
+let changeFeatureValue;
+let resetFeatureValue;
+let registerFeatureValueValidation;
+let validateFeatureValue;
 
 const FEATURE = {
   A: "test/feature_a",
@@ -157,7 +161,7 @@ describe("local integration test", () => {
       expect(await changeFeatureValue(FEATURE.A, "foobar")).toBeUndefined();
     });
 
-    it("custom module validations just module", async () => {
+    it("custom module validations just module from CWD", async () => {
       jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
       const mockValidator = require("./virtual-validator-just-module");
       await initializeFeatures({
@@ -174,7 +178,7 @@ describe("local integration test", () => {
       expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
-    it("custom module validations with call", async () => {
+    it("custom module validations with call from CWD", async () => {
       jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
       const { validator: mockValidator } = require("./virtual-validator-with-call");
       await initializeFeatures({
@@ -191,8 +195,49 @@ describe("local integration test", () => {
       expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
-    // it("custom module validations from CONFIG_DIR", async () => {
-    // });
+    it("custom module validations just module from CONFIG_DIR", async () => {
+      jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
+      const mockValidator = require("./virtual-validator-just-module");
+      const { readFile: readFileSpy } = require("fs");
+
+      const config = {
+        [FEATURE.A]: {
+          fallbackValue: "fallback",
+          type: "string",
+          validations: [{ module: "$CONFIG_DIR/virtual-validator-just-module" }],
+        },
+      };
+      const configBuffer = Buffer.from(JSON.stringify(config));
+      readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
+      await initializeFeatures({
+        configFile: path.join(__dirname, "virtual-config.json"),
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
+
+    it("custom module validations with call from CONFIG_DIR", async () => {
+      jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator } = require("./virtual-validator-with-call");
+      const { readFile: readFileSpy } = require("fs");
+
+      const config = {
+        [FEATURE.A]: {
+          fallbackValue: "fallback",
+          type: "string",
+          validations: [{ module: "$CONFIG_DIR/virtual-validator-with-call", call: "validator" }],
+        },
+      };
+      const configBuffer = Buffer.from(JSON.stringify(config));
+      readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
+      await initializeFeatures({
+        configFile: path.join(__dirname, "virtual-config.json"),
+      });
+
+      expect(mockValidator).toHaveBeenCalledTimes(1);
+      expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
   });
 
   describe("common config init", () => {
