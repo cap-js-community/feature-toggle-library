@@ -143,24 +143,56 @@ class FeatureToggles {
 
         const workingDir = process.cwd();
         const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
-
         const [validationsRegExp, validationsCode] = validations.reduce(
           (acc, validation) => {
             if (validation.regex) {
               acc[0].push(new RegExp(validation.regex));
-            } else if (validation.module) {
-              let moduleName = validation.module.replace("$CWD", workingDir);
-              if (configDir) {
-                moduleName = moduleName.replace("$CONFIG_DIR", configDir);
+              return acc;
+            }
+
+            if (validation.module) {
+              let modulePath = validation.module.replace("$CONFIG_DIR", configDir);
+              if (!path.isAbsolute(modulePath)) {
+                modulePath = path.join(workingDir, modulePath);
+              }
+              let validator = tryRequire(modulePath);
+
+              if (validation.call) {
+                validator = validator?.[validation.call];
               }
 
-              const validatorModule = tryRequire(moduleName);
-              if (validatorModule) {
-                const validator = validation.call ? validatorModule[validation.call] : validatorModule;
+              const validatorType = typeof validator;
+              if (validatorType === "function") {
                 acc[1].push(validator);
+              } else {
+                logger.warning(
+                  new VError(
+                    {
+                      name: VERROR_CLUSTER_NAME,
+                      info: {
+                        featureKey,
+                        validation: JSON.stringify(validation),
+                        modulePath,
+                        validatorType,
+                      },
+                    },
+                    "could not load module validation"
+                  )
+                );
               }
+              return acc;
             }
-            return acc;
+
+            throw new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                info: {
+                  featureKey,
+                  validation: JSON.stringify(validation),
+                },
+              },
+              "found invalid validation, only regex and module validations are supported"
+            );
           },
           [[], []]
         );

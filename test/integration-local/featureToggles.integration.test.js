@@ -169,7 +169,7 @@ describe("local integration test", () => {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "$CWD/test/integration-local/virtual-validator-just-module" }],
+            validations: [{ module: "./test/integration-local/virtual-validator-just-module" }],
           },
         },
       });
@@ -186,7 +186,7 @@ describe("local integration test", () => {
           [FEATURE.A]: {
             fallbackValue: "fallback",
             type: "string",
-            validations: [{ module: "$CWD/test/integration-local/virtual-validator-with-call", call: "validator" }],
+            validations: [{ module: "./test/integration-local/virtual-validator-with-call", call: "validator" }],
           },
         },
       });
@@ -210,7 +210,7 @@ describe("local integration test", () => {
       const configBuffer = Buffer.from(JSON.stringify(config));
       readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
       await initializeFeatures({
-        configFile: path.join(__dirname, "virtual-config.json"),
+        configFile: "./test/integration-local/virtual-config.json",
       });
 
       expect(mockValidator).toHaveBeenCalledTimes(1);
@@ -232,7 +232,7 @@ describe("local integration test", () => {
       const configBuffer = Buffer.from(JSON.stringify(config));
       readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
       await initializeFeatures({
-        configFile: path.join(__dirname, "virtual-config.json"),
+        configFile: "./test/integration-local/virtual-config.json",
       });
 
       expect(mockValidator).toHaveBeenCalledTimes(1);
