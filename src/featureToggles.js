@@ -43,8 +43,8 @@ const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
   VALIDATIONS: "VALIDATIONS",
-  VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
   VALIDATIONS_SCOPES_MAP: "VALIDATIONS_SCOPES_MAP",
+  VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
 });
@@ -123,7 +123,7 @@ class FeatureToggles {
     const { uris: cfAppUris } = cfEnv.cfApp;
 
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, validations, fallbackValue, allowedScopes }] of configEntries) {
+    for (const [featureKey, { type, active, appUrl, validations, fallbackValue }] of configEntries) {
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
@@ -415,7 +415,7 @@ class FeatureToggles {
     }
 
     const validationsRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP];
-    if (validationsRegExp) {
+    if (Array.isArray(validationsRegExp) && validationsRegExp.length > 0) {
       const failingRegExp = validationsRegExp.find((validationRegExp) => !validationRegExp.test(value));
       if (failingRegExp) {
         return [

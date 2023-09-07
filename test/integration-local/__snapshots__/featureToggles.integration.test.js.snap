@@ -97,13 +97,15 @@ exports[`local integration test common config init getFeatureValues, getFeatures
   },
   "test/feature_e": {
     "config": {
-      "ALLOWED_SCOPES": [
-        "component",
-        "layer",
-        "tenant",
-      ],
       "TYPE": "number",
       "VALIDATIONS": [
+        {
+          "scopes": [
+            "component",
+            "layer",
+            "tenant",
+          ],
+        },
         {
           "regex": "^\\d{1}$",
         },

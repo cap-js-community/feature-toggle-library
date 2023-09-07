@@ -51,8 +51,7 @@ const config = {
   [FEATURE.E]: {
     fallbackValue: 5,
     type: "number",
-    validations: [{ regex: "^\\d{1}$" }],
-    allowedScopes: ["component", "layer", "tenant"],
+    validations: [{ scopes: ["component", "layer", "tenant"] }, { regex: "^\\d{1}$" }],
   },
   [FEATURE.F]: {
     fallbackValue: "best",

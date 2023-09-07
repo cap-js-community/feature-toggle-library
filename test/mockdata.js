@@ -23,7 +23,7 @@ const mockConfig = {
   [FEATURE.AA]: {
     fallbackValue: false,
     type: "boolean",
-    allowedScopes: ["tenant", "user"],
+    validations: [{ scopes: ["tenant", "user"] }],
   },
   [FEATURE.B]: {
     fallbackValue: 1,

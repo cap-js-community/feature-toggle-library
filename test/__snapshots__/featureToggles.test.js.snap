@@ -40,11 +40,15 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   },
   "test/feature_aa": {
     "config": {
-      "ALLOWED_SCOPES": [
-        "tenant",
-        "user",
-      ],
       "TYPE": "boolean",
+      "VALIDATIONS": [
+        {
+          "scopes": [
+            "tenant",
+            "user",
+          ],
+        },
+      ],
     },
     "fallbackValue": false,
   },
@@ -117,15 +121,20 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "TYPE": "boolean",
   },
   "test/feature_aa": {
-    "ALLOWED_SCOPES": [
-      "tenant",
-      "user",
+    "TYPE": "boolean",
+    "VALIDATIONS": [
+      {
+        "scopes": [
+          "tenant",
+          "user",
+        ],
+      },
     ],
-    "ALLOWED_SCOPES_CHECK_MAP": {
+    "VALIDATIONS_REG_EXP": [],
+    "VALIDATIONS_SCOPES_MAP": {
       "tenant": true,
       "user": true,
     },
-    "TYPE": "boolean",
   },
   "test/feature_b": {
     "TYPE": "number",
@@ -143,6 +152,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "VALIDATIONS_REG_EXP": [
       /\\^\\(\\?:true\\)\\$/,
     ],
+    "VALIDATIONS_SCOPES_MAP": {},
   },
   "test/feature_e": {
     "TYPE": "number",
@@ -154,6 +164,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "VALIDATIONS_REG_EXP": [
       /\\^\\\\d\\{1\\}\\$/,
     ],
+    "VALIDATIONS_SCOPES_MAP": {},
   },
   "test/feature_f": {
     "TYPE": "string",
@@ -165,6 +176,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "VALIDATIONS_REG_EXP": [
       /\\^\\(\\?:best\\|worst\\)\\$/,
     ],
+    "VALIDATIONS_SCOPES_MAP": {},
   },
   "test/feature_g": {
     "ACTIVE": false,
