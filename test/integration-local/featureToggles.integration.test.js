@@ -134,31 +134,31 @@ describe("local integration test", () => {
         },
       });
       expect(await changeFeatureValue(FEATURE.A, "foo")).toMatchInlineSnapshot(`
-[
-  {
-    "errorMessage": "value "{0}" does not match validation regular expression {1}",
-    "errorMessageValues": [
-      "foo",
-      "/bar$/",
-    ],
-    "featureKey": "test/feature_a",
-    "scopeKey": "//",
-  },
-]
-`);
+        [
+          {
+            "errorMessage": "value "{0}" does not match validation regular expression {1}",
+            "errorMessageValues": [
+              "foo",
+              "/bar$/",
+            ],
+            "featureKey": "test/feature_a",
+            "scopeKey": "//",
+          },
+        ]
+      `);
       expect(await changeFeatureValue(FEATURE.A, "bar")).toMatchInlineSnapshot(`
-[
-  {
-    "errorMessage": "value "{0}" does not match validation regular expression {1}",
-    "errorMessageValues": [
-      "bar",
-      "/^foo/",
-    ],
-    "featureKey": "test/feature_a",
-    "scopeKey": "//",
-  },
-]
-`);
+        [
+          {
+            "errorMessage": "value "{0}" does not match validation regular expression {1}",
+            "errorMessageValues": [
+              "bar",
+              "/^foo/",
+            ],
+            "featureKey": "test/feature_a",
+            "scopeKey": "//",
+          },
+        ]
+      `);
       expect(await changeFeatureValue(FEATURE.A, "foobar")).toBeUndefined();
     });
 
