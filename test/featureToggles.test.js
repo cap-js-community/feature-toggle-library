@@ -993,18 +993,18 @@ describe("feature toggles test", () => {
 
     it("changeFeatureValues and invalid state and invalid fallback with delete", async () => {
       expect(await featureToggles.changeFeatureValue(FEATURE.B, "fallout")).toMatchInlineSnapshot(`
-[
-  {
-    "errorMessage": "value "{0}" does not match validation regular expression {1}",
-    "errorMessageValues": [
-      "fallout",
-      "/^xxx/",
-    ],
-    "featureKey": "test/feature_b",
-    "scopeKey": "//",
-  },
-]
-`);
+        [
+          {
+            "errorMessage": "value "{0}" does not match validation regular expression {1}",
+            "errorMessageValues": [
+              "fallout",
+              "/^xxx/",
+            ],
+            "featureKey": "test/feature_b",
+            "scopeKey": "//",
+          },
+        ]
+      `);
       expect(featureToggles.__stateScopedValues).toStrictEqual({});
 
       expect(await featureToggles.changeFeatureValue(FEATURE.B, null)).toBeUndefined();
