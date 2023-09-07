@@ -46,7 +46,8 @@ deployments. The configuration is a key-value map describing each individual fea
   type: string
   fallbackValue: info
   appUrl: \.cfapps\.sap\.hana\.ondemand\.com$
-  validation: ^(?:error|warn|info|verbose|debug)$
+  validations:
+    - regex: ^(?:error|warn|info|verbose|debug)$
 ```
 
 The semantics of these properties are as follows.
@@ -57,8 +58,7 @@ The semantics of these properties are as follows.
 | type          | true     | one of the allowed types `boolean`, `number`, `string`           |
 | fallbackValue | true     | see below                                                        |
 | appUrl        |          | see below                                                        |
-| validation    |          | regex for input validation                                       |
-| allowedScopes |          | see below                                                        |
+| validations   |          | see below                                                        |
 
 _fallbackValue_<br>
 This value gets set initially when the feature toggle is introduced, and it is also used as a fallback when
@@ -71,10 +71,26 @@ Regex for activating feature toggle _only_ if the cf app's url matches
 - for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`
 - specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`
 
-_allowedScopes_<br>
-This is an additional form of change validation. AllowedScopes can be set to a list of strings, for example
-`allowedScopes: [tenant, user]`. With this configuration only matching scopes can be used when setting feature toggle
-values.
+_validations_<br>
+List of validations that will guard all changes of the associated feature toggle. All validations must pass
+successfully for a change to occur.
+
+| property | example                                                    | meaning                    |
+| :------- | :--------------------------------------------------------- | :------------------------- |
+| scopes   | [tenant, user]                                             | see below                  |
+| regex    | ^\d+$                                                      | value must pass regex test |
+| module   | { module: $CONFIG_DIR/validations.js, call: myValidation } | see below                  |
+
+_scopes_<br>
+Scopes validation is a list of strings, for example `scopes: [tenant, user]`. With this configuration only matching
+scopes can be used when changing feature toggle values.
+
+_module_<br>
+Module points to a module, where [external validations](#external-validation) are implemented. These external checks
+get registered during initialization and will run for every change. You can specify just the module and export the
+validation function directly. Alternatively, you specify both the module and a property to call on the module. For the
+module path, you can either specify it relative to the project root `module: ./path-from-root/validations.js` or you
+can use the location of the configuration file as a relative anchor `module: $CONFIG_DIR/validation.js`.
 
 {: .info }
 You can use the type `string` to encode more complex data types, like arrays or objects, but need to take care of the
