@@ -42,20 +42,16 @@ const SCOPE_ROOT_KEY = "//";
 
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
-  ACTIVE: "ACTIVE",
   VALIDATIONS: "VALIDATIONS",
+  VALIDATIONS_INACTIVE: "VALIDATIONS_INACTIVE",
+  VALIDATIONS_FAILING_APP_URL_REG_EXP: "VALIDATIONS_FAILING_APP_URL_REG_EXP",
   VALIDATIONS_SCOPES_MAP: "VALIDATIONS_SCOPES_MAP",
   VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
-  APP_URL: "APP_URL",
-  APP_URL_ACTIVE: "APP_URL_ACTIVE",
 });
 
 const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
-  [CONFIG_KEY.ACTIVE]: true,
   [CONFIG_KEY.VALIDATIONS]: true,
-  [CONFIG_KEY.APP_URL]: true,
-  [CONFIG_KEY.APP_URL_ACTIVE]: true,
 };
 
 const COMPONENT_NAME = "/FeatureToggles";
@@ -117,14 +113,117 @@ class FeatureToggles {
   // START OF CONSTRUCTOR SECTION
   // ========================================
 
+  _processValidations(featureKey, validations, configFilepath) {
+    const { uris: cfAppUris } = cfEnv.cfApp;
+    const workingDir = process.cwd();
+    const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
+
+    const validationsScopesMap = {};
+    const validationsRegExp = [];
+    const validationsCode = [];
+    let isInactive = false;
+    let failingAppUrlRegExp;
+    for (const validation of validations) {
+      if (validation.active === false) {
+        isInactive = true;
+        break;
+      }
+
+      if (validation.appUrl) {
+        const appUrlRegex = new RegExp(validation.appUrl);
+        if (
+          Array.isArray(cfAppUris) &&
+          cfAppUris.reduce((acc, cfAppUri) => acc || !appUrlRegex.test(cfAppUri), false)
+        ) {
+          failingAppUrlRegExp = appUrlRegex;
+          break;
+        } else {
+          continue;
+        }
+      }
+
+      if (Array.isArray(validation.scopes)) {
+        for (const scope of validation.scopes) {
+          validationsScopesMap[scope] = true;
+        }
+        continue;
+      }
+
+      if (validation.regex) {
+        validationsRegExp.push(new RegExp(validation.regex));
+        continue;
+      }
+
+      if (validation.module) {
+        let modulePath = validation.module.replace("$CONFIG_DIR", configDir);
+        if (!path.isAbsolute(modulePath)) {
+          modulePath = path.join(workingDir, modulePath);
+        }
+        let validator = tryRequire(modulePath);
+
+        if (validation.call) {
+          validator = validator?.[validation.call];
+        }
+
+        const validatorType = typeof validator;
+        if (validatorType === "function") {
+          validationsCode.push(validator);
+        } else {
+          logger.warning(
+            new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                info: {
+                  featureKey,
+                  validation: JSON.stringify(validation),
+                  modulePath,
+                  validatorType,
+                },
+              },
+              "could not load module validation"
+            )
+          );
+        }
+        continue;
+      }
+
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          info: {
+            featureKey,
+            validation: JSON.stringify(validation),
+          },
+        },
+        "found invalid validation"
+      );
+    }
+
+    if (isInactive) {
+      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_INACTIVE] = true;
+      return;
+    }
+    if (failingAppUrlRegExp) {
+      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_FAILING_APP_URL_REG_EXP] = failingAppUrlRegExp;
+      return;
+    }
+    if (Object.keys(validationsScopesMap).length > 0) {
+      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP] = validationsScopesMap;
+    }
+    if (validationsRegExp.length > 0) {
+      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validationsRegExp;
+    }
+    for (const validator of validationsCode) {
+      this.registerFeatureValueValidation(featureKey, validator);
+    }
+  }
+
   /**
    * Populate this.__config.
    */
   _processConfig(config, configFilepath) {
-    const { uris: cfAppUris } = cfEnv.cfApp;
-
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, validations, fallbackValue }] of configEntries) {
+    for (const [featureKey, { type, fallbackValue, validations }] of configEntries) {
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
@@ -133,89 +232,9 @@ class FeatureToggles {
         this.__config[featureKey][CONFIG_KEY.TYPE] = type;
       }
 
-      if (active !== undefined) {
-        this.__config[featureKey][CONFIG_KEY.ACTIVE] = active;
-      }
-
       if (validations) {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
-
-        const workingDir = process.cwd();
-        const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
-        const { validationsScopesMap, validationsRegExp, validationsCode } = validations.reduce(
-          (acc, validation) => {
-            if (Array.isArray(validation.scopes)) {
-              for (const scope of validation.scopes) {
-                acc.validationsScopesMap[scope] = true;
-              }
-              return acc;
-            }
-
-            if (validation.regex) {
-              acc.validationsRegExp.push(new RegExp(validation.regex));
-              return acc;
-            }
-
-            if (validation.module) {
-              let modulePath = validation.module.replace("$CONFIG_DIR", configDir);
-              if (!path.isAbsolute(modulePath)) {
-                modulePath = path.join(workingDir, modulePath);
-              }
-              let validator = tryRequire(modulePath);
-
-              if (validation.call) {
-                validator = validator?.[validation.call];
-              }
-
-              const validatorType = typeof validator;
-              if (validatorType === "function") {
-                acc.validationsCode.push(validator);
-              } else {
-                logger.warning(
-                  new VError(
-                    {
-                      name: VERROR_CLUSTER_NAME,
-                      info: {
-                        featureKey,
-                        validation: JSON.stringify(validation),
-                        modulePath,
-                        validatorType,
-                      },
-                    },
-                    "could not load module validation"
-                  )
-                );
-              }
-              return acc;
-            }
-
-            throw new VError(
-              {
-                name: VERROR_CLUSTER_NAME,
-                info: {
-                  featureKey,
-                  validation: JSON.stringify(validation),
-                },
-              },
-              "found invalid validation, only scopes, regex, and module validations are supported"
-            );
-          },
-          { validationsScopesMap: {}, validationsRegExp: [], validationsCode: [] }
-        );
-        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP] = validationsScopesMap;
-        this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validationsRegExp;
-        for (const validator of validationsCode) {
-          this.registerFeatureValueValidation(featureKey, validator);
-        }
-      }
-
-      if (appUrl) {
-        this.__config[featureKey][CONFIG_KEY.APP_URL] = appUrl;
-
-        const appUrlRegex = new RegExp(appUrl);
-        this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] =
-          !Array.isArray(cfAppUris) ||
-          cfAppUris.reduce((accumulator, cfAppUri) => accumulator && appUrlRegex.test(cfAppUri), true);
+        this._processValidations(featureKey, validations, configFilepath);
       }
     }
 
@@ -379,16 +398,17 @@ class FeatureToggles {
 
     // NOTE: skip validating active properties during initialization
     if (this.__isInitialized) {
-      if (this.__config[featureKey][CONFIG_KEY.ACTIVE] === false) {
+      if (this.__config[featureKey][CONFIG_KEY.VALIDATIONS_INACTIVE]) {
         return [{ featureKey, errorMessage: "feature key is not active" }];
       }
 
-      if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
+      const failingAppUrlRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_FAILING_APP_URL_REG_EXP];
+      if (failingAppUrlRegExp) {
         return [
           {
             featureKey,
             errorMessage: "feature key is not active because app url does not match regular expression {0}",
-            errorMessageValues: [this.__config[featureKey][CONFIG_KEY.APP_URL]],
+            errorMessageValues: [failingAppUrlRegExp.toString()],
           },
         ];
       }
