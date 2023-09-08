@@ -45,10 +45,10 @@ const CONFIG_KEY = Object.freeze({
   ACTIVE: "ACTIVE",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
-  FAILING_APP_URL_REG_EXP: "FAILING_APP_URL_REG_EXP",
+  FAILING_APP_URL_REGEX: "FAILING_APP_URL_REGEX",
   VALIDATIONS: "VALIDATIONS",
   VALIDATIONS_SCOPES_MAP: "VALIDATIONS_SCOPES_MAP",
-  VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
+  VALIDATIONS_REGEX: "VALIDATIONS_REGEX",
 });
 
 const CONFIG_INFO_KEY = {
@@ -123,10 +123,8 @@ class FeatureToggles {
     const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
 
     const validationsScopesMap = {};
-    const validationsRegExp = [];
+    const validationsRegex = [];
     const validationsCode = [];
-    let isInactive = false;
-    let failingAppUrlRegExp;
     for (const validation of validations) {
       if (Array.isArray(validation.scopes)) {
         for (const scope of validation.scopes) {
@@ -136,7 +134,7 @@ class FeatureToggles {
       }
 
       if (validation.regex) {
-        validationsRegExp.push(new RegExp(validation.regex));
+        validationsRegex.push(new RegExp(validation.regex));
         continue;
       }
 
@@ -188,8 +186,8 @@ class FeatureToggles {
     if (Object.keys(validationsScopesMap).length > 0) {
       this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP] = validationsScopesMap;
     }
-    if (validationsRegExp.length > 0) {
-      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP] = validationsRegExp;
+    if (validationsRegex.length > 0) {
+      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REGEX] = validationsRegex;
     }
     for (const validator of validationsCode) {
       this.registerFeatureValueValidation(featureKey, validator);
@@ -223,7 +221,7 @@ class FeatureToggles {
           cfAppUris.reduce((acc, cfAppUri) => acc || !appUrlRegex.test(cfAppUri), false)
         ) {
           this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] = false;
-          this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REG_EXP] = appUrlRegex;
+          this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REGEX] = appUrlRegex;
         }
       }
 
@@ -398,12 +396,12 @@ class FeatureToggles {
       }
 
       if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
-        const failingAppUrlRegExp = this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REG_EXP];
+        const failingAppUrlRegex = this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REGEX];
         return [
           {
             featureKey,
             errorMessage: "feature key is not active because app url does not match regular expression {0}",
-            errorMessageValues: [failingAppUrlRegExp.toString()],
+            errorMessageValues: [failingAppUrlRegex.toString()],
           },
         ];
       }
@@ -432,16 +430,16 @@ class FeatureToggles {
       ];
     }
 
-    const validationsRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REG_EXP];
-    if (Array.isArray(validationsRegExp) && validationsRegExp.length > 0) {
-      const failingRegExp = validationsRegExp.find((validationRegExp) => !validationRegExp.test(value));
-      if (failingRegExp) {
+    const validationsRegex = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_REGEX];
+    if (Array.isArray(validationsRegex) && validationsRegex.length > 0) {
+      const failingRegex = validationsRegex.find((validationRegex) => !validationRegex.test(value));
+      if (failingRegex) {
         return [
           {
             featureKey,
             ...(scopeKey && { scopeKey }),
             errorMessage: 'value "{0}" does not match validation regular expression {1}',
-            errorMessageValues: [value, failingRegExp.toString()],
+            errorMessageValues: [value, failingRegex.toString()],
           },
         ];
       }

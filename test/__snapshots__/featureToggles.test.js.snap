@@ -147,7 +147,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
         "regex": "^(?:true)$",
       },
     ],
-    "VALIDATIONS_REG_EXP": [
+    "VALIDATIONS_REGEX": [
       /\\^\\(\\?:true\\)\\$/,
     ],
   },
@@ -158,7 +158,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
         "regex": "^\\d{1}$",
       },
     ],
-    "VALIDATIONS_REG_EXP": [
+    "VALIDATIONS_REGEX": [
       /\\^\\\\d\\{1\\}\\$/,
     ],
   },
@@ -169,7 +169,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
         "regex": "^(?:best|worst)$",
       },
     ],
-    "VALIDATIONS_REG_EXP": [
+    "VALIDATIONS_REGEX": [
       /\\^\\(\\?:best\\|worst\\)\\$/,
     ],
   },
