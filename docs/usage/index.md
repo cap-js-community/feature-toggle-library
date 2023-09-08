@@ -52,17 +52,26 @@ deployments. The configuration is a key-value map describing each individual fea
 
 The semantics of these properties are as follows.
 
-| property      | required | meaning                                                                |
-| :------------ | :------- | :--------------------------------------------------------------------- |
-| type          | true     | one of the allowed types `boolean`, `number`, `string`                 |
-| fallbackValue | true     | emergency fallback value, see below for details                        |
-| active        |          | if this is `false`, the corresponding feature toggle is inactive       |
-| appUrl        |          | activate toggle only if appUrl regex is matched, see below for details |
-| validations   |          | list of validations, see below for details                             |
+| property      | required | meaning                                                          |
+| :------------ | :------- | :--------------------------------------------------------------- |
+| type          | true     | one of the allowed types `boolean`, `number`, `string`           |
+| fallbackValue | true     | emergency fallback value                                         |
+| active        |          | if this is `false`, the corresponding feature toggle is inactive |
+| appUrl        |          | activate toggle only if appUrl regex is matched                  |
+| validations   |          | list of validations                                              |
+
+_type_<br>
+You can use the type `string` to encode complex data types, like arrays or objects, but need to take care of the
+serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
+so that new values can be deserialized correctly.
 
 _fallbackValue_<br>
 This value gets set initially when the feature toggle is introduced, and it is also used as a fallback when
 communication with Redis is interrupted during startup.
+
+_active_<br>
+Using _active_ or _appUrl_ to block the activation of a feature toggle, will cause all usage code reading it to
+always get the fallback value.
 
 _appUrl_<br>
 Regular expression for activating a feature toggle _only_ if at least one of its Cloud Foundry application's urls match.
@@ -89,11 +98,11 @@ successfully for a change to occur. Here is a practical example with all possibl
 
 The semantics of these properties are as follows.
 
-| property | meaning                                                    |
-| :------- | :--------------------------------------------------------- |
-| scopes   | restrict which scopes are allowed                          |
-| regex    | value converted to string must match regex                 |
-| module   | register external validation module, see below for details |
+| property | meaning                                    |
+| :------- | :----------------------------------------- |
+| scopes   | restrict which scopes are allowed          |
+| regex    | value converted to string must match regex |
+| module   | register external validation module        |
 
 _module_<br>
 Module points to a module, where an [external validation](#external-validation) is implemented. These external checks get registered
@@ -103,15 +112,6 @@ validation function directly. Alternatively, you can specify both the module and
 For the module path, you can specify it either relative to the runtime working directory (usually the project root),
 e.g., `module: ./path-from-root/validations.js`, or you can use the location of the configuration file as a relative anchor,
 e.g., `module: $CONFIG_DIR/validation.js`.
-
-{: .info }
-You can use the type `string` to encode complex data types, like arrays or objects, but need to take care of the
-serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
-so that new values can be deserialized correctly.
-
-{: .info }
-When using _active_ or _appUrl_ to block activation of a feature toggle, then user code accessing the
-feature toggle value will always get the fallback value.
 
 ## Initialization for CAP Projects
 
