@@ -222,9 +222,9 @@ The following environment variables can be used to fine-tune the library's behav
 In this section, we will assume that the [initialization](#initialization) has happened and the configuration contained
 a feature toggle with the key `/srv/util/logger/logLevel`, similar to the one described [here](#format).
 
-### Querying Feature Value
+### Reading Feature Value
 
-You can query the current in memory state of any feature toggle:
+You can read the current in memory state of any feature toggle:
 
 ```javascript
 const {
@@ -292,9 +292,37 @@ async function changeIt(newValue, scopeMap) {
 The change API `changeFeatureValue` will return when the change is published to Redis, so there may be a slight
 processing delay until the change is picked up by all subscribers.
 
-{: .info }
 Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback
 value.
+
+Since setting values for scope-combinations happens additively, it can become hard to keep track of which combinations
+have dedicated values attached to them. If you want to set a value _and_ make sure that there isn't a more specific
+scope-combination, which overrides that value, then you can use the option `{ clearSubScopes: true }` as a third
+argument. For example
+
+```javascript
+await changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { clearSubScopes: true });
+```
+
+will set the root-scope value to `"error"` and remove all sub-scopes. See
+[scoping]({{ base_url }}/architecture/#scoping) for context.
+
+### Resetting Feature Value
+
+There is a convenience reset API just to reset a feature toggle and remove all associated persisted values. Reading
+the feature toggle will only yield the fallback value after this until new changes are made.
+
+```javascript
+const {
+  singleton: { resetFeatureValue, changeFeatureValue },
+} = require("@cap-js-community/feature-toggle-library");
+
+// ... in some function
+await resetFeatureValue("/srv/util/logger/logLevel");
+
+// this is functionally equivalent to
+await changeFeatureValue("/srv/util/logger/logLevel", null, {}, { clearSubScopes: true });
+```
 
 ### External Validation
 

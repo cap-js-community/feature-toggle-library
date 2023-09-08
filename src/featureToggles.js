@@ -12,7 +12,6 @@
 "use strict";
 
 // TODO locale for validation messages
-// TODO document clearSubScopes option
 
 const { promisify } = require("util");
 const path = require("path");
