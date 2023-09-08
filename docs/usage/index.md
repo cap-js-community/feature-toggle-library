@@ -46,44 +46,75 @@ deployments. The configuration is a key-value map describing each individual fea
   type: string
   fallbackValue: info
   appUrl: \.cfapps\.sap\.hana\.ondemand\.com$
-  validation: ^(?:error|warn|info|verbose|debug)$
+  validations:
+    - regex: ^(error|warn|info|verbose|debug)$
 ```
 
 The semantics of these properties are as follows.
 
 | property      | required | meaning                                                          |
 | :------------ | :------- | :--------------------------------------------------------------- |
-| active        |          | if this is `false`, the corresponding feature toggle is inactive |
 | type          | true     | one of the allowed types `boolean`, `number`, `string`           |
-| fallbackValue | true     | see below                                                        |
-| appUrl        |          | see below                                                        |
-| validation    |          | regex for input validation                                       |
-| allowedScopes |          | see below                                                        |
+| fallbackValue | true     | emergency fallback value                                         |
+| active        |          | if this is `false`, the corresponding feature toggle is inactive |
+| appUrl        |          | activate toggle only if appUrl regex is matched                  |
+| validations   |          | list of validations                                              |
+
+_type_<br>
+You can use the type `string` to encode complex data types like arrays or objects, but need to take care of
+serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
+so that new values can be deserialized correctly.
 
 _fallbackValue_<br>
 This value gets set initially when the feature toggle is introduced, and it is also used as a fallback when
 communication with Redis is interrupted during startup.
 
+_active_<br>
+Using _active_ or _appUrl_ to block the activation of a feature toggle, will cause all usage code reading it to
+always get the fallback value.
+
 _appUrl_<br>
-Regex for activating feature toggle _only_ if the cf app's url matches
+Regular expression for activating a feature toggle _only_ if at least one of its Cloud Foundry application's urls
+match. When the library is not running in `CF_REDIS` [integration mode](#integration-mode), this check is disabled.
+Here are some examples:
 
-- for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`
-- for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`
-- specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`
+- for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`,
+- for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`,
+- specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`.
 
-_allowedScopes_<br>
-This is an additional form of change validation. AllowedScopes can be set to a list of strings, for example
-`allowedScopes: [tenant, user]`. With this configuration only matching scopes can be used when setting feature toggle
-values.
+_validations_<br>
+List of validations that will guard all changes of the associated feature toggle. All validations must pass
+successfully for a change to occur. Each kind of validation can happen multiple times. Here is a practical example with
+all possible validation kinds:
 
-{: .info }
-You can use the type `string` to encode more complex data types, like arrays or objects, but need to take care of the
-serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
-so that new values can be deserialized correctly.
+```yaml
+# info: check api priority; 0 means access is disabled
+/check/priority:
+  type: number
+  fallbackValue: 0
+  validations:
+    - scopes: [user, tenant]
+    - regex: ^\d+$
+    - { module: "$CONFIG_DIR/validators.js", call: validateTenantScope }
+```
 
-{: .warn }
-When using _active_ or _appUrl_ to block activation of a feature toggle, then user code accessing the
-feature toggle value will always get the fallback value.
+The semantics of these properties are as follows.
+
+| property | meaning                                    |
+| :------- | :----------------------------------------- |
+| scopes   | restrict which scopes are allowed          |
+| regex    | value converted to string must match regex |
+| module   | register external validation module        |
+
+_module_<br>
+Module points to a module, where an [external validation](#external-validation) is implemented. These external checks
+get registered during initialization and will be called during change attempts. You can specify just the module and
+export the validation function directly. Alternatively, you can specify both the module and a property to call on the
+module.
+
+For the module path, you can specify it either relative to the runtime working directory (usually the project root),
+e.g., `module: ./path-from-root/validations.js`, or you can use the location of the configuration file as a relative
+anchor, e.g., `module: $CONFIG_DIR/validation.js`.
 
 ## Initialization for CAP Projects
 
@@ -162,6 +193,23 @@ const config = await readConfigFromFile(FEATURES_FILEPATH);
 await initializeFeatures({ config });
 ```
 
+## Integration Mode
+
+After successful initialization, the library will write one info log of the form:
+
+```
+13:40:13.775 | INFO | /FeatureToggles | finished initialization with 2 feature toggles with NO_REDIS
+```
+
+It tells you both how many toggles where initialized, and the integration mode, that the library detected. Here are all
+possible modes:
+
+| mode          | meaning                                                                          |
+| :------------ | :------------------------------------------------------------------------------- |
+| `NO_REDIS`    | no redis detected, all changes are only in memory and will be lost on restart    |
+| `LOCAL_REDIS` | local redis server detected, changes are persisted in that local redis           |
+| `CF_REDIS`    | Cloud Foundry redis service binding detected, changes will be persisted normally |
+
 ## Environment Variables
 
 The following environment variables can be used to fine-tune the library's behavior:
@@ -177,9 +225,9 @@ The following environment variables can be used to fine-tune the library's behav
 In this section, we will assume that the [initialization](#initialization) has happened and the configuration contained
 a feature toggle with the key `/srv/util/logger/logLevel`, similar to the one described [here](#format).
 
-### Querying Feature Value
+### Reading Feature Value
 
-You can query the current in memory state of any feature toggle:
+You can read the current in memory state of any feature toggle:
 
 ```javascript
 const {
@@ -247,9 +295,37 @@ async function changeIt(newValue, scopeMap) {
 The change API `changeFeatureValue` will return when the change is published to Redis, so there may be a slight
 processing delay until the change is picked up by all subscribers.
 
-{: .info }
 Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback
 value.
+
+Since setting values for scope-combinations happens additively, it can become hard to keep track of which combinations
+have dedicated values attached to them. If you want to set a value _and_ make sure that there isn't a more specific
+scope-combination, which overrides that value, then you can use the option `{ clearSubScopes: true }` as a third
+argument. For example
+
+```javascript
+await changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { clearSubScopes: true });
+```
+
+will set the root-scope value to `"error"` and remove all sub-scopes. See
+[scoping]({{ base_url }}/architecture/#scoping) for context.
+
+### Resetting Feature Value
+
+There is a convenience reset API just to reset a feature toggle and remove all associated persisted values. Reading
+the feature toggle afterward will only yield the fallback value until new changes are made.
+
+```javascript
+const {
+  singleton: { resetFeatureValue, changeFeatureValue },
+} = require("@cap-js-community/feature-toggle-library");
+
+// ... in some function
+await resetFeatureValue("/srv/util/logger/logLevel");
+
+// this is functionally equivalent to
+await changeFeatureValue("/srv/util/logger/logLevel", null, {}, { clearSubScopes: true });
+```
 
 ### External Validation
 

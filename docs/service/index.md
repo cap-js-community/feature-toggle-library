@@ -36,7 +36,7 @@ These service endpoints will enable operations teams to understand and modify to
 check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http)
 in our example CAP Server.
 
-### Read Server Memory State
+### Read Feature Toggles State
 
 Get all information about the current in-memory state of all toggles.
 
@@ -74,7 +74,7 @@ Get all information about the current in-memory state of all toggles.
 
 ---
 
-### Update Toggle
+### Update Feature Toggle
 
 Update the toggle state on Redis, which in turn is published to all server instances.
 
@@ -91,6 +91,28 @@ Update the toggle state on Redis, which in turn is published to all server insta
     "key": "/check/priority",
     "value": 10,
     "scope": { "tenant": "people" }
+  }
+  ```
+- Response
+
+  ```
+  HTTP/1.1 204 No Content
+  ...
+  ```
+
+- Valid Request with [clearSubScopes]({{ base_url }}/usage/#updating-feature-value)
+  ```http
+  POST /rest/feature/redisUpdate
+  Authorization: ...
+  Content-Type: application/json
+  ```
+  ```json
+  {
+    "key": "/check/priority",
+    "value": 10,
+    "options": {
+      "clearSubScopes": true
+    }
   }
   ```
 - Response
