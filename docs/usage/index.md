@@ -47,16 +47,16 @@ deployments. The configuration is a key-value map describing each individual fea
   fallbackValue: info
   appUrl: \.cfapps\.sap\.hana\.ondemand\.com$
   validations:
-    - regex: ^(?:error|warn|info|verbose|debug)$
+    - regex: ^(error|warn|info|verbose|debug)$
 ```
 
 The semantics of these properties are as follows.
 
 | property      | required | meaning                                                          |
 | :------------ | :------- | :--------------------------------------------------------------- |
-| active        |          | if this is `false`, the corresponding feature toggle is inactive |
 | type          | true     | one of the allowed types `boolean`, `number`, `string`           |
 | fallbackValue | true     | see below                                                        |
+| active        |          | if this is `false`, the corresponding feature toggle is inactive |
 | appUrl        |          | see below                                                        |
 | validations   |          | see below                                                        |
 
@@ -65,11 +65,12 @@ This value gets set initially when the feature toggle is introduced, and it is a
 communication with Redis is interrupted during startup.
 
 _appUrl_<br>
-Regex for activating feature toggle _only_ if the cf app's url matches
+Regular expression for activating a feature toggle _only_ if at least one of its Cloud Foundry application's urls match.
+When the library is not running `CF_REDIS` [integration mode](#integration-mode), this check is disabled. Here are some examples:
 
-- for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`
-- for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`
-- specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`
+- for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`,
+- for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`,
+- specific CANARY app `<cf-app-name>\.cfapps\.sap\.hana\.ondemand\.com$`.
 
 _validations_<br>
 List of validations that will guard all changes of the associated feature toggle. All validations must pass
@@ -177,6 +178,23 @@ const config = await readConfigFromFile(FEATURES_FILEPATH);
 // ... manipulate
 await initializeFeatures({ config });
 ```
+
+## Integration Mode
+
+After successful initialization, the library will write one info log of the form:
+
+```
+13:40:13.775 | INFO | /FeatureToggles | finished initialization with 2 feature toggles with NO_REDIS
+```
+
+It tells you both how many toggles where initialized and the integration mode, that the library detected. Here are all
+possible modes:
+
+| mode          | meaning                                                                          |
+| :------------ | :------------------------------------------------------------------------------- |
+| `NO_REDIS`    | no redis detected, all changes are only in memory and will be lost on restart    |
+| `LOCAL_REDIS` | local redis server detected, changes are persisted in that local redis           |
+| `CF_REDIS`    | Cloud Foundry redis service binding detected, changes will be persisted normally |
 
 ## Environment Variables
 

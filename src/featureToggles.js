@@ -216,10 +216,7 @@ class FeatureToggles {
       if (appUrl) {
         this.__config[featureKey][CONFIG_KEY.APP_URL] = appUrl;
         const appUrlRegex = new RegExp(appUrl);
-        if (
-          Array.isArray(cfAppUris) &&
-          cfAppUris.reduce((acc, cfAppUri) => acc || !appUrlRegex.test(cfAppUri), false)
-        ) {
+        if (Array.isArray(cfAppUris) && cfAppUris.every((cfAppUri) => !appUrlRegex.test(cfAppUri))) {
           this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] = false;
           this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REGEX] = appUrlRegex;
         }
