@@ -61,7 +61,7 @@ The semantics of these properties are as follows.
 | validations   |          | list of validations                                              |
 
 _type_<br>
-You can use the type `string` to encode complex data types, like arrays or objects, but need to take care of the
+You can use the type `string` to encode complex data types like arrays or objects, but need to take care of
 serialization/deserialization yourself. In these cases, make sure to use [external validation](#external-validation)
 so that new values can be deserialized correctly.
 
@@ -74,8 +74,9 @@ Using _active_ or _appUrl_ to block the activation of a feature toggle, will cau
 always get the fallback value.
 
 _appUrl_<br>
-Regular expression for activating a feature toggle _only_ if at least one of its Cloud Foundry application's urls match.
-When the library is not running in `CF_REDIS` [integration mode](#integration-mode), this check is disabled. Here are some examples:
+Regular expression for activating a feature toggle _only_ if at least one of its Cloud Foundry application's urls
+match. When the library is not running in `CF_REDIS` [integration mode](#integration-mode), this check is disabled.
+Here are some examples:
 
 - for CANARY landscape `\.cfapps\.sap\.hana\.ondemand\.com$`,
 - for EU10 landscape `\.cfapps\.eu10\.hana\.ondemand\.com$`,
@@ -83,7 +84,8 @@ When the library is not running in `CF_REDIS` [integration mode](#integration-mo
 
 _validations_<br>
 List of validations that will guard all changes of the associated feature toggle. All validations must pass
-successfully for a change to occur. Here is a practical example with all possible validations:
+successfully for a change to occur. Each kind of validation can happen multiple times. Here is a practical example with
+all possible validation kinds:
 
 ```yaml
 # info: check api priority; 0 means access is disabled
@@ -105,13 +107,14 @@ The semantics of these properties are as follows.
 | module   | register external validation module        |
 
 _module_<br>
-Module points to a module, where an [external validation](#external-validation) is implemented. These external checks get registered
-during initialization and will be called during change attempts. You can specify just the module and export the
-validation function directly. Alternatively, you can specify both the module and a property to call on the module.
+Module points to a module, where an [external validation](#external-validation) is implemented. These external checks
+get registered during initialization and will be called during change attempts. You can specify just the module and
+export the validation function directly. Alternatively, you can specify both the module and a property to call on the
+module.
 
 For the module path, you can specify it either relative to the runtime working directory (usually the project root),
-e.g., `module: ./path-from-root/validations.js`, or you can use the location of the configuration file as a relative anchor,
-e.g., `module: $CONFIG_DIR/validation.js`.
+e.g., `module: ./path-from-root/validations.js`, or you can use the location of the configuration file as a relative
+anchor, e.g., `module: $CONFIG_DIR/validation.js`.
 
 ## Initialization for CAP Projects
 
@@ -198,7 +201,7 @@ After successful initialization, the library will write one info log of the form
 13:40:13.775 | INFO | /FeatureToggles | finished initialization with 2 feature toggles with NO_REDIS
 ```
 
-It tells you both how many toggles where initialized and the integration mode, that the library detected. Here are all
+It tells you both how many toggles where initialized, and the integration mode, that the library detected. Here are all
 possible modes:
 
 | mode          | meaning                                                                          |
