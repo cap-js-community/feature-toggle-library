@@ -48,11 +48,7 @@ describe("feature toggles test", () => {
 
   describe("enums", () => {
     it("config info consistency", () => {
-      const internalKeys = [
-        CONFIG_KEY.FAILING_APP_URL_REGEX,
-        CONFIG_KEY.VALIDATIONS_SCOPES_MAP,
-        CONFIG_KEY.VALIDATIONS_REGEX,
-      ];
+      const internalKeys = [CONFIG_KEY.VALIDATIONS_SCOPES_MAP, CONFIG_KEY.VALIDATIONS_REGEX];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
 
@@ -847,7 +843,7 @@ describe("feature toggles test", () => {
           {
             "errorMessage": "feature key is not active because app url does not match regular expression {0}",
             "errorMessageValues": [
-              "/\\.cfapps\\.sap\\.hana\\.ondemand\\.com$/",
+              "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
             ],
             "featureKey": "test/feature_h",
           },

@@ -43,7 +43,6 @@ const CONFIG_KEY = Object.freeze({
   ACTIVE: "ACTIVE",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
-  FAILING_APP_URL_REGEX: "FAILING_APP_URL_REGEX",
   VALIDATIONS: "VALIDATIONS",
   VALIDATIONS_SCOPES_MAP: "VALIDATIONS_SCOPES_MAP",
   VALIDATIONS_REGEX: "VALIDATIONS_REGEX",
@@ -216,7 +215,6 @@ class FeatureToggles {
         const appUrlRegex = new RegExp(appUrl);
         if (Array.isArray(cfAppUris) && cfAppUris.every((cfAppUri) => !appUrlRegex.test(cfAppUri))) {
           this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] = false;
-          this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REGEX] = appUrlRegex;
         }
       }
 
@@ -391,12 +389,11 @@ class FeatureToggles {
       }
 
       if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
-        const failingAppUrlRegex = this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REGEX];
         return [
           {
             featureKey,
             errorMessage: "feature key is not active because app url does not match regular expression {0}",
-            errorMessageValues: [failingAppUrlRegex.toString()],
+            errorMessageValues: [this.__config[featureKey][CONFIG_KEY.APP_URL]],
           },
         ];
       }
