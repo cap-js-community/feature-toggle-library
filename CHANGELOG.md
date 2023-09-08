@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v0.7.0 - 2023-09-08
+
+### Added
+
+- new harmonized validation configuration for scope and regex checks, as well as external validation with user
+  provided modules.
+
+- new (optional) [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) integration. for details, see the new
+  [plugin and service](https://cap-js-community.github.io/feature-toggle-library/service/) documentation.
+
+- new logger implementation which replaces
+  [cf-nodejs-logging-support](https://www.npmjs.com/package/cf-nodejs-logging-support) dependency. it has better cds
+  integration (if present). for example, it will log
+  [correlation ids](https://cap.cloud.sap/docs/node.js/cds-log#node-observability-correlation) that are present in cds
+  context via [async local storage](https://nodejs.org/api/async_context.html#class-asynclocalstorage).
+
+### Changed
+
+- `allowedScopes: [xxx]` configuration will now be ignored and needs to be replaced with
+  `validations: [{ scopes: [xxx] }]`.
+
+### Fixed
+
+- re-work pipelines to separate main branch and pr-voter status
+
 ## v0.6.9 - 2023-07-18
 
 ### Added
