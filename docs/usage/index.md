@@ -313,7 +313,7 @@ will set the root-scope value to `"error"` and remove all sub-scopes. See
 ### Resetting Feature Value
 
 There is a convenience reset API just to reset a feature toggle and remove all associated persisted values. Reading
-the feature toggle will only yield the fallback value after this until new changes are made.
+the feature toggle afterward will only yield the fallback value until new changes are made.
 
 ```javascript
 const {
