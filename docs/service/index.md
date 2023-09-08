@@ -5,7 +5,7 @@ nav_order: 3
 ---
 
 <!-- prettier-ignore-start -->
-# Service
+# Plugin and Service
 {: .no_toc }
 <!-- prettier-ignore-end -->
 
