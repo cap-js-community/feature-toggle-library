@@ -166,7 +166,7 @@ Force server to re-sync with Redis, this should never be necessary. It returns t
   Authorization: ...
   ```
 - Response<br>
-  Same as [Read Server Memory State](#read-server-memory-state).
+  Same as [Read Feature Toggles State](#read-feature-toggles-state).
 
 ---
 

@@ -116,7 +116,9 @@ For the module path, you can specify it either relative to the runtime working d
 e.g., `module: ./path-from-root/validations.js`, or you can use the location of the configuration file as a relative
 anchor, e.g., `module: $CONFIG_DIR/validation.js`.
 
-## Initialization for CAP Projects
+## Initialization
+
+### For CAP Projects
 
 CAP projects, will use the library as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). Their
 initialization settings are in `package.json`. For example:
@@ -139,7 +141,7 @@ after the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstra
 Using the feature toggles in CAP projects also enables a [REST service]({{ site.baseurl }}/service/), where toggles can
 be read and manipulated.
 
-## Initialization for Non-CAP Projects
+### For Non-CAP Projects
 
 Other projects will need to use the corresponding filepath, in order to initialize the feature toggles instance in code.
 
@@ -223,7 +225,7 @@ The following environment variables can be used to fine-tune the library's behav
 ## User Code
 
 In this section, we will assume that the [initialization](#initialization) has happened and the configuration contained
-a feature toggle with the key `/srv/util/logger/logLevel`, similar to the one described [here](#format).
+a feature toggle with the key `/srv/util/logger/logLevel`, similar to the one described [here](#configuration).
 
 ### Reading Feature Value
 
@@ -349,4 +351,4 @@ registerFeatureValueValidation("/srv/util/logger/logLevel", (newValue) => {
 
 {: .info }
 Simple validation rules that can be expressed as a regular expression should use the associated
-validation [configuration](#format) instead.
+validation [configuration](#configuration) instead.
