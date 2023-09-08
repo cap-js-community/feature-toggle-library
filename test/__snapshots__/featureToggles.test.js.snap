@@ -107,7 +107,6 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   "test/feature_h": {
     "config": {
       "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
-      "APP_URL_ACTIVE": true,
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",
@@ -130,7 +129,6 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
         ],
       },
     ],
-    "VALIDATIONS_REG_EXP": [],
     "VALIDATIONS_SCOPES_MAP": {
       "tenant": true,
       "user": true,
@@ -152,7 +150,6 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "VALIDATIONS_REG_EXP": [
       /\\^\\(\\?:true\\)\\$/,
     ],
-    "VALIDATIONS_SCOPES_MAP": {},
   },
   "test/feature_e": {
     "TYPE": "number",
@@ -164,7 +161,6 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "VALIDATIONS_REG_EXP": [
       /\\^\\\\d\\{1\\}\\$/,
     ],
-    "VALIDATIONS_SCOPES_MAP": {},
   },
   "test/feature_f": {
     "TYPE": "string",
@@ -176,7 +172,6 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "VALIDATIONS_REG_EXP": [
       /\\^\\(\\?:best\\|worst\\)\\$/,
     ],
-    "VALIDATIONS_SCOPES_MAP": {},
   },
   "test/feature_g": {
     "ACTIVE": false,
@@ -184,7 +179,6 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
   },
   "test/feature_h": {
     "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
-    "APP_URL_ACTIVE": true,
     "TYPE": "string",
   },
 }

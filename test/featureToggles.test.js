@@ -48,7 +48,11 @@ describe("feature toggles test", () => {
 
   describe("enums", () => {
     it("config info consistency", () => {
-      const internalKeys = [CONFIG_KEY.VALIDATIONS_SCOPES_MAP, CONFIG_KEY.VALIDATIONS_REG_EXP];
+      const internalKeys = [
+        CONFIG_KEY.FAILING_APP_URL_REG_EXP,
+        CONFIG_KEY.VALIDATIONS_SCOPES_MAP,
+        CONFIG_KEY.VALIDATIONS_REG_EXP,
+      ];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
 
@@ -824,7 +828,7 @@ describe("feature toggles test", () => {
       const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
 
       expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
-      expect(featureConfig.APP_URL_ACTIVE).toBe(true);
+      expect(featureConfig.APP_URL_ACTIVE).toBeUndefined();
       expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toBeUndefined();
       expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(newValue);
     });
@@ -843,7 +847,7 @@ describe("feature toggles test", () => {
           {
             "errorMessage": "feature key is not active because app url does not match regular expression {0}",
             "errorMessageValues": [
-              "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+              "/\\.cfapps\\.sap\\.hana\\.ondemand\\.com$/",
             ],
             "featureKey": "test/feature_h",
           },
