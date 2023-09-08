@@ -308,7 +308,7 @@ await changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { clearSubSco
 ```
 
 will set the root-scope value to `"error"` and remove all sub-scopes. See
-[scoping]({{ base_url }}/architecture/#scoping) for context.
+[scoping]({{ site.baseurl }}/architecture/#scoping) for context.
 
 ### Resetting Feature Value
 

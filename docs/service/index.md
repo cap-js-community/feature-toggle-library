@@ -100,7 +100,7 @@ Update the toggle state on Redis, which in turn is published to all server insta
   ...
   ```
 
-- Valid Request with [clearSubScopes]({{ base_url }}/usage/#updating-feature-value)
+- Valid Request with [clearSubScopes]({{ site.baseurl }}/usage/#updating-feature-value)
   ```http
   POST /rest/feature/redisUpdate
   Authorization: ...
