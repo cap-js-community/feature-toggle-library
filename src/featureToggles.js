@@ -42,15 +42,20 @@ const SCOPE_ROOT_KEY = "//";
 
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
+  ACTIVE: "ACTIVE",
+  APP_URL: "APP_URL",
+  APP_URL_ACTIVE: "APP_URL_ACTIVE",
+  FAILING_APP_URL_REG_EXP: "FAILING_APP_URL_REG_EXP",
   VALIDATIONS: "VALIDATIONS",
-  VALIDATIONS_INACTIVE: "VALIDATIONS_INACTIVE",
-  VALIDATIONS_FAILING_APP_URL_REG_EXP: "VALIDATIONS_FAILING_APP_URL_REG_EXP",
   VALIDATIONS_SCOPES_MAP: "VALIDATIONS_SCOPES_MAP",
   VALIDATIONS_REG_EXP: "VALIDATIONS_REG_EXP",
 });
 
 const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
+  [CONFIG_KEY.ACTIVE]: true,
+  [CONFIG_KEY.APP_URL]: true,
+  [CONFIG_KEY.APP_URL_ACTIVE]: true,
   [CONFIG_KEY.VALIDATIONS]: true,
 };
 
@@ -114,7 +119,6 @@ class FeatureToggles {
   // ========================================
 
   _processValidations(featureKey, validations, configFilepath) {
-    const { uris: cfAppUris } = cfEnv.cfApp;
     const workingDir = process.cwd();
     const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
 
@@ -124,24 +128,6 @@ class FeatureToggles {
     let isInactive = false;
     let failingAppUrlRegExp;
     for (const validation of validations) {
-      if (validation.active === false) {
-        isInactive = true;
-        break;
-      }
-
-      if (validation.appUrl) {
-        const appUrlRegex = new RegExp(validation.appUrl);
-        if (
-          Array.isArray(cfAppUris) &&
-          cfAppUris.reduce((acc, cfAppUri) => acc || !appUrlRegex.test(cfAppUri), false)
-        ) {
-          failingAppUrlRegExp = appUrlRegex;
-          break;
-        } else {
-          continue;
-        }
-      }
-
       if (Array.isArray(validation.scopes)) {
         for (const scope of validation.scopes) {
           validationsScopesMap[scope] = true;
@@ -199,14 +185,6 @@ class FeatureToggles {
       );
     }
 
-    if (isInactive) {
-      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_INACTIVE] = true;
-      return;
-    }
-    if (failingAppUrlRegExp) {
-      this.__config[featureKey][CONFIG_KEY.VALIDATIONS_FAILING_APP_URL_REG_EXP] = failingAppUrlRegExp;
-      return;
-    }
     if (Object.keys(validationsScopesMap).length > 0) {
       this.__config[featureKey][CONFIG_KEY.VALIDATIONS_SCOPES_MAP] = validationsScopesMap;
     }
@@ -222,14 +200,31 @@ class FeatureToggles {
    * Populate this.__config.
    */
   _processConfig(config, configFilepath) {
+    const { uris: cfAppUris } = cfEnv.cfApp;
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, fallbackValue, validations }] of configEntries) {
+    for (const [featureKey, { type, active, appUrl, fallbackValue, validations }] of configEntries) {
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
 
       if (type) {
         this.__config[featureKey][CONFIG_KEY.TYPE] = type;
+      }
+
+      if (active === false) {
+        this.__config[featureKey][CONFIG_KEY.ACTIVE] = false;
+      }
+
+      if (appUrl) {
+        this.__config[featureKey][CONFIG_KEY.APP_URL] = appUrl;
+        const appUrlRegex = new RegExp(appUrl);
+        if (
+          Array.isArray(cfAppUris) &&
+          cfAppUris.reduce((acc, cfAppUri) => acc || !appUrlRegex.test(cfAppUri), false)
+        ) {
+          this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] = false;
+          this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REG_EXP] = appUrlRegex;
+        }
       }
 
       if (validations) {
@@ -398,12 +393,12 @@ class FeatureToggles {
 
     // NOTE: skip validating active properties during initialization
     if (this.__isInitialized) {
-      if (this.__config[featureKey][CONFIG_KEY.VALIDATIONS_INACTIVE]) {
+      if (this.__config[featureKey][CONFIG_KEY.ACTIVE] === false) {
         return [{ featureKey, errorMessage: "feature key is not active" }];
       }
 
-      const failingAppUrlRegExp = this.__config[featureKey][CONFIG_KEY.VALIDATIONS_FAILING_APP_URL_REG_EXP];
-      if (failingAppUrlRegExp) {
+      if (this.__config[featureKey][CONFIG_KEY.APP_URL_ACTIVE] === false) {
+        const failingAppUrlRegExp = this.__config[featureKey][CONFIG_KEY.FAILING_APP_URL_REG_EXP];
         return [
           {
             featureKey,
