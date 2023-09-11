@@ -1,4 +1,4 @@
-// https://pages.github.tools.sap/cap/docs/node.js/cds-plugins
+// https://cap.cloud.sap/docs/node.js/cds-plugins
 "use strict";
 
 const cds = require("@sap/cds");
