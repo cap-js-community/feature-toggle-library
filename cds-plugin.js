@@ -6,9 +6,7 @@ const { initializeFeatures } = require("./src/singleton");
 
 const activate = async () => {
   if (cds.env.featureToggles?.config || cds.env.featureToggles?.configFile) {
-    cds.env.requires = Object.assign(cds.env.requires, {
-      FeatureService: { model: "@cap-js-community/feature-toggle-library" },
-    });
+    cds.env.requires["FeatureService"] = { model: "@cap-js-community/feature-toggle-library" };
 
     if (Array.isArray(cds.env.featureToggles.serviceAccessRoles)) {
       cds.on("loaded", (csn) => {
