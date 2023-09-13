@@ -88,6 +88,16 @@ const _createClientBase = () => {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
       const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
+      if (credentials.cluster_mode) {
+        return redis.createCluster({
+          rootNodes: [{ url }],
+          // https://github.com/redis/node-redis/issues/1782
+          defaults: {
+            password: credentials.password,
+            socket: { tls: credentials.tls },
+          },
+        });
+      }
       return redis.createClient({ url });
     } catch (err) {
       throw new VError(
