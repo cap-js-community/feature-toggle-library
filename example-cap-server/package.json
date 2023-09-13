@@ -18,7 +18,11 @@
   },
   "cds": {
     "featureToggles": {
-      "configFile": "./srv/feature/features.yaml"
+      "configFile": "./srv/feature/features.yaml",
+      "serviceAccessRoles": [
+        "system-user",
+        "custom-role"
+      ]
     }
   }
 }
