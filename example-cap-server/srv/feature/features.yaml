@@ -14,4 +14,3 @@
   fallbackValue: 0
   validations:
     - regex: '^\d+$'
-    - { module: "./srv/feature/validators.js", call: validateTenantScope }
