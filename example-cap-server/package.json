@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "start": "npm run copy-library && npm run serve",
-    "copy-library": "npx --yes shx rm -rf node_modules/@cap-js-community/feature-toggle-library && npx --yes shx mkdir -p node_modules/@cap-js-community/feature-toggle-library && npx --yes shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src node_modules/@cap-js-community/feature-toggle-library",
+    "copy-library": "npx shx rm -rf node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src node_modules/@cap-js-community/feature-toggle-library",
     "serve": "cds-serve",
     "build": "cds build --production",
-    "cloc": "npx --yes cloc --vcs=git --read-lang-def=cloc.def .",
-    "upgrade": "npm up --save && npx --yes shx rm -rf node_modules && npm i"
+    "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def .",
+    "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
