@@ -7,7 +7,7 @@
     "copy-library": "npx shx rm -rf node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src node_modules/@cap-js-community/feature-toggle-library",
     "serve": "cds-serve",
     "build": "cds build --production",
-    "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def .",
+    "cloc": "npx cloc --vcs=git --exclude-ext=def --read-lang-def=cloc.def .",
     "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
   },
   "dependencies": {
