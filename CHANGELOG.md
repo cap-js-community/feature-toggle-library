@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v0.7.1 - 2023-09-13
+
+### Fixed
+
+- cds-plugin integration now works for projects that run `cds build --production` and only use the resulting
+  `csn.json` at runtime.
+
 ## v0.7.0 - 2023-09-08
 
 ### Added
@@ -25,6 +32,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `allowedScopes: [xxx]` configuration will now be ignored and needs to be replaced with
   `validations: [{ scopes: [xxx] }]`.
+
+- `validation: yyy` configuration will now be ignored and needs to be replaced with
+  `validations: [{ regex: yyy }]`.
 
 ### Fixed
 
