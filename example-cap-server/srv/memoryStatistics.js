@@ -7,9 +7,7 @@ const {
   singleton: { registerFeatureValueChangeHandler, getFeatureValue },
   DynamicIntervalController,
 } = require("@cap-js-community/feature-toggle-library");
-const {
-  FEATURE: { MEM_STAT_LOG_INTERVAL },
-} = require("./feature");
+const { MEM_STAT_LOG_INTERVAL } = require("./feature");
 
 const logger = cds.log("memoryStatistics");
 
