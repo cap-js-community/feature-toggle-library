@@ -4,7 +4,7 @@ const {
   singleton: { getFeatureValue },
 } = require("@cap-js-community/feature-toggle-library");
 
-const { FEATURE } = require("../feature");
+const { CHECK_API_PRIORITY } = require("../feature");
 
 const LOW_VALUE_RESPONSES = ["hello", "barely made it"];
 
@@ -15,7 +15,7 @@ const HIGH_VALUE_RESPONSES = ["well done", "full success", "huzzah", "celebratio
 const HIGH_BOUNDARY = 100;
 
 const priorityHandler = async (context) => {
-  const value = getFeatureValue(FEATURE.CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
+  const value = getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
     value >= HIGH_BOUNDARY
       ? HIGH_VALUE_RESPONSES
