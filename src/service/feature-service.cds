@@ -1,5 +1,5 @@
 @protocol: 'rest'
-@impl: './feature-service.js'
+
 @(requires: ['system-user'])
 service FeatureService {
     type JSON {};
