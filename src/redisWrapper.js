@@ -14,6 +14,7 @@ const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
 
 const INTEGRATION_MODE = Object.freeze({
+  CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
   CF_REDIS: "CF_REDIS",
   LOCAL_REDIS: "LOCAL_REDIS",
   NO_REDIS: "NO_REDIS",
@@ -27,16 +28,17 @@ const MODE = Object.freeze({
 });
 
 let redisIsOnCF = isOnCF;
+let redisIsCluster;
 let mainClient = null;
 let subscriberClient = null;
 let messageHandlers = new HandlerCollection();
 let integrationMode = null;
-let isRedisCluster;
 
 const watchedGetSetSemaphore = new Semaphore();
 
 const _reset = () => {
   redisIsOnCF = isOnCF;
+  redisIsCluster = false;
   mainClient = null;
   subscriberClient = null;
   messageHandlers = new HandlerCollection();
@@ -89,8 +91,8 @@ const _createClientBase = () => {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
       const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
-      isRedisCluster = credentials.cluster_mode;
-      if (isRedisCluster) {
+      redisIsCluster = credentials.cluster_mode;
+      if (redisIsCluster) {
         return redis.createCluster({
           rootNodes: [{ url }],
           // https://github.com/redis/node-redis/issues/1782
@@ -217,7 +219,7 @@ const sendCommand = async (command) => {
   }
 
   try {
-    if (isRedisCluster) {
+    if (redisIsCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
       return await mainClient.sendCommand(undefined, undefined, command);
@@ -494,7 +496,7 @@ const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(
 
 const _getIntegrationMode = async () => {
   if (redisIsOnCF) {
-    return INTEGRATION_MODE.CF_REDIS;
+    return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   try {
     await getMainClient();
