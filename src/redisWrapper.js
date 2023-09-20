@@ -21,29 +21,30 @@ const INTEGRATION_MODE = Object.freeze({
 });
 
 const logger = new Logger(COMPONENT_NAME);
-const redisCredentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
+const watchedGetSetSemaphore = new Semaphore();
 
 const MODE = Object.freeze({
   RAW: "raw",
   OBJECT: "object",
 });
 
-let redisIsOnCF = isOnCF;
-let redisIsCluster = redisCredentials.cluster_mode;
-let mainClient = null;
-let subscriberClient = null;
-let messageHandlers = new HandlerCollection();
-let integrationMode = null;
-
-const watchedGetSetSemaphore = new Semaphore();
-
+let redisCredentials;
+let redisIsOnCF;
+let redisIsCluster;
+let messageHandlers;
+let mainClient;
+let subscriberClient;
+let integrationMode;
 const _reset = () => {
+  redisCredentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
   redisIsOnCF = isOnCF;
   redisIsCluster = redisCredentials.cluster_mode;
+  messageHandlers = new HandlerCollection();
   mainClient = null;
   subscriberClient = null;
-  messageHandlers = new HandlerCollection();
+  integrationMode = null;
 };
+_reset();
 
 const _logErrorOnEvent = (err) =>
   redisIsOnCF ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
@@ -540,6 +541,7 @@ module.exports = {
     _getMessageHandlers: () => messageHandlers,
     _getLogger: () => logger,
     _setRedisIsOnCF: (value) => (redisIsOnCF = value),
+    _setRedisCredentials: (value) => (redisCredentials = value),
     _getMainClient: () => mainClient,
     _setMainClient: (value) => (mainClient = value),
     _getSubscriberClient: () => subscriberClient,
