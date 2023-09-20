@@ -9,4 +9,4 @@ applications:
     buildpacks:
       - nodejs_buildpack
     services:
-      - afc-redis-cluster
+      - redis-service
