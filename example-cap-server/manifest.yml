@@ -1,0 +1,12 @@
+# https://docs.cloudfoundry.org/devguide/deploy-apps/manifest-attributes.html
+---
+applications:
+  - name: example-cap-server
+    path: ./gen/srv
+    memory: 256M
+    disk_quota: 1G
+    health-check-type: port
+    buildpacks:
+      - nodejs_buildpack
+    services:
+      - afc-redis-cluster
