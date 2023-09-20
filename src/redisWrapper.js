@@ -31,6 +31,7 @@ let mainClient = null;
 let subscriberClient = null;
 let messageHandlers = new HandlerCollection();
 let integrationMode = null;
+let isRedisCluster;
 
 const watchedGetSetSemaphore = new Semaphore();
 
@@ -88,7 +89,8 @@ const _createClientBase = () => {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
       const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
-      if (credentials.cluster_mode) {
+      isRedisCluster = credentials.cluster_mode;
+      if (isRedisCluster) {
         return redis.createCluster({
           rootNodes: [{ url }],
           // https://github.com/redis/node-redis/issues/1782
@@ -215,6 +217,11 @@ const sendCommand = async (command) => {
   }
 
   try {
+    if (isRedisCluster) {
+      // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
+      //   isReadonly before the command
+      return await mainClient.sendCommand(undefined, undefined, command);
+    }
     return await mainClient.sendCommand(command);
   } catch (err) {
     throw new VError(
