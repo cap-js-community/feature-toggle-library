@@ -21,6 +21,7 @@ const INTEGRATION_MODE = Object.freeze({
 });
 
 const logger = new Logger(COMPONENT_NAME);
+const redisCredentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
 
 const MODE = Object.freeze({
   RAW: "raw",
@@ -28,7 +29,7 @@ const MODE = Object.freeze({
 });
 
 let redisIsOnCF = isOnCF;
-let redisIsCluster;
+let redisIsCluster = redisCredentials.cluster_mode;
 let mainClient = null;
 let subscriberClient = null;
 let messageHandlers = new HandlerCollection();
@@ -38,7 +39,7 @@ const watchedGetSetSemaphore = new Semaphore();
 
 const _reset = () => {
   redisIsOnCF = isOnCF;
-  redisIsCluster = false;
+  redisIsCluster = redisCredentials.cluster_mode;
   mainClient = null;
   subscriberClient = null;
   messageHandlers = new HandlerCollection();
@@ -87,18 +88,16 @@ const _localReconnectStrategy = () =>
 const _createClientBase = () => {
   if (redisIsOnCF) {
     try {
-      const credentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
-      const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
-      redisIsCluster = credentials.cluster_mode;
+      const url = redisCredentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
       if (redisIsCluster) {
         return redis.createCluster({
           rootNodes: [{ url }],
           // https://github.com/redis/node-redis/issues/1782
           defaults: {
-            password: credentials.password,
-            socket: { tls: credentials.tls },
+            password: redisCredentials.password,
+            socket: { tls: redisCredentials.tls },
           },
         });
       }
