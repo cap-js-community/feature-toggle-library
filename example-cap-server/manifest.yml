@@ -3,9 +3,8 @@
 applications:
   - name: example-cap-server
     path: ./gen/srv
+    random-route: true
     memory: 256M
-    disk_quota: 1G
-    health-check-type: port
     buildpacks:
       - nodejs_buildpack
     services:
