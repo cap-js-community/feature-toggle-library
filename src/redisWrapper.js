@@ -19,6 +19,7 @@ const INTEGRATION_MODE = Object.freeze({
   LOCAL_REDIS: "LOCAL_REDIS",
   NO_REDIS: "NO_REDIS",
 });
+const CF_REDIS_SERVICE_LABEL = "redis-cache";
 
 const logger = new Logger(COMPONENT_NAME);
 const watchedGetSetSemaphore = new Semaphore();
@@ -28,17 +29,13 @@ const MODE = Object.freeze({
   OBJECT: "object",
 });
 
-let redisCredentials;
 let redisIsOnCF;
-let redisIsCluster;
 let messageHandlers;
 let mainClient;
 let subscriberClient;
 let integrationMode;
 const _reset = () => {
-  redisCredentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
   redisIsOnCF = isOnCF;
-  redisIsCluster = redisCredentials.cluster_mode;
   messageHandlers = new HandlerCollection();
   mainClient = null;
   subscriberClient = null;
@@ -91,6 +88,8 @@ const _createClientBase = () => {
     try {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
+      const redisCredentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+      const redisIsCluster = redisCredentials.cluster_mode;
       const url = redisCredentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
       if (redisIsCluster) {
         return redis.createCluster({
@@ -104,10 +103,7 @@ const _createClientBase = () => {
       }
       return redis.createClient({ url });
     } catch (err) {
-      throw new VError(
-        { name: VERROR_CLUSTER_NAME, cause: err },
-        "error during create client with redis-cache service"
-      );
+      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client with redis service");
     }
   } else {
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
@@ -219,6 +215,7 @@ const sendCommand = async (command) => {
   }
 
   try {
+    const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
     if (redisIsCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
@@ -496,6 +493,7 @@ const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(
 
 const _getIntegrationMode = async () => {
   if (redisIsOnCF) {
+    const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
     return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   try {
@@ -541,7 +539,6 @@ module.exports = {
     _getMessageHandlers: () => messageHandlers,
     _getLogger: () => logger,
     _setRedisIsOnCF: (value) => (redisIsOnCF = value),
-    _setRedisCredentials: (value) => (redisCredentials = value),
     _getMainClient: () => mainClient,
     _setMainClient: (value) => (mainClient = value),
     _getSubscriberClient: () => subscriberClient,

@@ -87,7 +87,7 @@ describe("redis wrapper test", () => {
     const mockUrlUsable = mockUrl.replace("BAD_USERNAME", "");
 
     redisWrapper._._setRedisIsOnCF(true);
-    redisWrapper._._setRedisCredentials({ uri: mockUrl });
+    envMock.cfEnv.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     const client = redisWrapper._._createClientBase();
 
@@ -423,7 +423,7 @@ describe("redis wrapper test", () => {
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
 
     redisWrapper._._setRedisIsOnCF(true);
-    redisWrapper._._setRedisCredentials({ uri: mockUrl });
+    envMock.cfEnv.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);
