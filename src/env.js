@@ -2,9 +2,14 @@
 
 const { ENV } = require("./shared/static");
 
-const isOnCF = process.env[ENV.USER] === "vcap";
-
 class CfEnv {
+  isOnCf;
+  cfApp;
+  cfServices;
+  cfInstanceGuid;
+  cfInstanceIp;
+  cfInstanceIndex;
+
   static parseEnvVar(env, envVar) {
     try {
       if (Object.prototype.hasOwnProperty.call(env, envVar)) {
@@ -14,6 +19,7 @@ class CfEnv {
   }
 
   constructor(env = process.env) {
+    this.isOnCf = env[ENV.USER] === "vcap";
     this.cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
     this.cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
     this.cfInstanceGuid = env[ENV.CF_INSTANCE_GUID];
@@ -31,7 +37,7 @@ class CfEnv {
   /**
    * @return CfEnv
    */
-  static getInstance() {
+  static get instance() {
     if (!CfEnv.__instance) {
       CfEnv.__instance = new CfEnv();
     }
@@ -53,7 +59,5 @@ class CfEnv {
 
 module.exports = {
   CfEnv,
-
-  isOnCF,
-  cfEnv: CfEnv.getInstance(),
+  cfEnv: CfEnv.instance,
 };

@@ -1,19 +1,15 @@
 "use strict";
 
-let cfEnv;
-let isOnCF;
-
+let cfEnv = {};
 const _reset = () => {
-  isOnCF = false;
-  cfEnv = {
-    cfApp: {},
-    cfServices: {},
-  };
+  cfEnv.isOnCf = false;
+  cfEnv.cfApp = {};
+  cfEnv.cfServices = {};
+  cfEnv.cfServiceCredentialsForLabel = jest.fn().mockReturnValue({});
 };
 _reset();
 
 module.exports = {
   cfEnv,
-  isOnCF,
   _reset,
 };

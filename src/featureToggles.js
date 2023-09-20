@@ -21,7 +21,7 @@ const yaml = require("yaml");
 const redis = require("./redisWrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
-const { isOnCF, cfEnv } = require("./env");
+const { cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { ENV, isObject, tryRequire } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
@@ -743,7 +743,7 @@ class FeatureToggles {
         await redis.subscribe(this.__redisChannel);
       } catch (err) {
         logger.warning(
-          isOnCF
+          cfEnv.isOnCf
             ? new VError(
                 {
                   name: VERROR_CLUSTER_NAME,

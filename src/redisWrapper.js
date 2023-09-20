@@ -6,7 +6,7 @@
 const redis = require("redis");
 const VError = require("verror");
 const { Logger } = require("./logger");
-const { isOnCF, cfEnv } = require("./env");
+const { cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { Semaphore } = require("./shared/semaphore");
 
@@ -14,35 +14,35 @@ const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
 
 const INTEGRATION_MODE = Object.freeze({
+  CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
   CF_REDIS: "CF_REDIS",
   LOCAL_REDIS: "LOCAL_REDIS",
   NO_REDIS: "NO_REDIS",
 });
+const CF_REDIS_SERVICE_LABEL = "redis-cache";
 
 const logger = new Logger(COMPONENT_NAME);
+const watchedGetSetSemaphore = new Semaphore();
 
 const MODE = Object.freeze({
   RAW: "raw",
   OBJECT: "object",
 });
 
-let redisIsOnCF = isOnCF;
-let mainClient = null;
-let subscriberClient = null;
-let messageHandlers = new HandlerCollection();
-let integrationMode = null;
-
-const watchedGetSetSemaphore = new Semaphore();
-
+let messageHandlers;
+let mainClient;
+let subscriberClient;
+let integrationMode;
 const _reset = () => {
-  redisIsOnCF = isOnCF;
+  messageHandlers = new HandlerCollection();
   mainClient = null;
   subscriberClient = null;
-  messageHandlers = new HandlerCollection();
+  integrationMode = null;
 };
+_reset();
 
 const _logErrorOnEvent = (err) =>
-  redisIsOnCF ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
+  cfEnv.isOnCf ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
 
 const _subscribedMessageHandler = async (message, channel) => {
   const handlers = messageHandlers.getHandlers(channel);
@@ -78,22 +78,30 @@ const _localReconnectStrategy = () =>
  * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
  * (hyperscaler option) and a local redis-server.
  *
- * @returns {RedisClient}
+ * @returns {RedisClient|RedisCluster}
  * @private
  */
 const _createClientBase = () => {
-  if (redisIsOnCF) {
+  if (cfEnv.isOnCf) {
     try {
-      const credentials = cfEnv.cfServiceCredentialsForLabel("redis-cache");
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
-      const url = credentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
+      const redisCredentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+      const redisIsCluster = redisCredentials.cluster_mode;
+      const url = redisCredentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
+      if (redisIsCluster) {
+        return redis.createCluster({
+          rootNodes: [{ url }],
+          // https://github.com/redis/node-redis/issues/1782
+          defaults: {
+            password: redisCredentials.password,
+            socket: { tls: redisCredentials.tls },
+          },
+        });
+      }
       return redis.createClient({ url });
     } catch (err) {
-      throw new VError(
-        { name: VERROR_CLUSTER_NAME, cause: err },
-        "error during create client with redis-cache service"
-      );
+      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client with redis service");
     }
   } else {
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
@@ -144,7 +152,7 @@ const _clientErrorHandlerBase = async (client, err, clientName) => {
  *
  * Only one publisher is necessary for any number of channels.
  *
- * @returns {RedisClient}
+ * @returns {RedisClient|RedisCluster}
  * @private
  */
 const getMainClient = async () => {
@@ -163,7 +171,7 @@ const getMainClient = async () => {
  *
  * Only one subscriber is necessary for any number of channels.
  *
- * @returns {RedisClient}
+ * @returns {RedisClient|RedisCluster}
  * @private
  */
 const getSubscriberClient = async () => {
@@ -205,6 +213,12 @@ const sendCommand = async (command) => {
   }
 
   try {
+    const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
+    if (redisIsCluster) {
+      // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
+      //   isReadonly before the command
+      return await mainClient.sendCommand(undefined, undefined, command);
+    }
     return await mainClient.sendCommand(command);
   } catch (err) {
     throw new VError(
@@ -476,8 +490,9 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
 const _getIntegrationMode = async () => {
-  if (redisIsOnCF) {
-    return INTEGRATION_MODE.CF_REDIS;
+  if (cfEnv.isOnCf) {
+    const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
+    return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   try {
     await getMainClient();
@@ -521,7 +536,6 @@ module.exports = {
     _reset,
     _getMessageHandlers: () => messageHandlers,
     _getLogger: () => logger,
-    _setRedisIsOnCF: (value) => (redisIsOnCF = value),
     _getMainClient: () => mainClient,
     _setMainClient: (value) => (mainClient = value),
     _getSubscriberClient: () => subscriberClient,
