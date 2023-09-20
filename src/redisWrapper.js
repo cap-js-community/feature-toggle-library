@@ -79,7 +79,7 @@ const _localReconnectStrategy = () =>
  * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
  * (hyperscaler option) and a local redis-server.
  *
- * @returns {RedisClient}
+ * @returns {RedisClient|RedisCluster}
  * @private
  */
 const _createClientBase = () => {
@@ -156,7 +156,7 @@ const _clientErrorHandlerBase = async (client, err, clientName) => {
  *
  * Only one publisher is necessary for any number of channels.
  *
- * @returns {RedisClient}
+ * @returns {RedisClient|RedisCluster}
  * @private
  */
 const getMainClient = async () => {
@@ -175,7 +175,7 @@ const getMainClient = async () => {
  *
  * Only one subscriber is necessary for any number of channels.
  *
- * @returns {RedisClient}
+ * @returns {RedisClient|RedisCluster}
  * @private
  */
 const getSubscriberClient = async () => {
