@@ -47,6 +47,7 @@ describe("redis wrapper test", () => {
   afterEach(() => {
     jest.clearAllMocks();
     redisWrapper._._reset();
+    envMock._reset();
   });
 
   it("_createMainClientAndConnect/_createSubscriberClientAndConnect shortcut", async () => {
@@ -64,7 +65,7 @@ describe("redis wrapper test", () => {
   });
 
   it("_createClientBase local", async () => {
-    redisWrapper._._setRedisIsOnCF(false);
+    envMock.cfEnv.isOnCf = false;
     const client = redisWrapper._._createClientBase();
 
     expect(redis.createClient).toHaveBeenCalledTimes(1);
@@ -86,7 +87,7 @@ describe("redis wrapper test", () => {
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
     const mockUrlUsable = mockUrl.replace("BAD_USERNAME", "");
 
-    redisWrapper._._setRedisIsOnCF(true);
+    envMock.cfEnv.isOnCf = true;
     envMock.cfEnv.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     const client = redisWrapper._._createClientBase();
@@ -422,7 +423,7 @@ describe("redis wrapper test", () => {
   it("_subscribedMessageHandler error", async () => {
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
 
-    redisWrapper._._setRedisIsOnCF(true);
+    envMock.cfEnv.isOnCf = true;
     envMock.cfEnv.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     redisWrapper.registerMessageHandler(channel, mockMessageHandler);

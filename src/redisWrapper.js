@@ -6,7 +6,7 @@
 const redis = require("redis");
 const VError = require("verror");
 const { Logger } = require("./logger");
-const { isOnCF, cfEnv } = require("./env");
+const { cfEnv } = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { Semaphore } = require("./shared/semaphore");
 
@@ -29,13 +29,11 @@ const MODE = Object.freeze({
   OBJECT: "object",
 });
 
-let redisIsOnCF;
 let messageHandlers;
 let mainClient;
 let subscriberClient;
 let integrationMode;
 const _reset = () => {
-  redisIsOnCF = isOnCF;
   messageHandlers = new HandlerCollection();
   mainClient = null;
   subscriberClient = null;
@@ -44,7 +42,7 @@ const _reset = () => {
 _reset();
 
 const _logErrorOnEvent = (err) =>
-  redisIsOnCF ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
+  cfEnv.isOnCf ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
 
 const _subscribedMessageHandler = async (message, channel) => {
   const handlers = messageHandlers.getHandlers(channel);
@@ -84,7 +82,7 @@ const _localReconnectStrategy = () =>
  * @private
  */
 const _createClientBase = () => {
-  if (redisIsOnCF) {
+  if (cfEnv.isOnCf) {
     try {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
@@ -492,7 +490,7 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
 const _getIntegrationMode = async () => {
-  if (redisIsOnCF) {
+  if (cfEnv.isOnCf) {
     const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
     return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
@@ -538,7 +536,6 @@ module.exports = {
     _reset,
     _getMessageHandlers: () => messageHandlers,
     _getLogger: () => logger,
-    _setRedisIsOnCF: (value) => (redisIsOnCF = value),
     _getMainClient: () => mainClient,
     _setMainClient: (value) => (mainClient = value),
     _getSubscriberClient: () => subscriberClient,
