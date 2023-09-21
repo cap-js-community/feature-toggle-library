@@ -3,7 +3,8 @@
 const VError = require("verror");
 const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles } = featureTogglesModule;
-const { FORMAT, Logger } = require("../src/logger");
+const { ENV } = require("../src/shared/static");
+const { LEVEL, FORMAT, Logger } = require("../src/logger");
 
 const redisWrapperMock = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
@@ -57,6 +58,7 @@ let layer = "/test";
 
 describe("logger test", () => {
   beforeEach(() => {
+    Logger._reset();
     redisWrapperMock._reset();
     envMock._reset();
     featureToggles = new FeatureToggles({ redisKey, redisChannel, refreshMessage });
@@ -179,6 +181,54 @@ caused by: Error: bad validator
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+    });
+
+    it("make sure env log level WARN is respected", async () => {
+      process.env[ENV.LOG_LEVEL] = " warn ";
+      logger = new Logger(layer, { maxLevel: LEVEL.TRACE });
+      logger.trace("some trace");
+      logger.debug("some debug");
+      logger.info("some info");
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(0);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(0);
+      logger.warning("some warning");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "88:88:88.888 | WARN | /test | some warning",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(0);
+      processStreamSpy.stdout.mockClear();
+      logger.error("some error");
+      expect(processStreamSpy.stderr.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "88:88:88.888 | ERROR | /test | some error",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(0);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
+      Reflect.deleteProperty(process.env, ENV.LOG_LEVEL);
+    });
+
+    it("make sure env log level ERROR is respected", async () => {
+      process.env[ENV.LOG_LEVEL] = " err ";
+      logger = new Logger(layer, { maxLevel: LEVEL.TRACE });
+      logger.trace("some trace");
+      logger.debug("some debug");
+      logger.info("some info");
+      logger.warning("some warning");
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(0);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(0);
+      logger.error("some error");
+      expect(processStreamSpy.stderr.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "88:88:88.888 | ERROR | /test | some error",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(0);
+      expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
+      Reflect.deleteProperty(process.env, ENV.LOG_LEVEL);
     });
 
     it("error basic usage", async () => {

@@ -89,16 +89,20 @@ const cfAppData = cfEnv.isOnCf
 class Logger {
   static get envMaxLevelNumber() {
     if (!Object.prototype.hasOwnProperty.call(Logger, "__envMaxLevelNumber")) {
-      this.__envMaxLevelNumber = undefined;
+      Logger.__envMaxLevelNumber = undefined;
       let envLogLevel = process.env[ENV.LOG_LEVEL]?.trim().toUpperCase();
       if (envLogLevel) {
         const level = Object.values(LEVEL).find((level) => level.startsWith(envLogLevel));
         if (level) {
-          this.__envMaxLevelNumber = LEVEL_NUMBER[level];
+          Logger.__envMaxLevelNumber = LEVEL_NUMBER[level];
         }
       }
     }
-    return this.__envMaxLevelNumber;
+    return Logger.__envMaxLevelNumber;
+  }
+
+  static _reset() {
+    Reflect.deleteProperty(Logger, "__envMaxLevelNumber");
   }
 
   constructor(
