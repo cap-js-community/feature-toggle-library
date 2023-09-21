@@ -2,7 +2,7 @@
 const util = require("util");
 const VError = require("verror");
 
-const { cfEnv, isOnCF } = require("./env");
+const { cfEnv } = require("./env");
 const { tryRequire } = require("./shared/static");
 const cds = tryRequire("@sap/cds");
 
@@ -72,7 +72,7 @@ const MILLIS_IN_NANOS_NUMBER = 1000000;
 const MILLIS_IN_NANOS_BIGINT = BigInt(MILLIS_IN_NANOS_NUMBER);
 
 const cfApp = cfEnv.cfApp;
-const cfAppData = isOnCF
+const cfAppData = cfEnv.isOnCf
   ? {
       [FIELD.COMPONENT_TYPE]: "application",
       [FIELD.COMPONENT_NAME]: cfApp.application_name,
@@ -93,7 +93,7 @@ class Logger {
       type = "log",
       maxLevel = LEVEL.INFO,
       customData,
-      format = isOnCF ? FORMAT.JSON : FORMAT.TEXT,
+      format = cfEnv.isOnCf ? FORMAT.JSON : FORMAT.TEXT,
       inspectOptions = { colors: false },
     } = {}
   ) {

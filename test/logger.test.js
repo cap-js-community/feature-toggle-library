@@ -5,8 +5,11 @@ const featureTogglesModule = require("../src/featureToggles");
 const { FeatureToggles } = featureTogglesModule;
 const { FORMAT, Logger } = require("../src/logger");
 
-const redisWrapper = require("../src/redisWrapper");
+const redisWrapperMock = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
+
+const envMock = require("../src/env");
+jest.mock("../src/env", () => require("./__mocks__/env"));
 
 const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./mockdata");
 
@@ -18,10 +21,14 @@ const processStreamSpy = {
 };
 
 const cleanupTextLogCalls = (args) =>
-  args.map((arg) =>
-    typeof arg !== "string"
-      ? arg
-      : arg.replace(/\d\d:\d\d:\d\d.\d\d\d/g, "88:88:88.888").replace(/(?<=\n)\s+at.*?\n/g, "")
+  args.map(
+    (arg) =>
+      typeof arg !== "string"
+        ? arg
+        : arg
+            .replace(/\d\d:\d\d:\d\d.\d\d\d/g, "88:88:88.888") // timestamps
+            .replace(/\n$/g, "") // final newline
+            .replace(/(?<=\n)\s+at.*?\n/g, "") // stacktrace
   );
 
 const cleanupJsonLogCalls = (args) =>
@@ -50,7 +57,8 @@ let layer = "/test";
 
 describe("logger test", () => {
   beforeEach(() => {
-    redisWrapper._reset();
+    redisWrapperMock._reset();
+    envMock._reset();
     featureToggles = new FeatureToggles({ redisKey, redisChannel, refreshMessage });
   });
 
@@ -72,12 +80,10 @@ describe("logger test", () => {
     "88:88:88.888 | WARN | /test | FeatureTogglesError: found invalid fallback values during initialization
 {
   validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
-}
-",
+}",
   ],
   [
-    "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles with CF_REDIS
-",
+    "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles with CF_REDIS",
   ],
 ]
 `);
@@ -90,8 +96,7 @@ caused by: Error: bad validator
   validator: 'mockConstructor',
   featureKey: 'test/feature_b',
   value: 1
-}
-",
+}",
   ],
 ]
 `);
@@ -136,8 +141,7 @@ caused by: Error: bad validator
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "88:88:88.888 | INFO | some info
-",
+  "88:88:88.888 | INFO | some info",
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
@@ -159,8 +163,19 @@ caused by: Error: bad validator
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
 [
-  "88:88:88.888 | INFO | /test | some info
-",
+  "88:88:88.888 | INFO | /test | some info",
+]
+`);
+      expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
+    });
+
+    it("info on cf defaults to json format", async () => {
+      envMock.cfEnv.isOnCf = true;
+      logger = new Logger(layer);
+      logger.info("some info");
+      expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
+[
+  "{"level":"info","msg":"some info","type":"log","layer":"/test"}",
 ]
 `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
