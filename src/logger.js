@@ -3,7 +3,7 @@ const util = require("util");
 const VError = require("verror");
 
 const { cfEnv } = require("./env");
-const { tryRequire } = require("./shared/static");
+const { ENV, tryRequire } = require("./shared/static");
 const cds = tryRequire("@sap/cds");
 
 // NOTE: logger levels are tricky. looking at console, npm, winston, and cap there is no real consistency. we will
@@ -87,11 +87,22 @@ const cfAppData = cfEnv.isOnCf
   : undefined;
 
 class Logger {
+  static defaultMaxLevel() {
+    let envLogLevel = process.env[ENV.LOG_LEVEL];
+    if (envLogLevel) {
+      envLogLevel = envLogLevel.trim().toUpperCase();
+      if (Object.values(LEVEL).some((level) => level === envLogLevel)) {
+        return envLogLevel;
+      }
+    }
+    return LEVEL.INFO;
+  }
+
   constructor(
     layer = undefined,
     {
       type = "log",
-      maxLevel = LEVEL.INFO,
+      maxLevel = Logger.defaultMaxLevel(),
       customData,
       format = cfEnv.isOnCf ? FORMAT.JSON : FORMAT.TEXT,
       inspectOptions = { colors: false },
