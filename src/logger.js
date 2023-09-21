@@ -87,22 +87,25 @@ const cfAppData = cfEnv.isOnCf
   : undefined;
 
 class Logger {
-  static defaultMaxLevel() {
-    let envLogLevel = process.env[ENV.LOG_LEVEL];
-    if (envLogLevel) {
-      envLogLevel = envLogLevel.trim().toUpperCase();
-      if (Object.values(LEVEL).some((level) => level === envLogLevel)) {
-        return envLogLevel;
+  static get envMaxLevelNumber() {
+    if (!Object.prototype.hasOwnProperty.call(Logger, "__envMaxLevelNumber")) {
+      this.__envMaxLevelNumber = undefined;
+      let envLogLevel = process.env[ENV.LOG_LEVEL]?.trim().toUpperCase();
+      if (envLogLevel) {
+        const level = Object.values(LEVEL).find((level) => level.startsWith(envLogLevel));
+        if (level) {
+          this.__envMaxLevelNumber = LEVEL_NUMBER[level];
+        }
       }
     }
-    return LEVEL.INFO;
+    return this.__envMaxLevelNumber;
   }
 
   constructor(
     layer = undefined,
     {
       type = "log",
-      maxLevel = Logger.defaultMaxLevel(),
+      maxLevel = LEVEL.INFO,
       customData,
       format = cfEnv.isOnCf ? FORMAT.JSON : FORMAT.TEXT,
       inspectOptions = { colors: false },
@@ -204,7 +207,11 @@ class Logger {
   }
 
   _log(level, args) {
-    if (this.__maxLevelNumber < LEVEL_NUMBER[level]) {
+    const levelNumber = LEVEL_NUMBER[level];
+    if (
+      (Logger.envMaxLevelNumber !== undefined && Logger.envMaxLevelNumber < levelNumber) ||
+      this.__maxLevelNumber < levelNumber
+    ) {
       return;
     }
     const streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout;
