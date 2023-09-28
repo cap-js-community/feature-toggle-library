@@ -137,7 +137,6 @@ class Logger {
 
   _logData(level, args) {
     let message;
-    let invocationErrorData;
     if (args.length > 0) {
       const firstArg = args[0];
 
@@ -183,15 +182,7 @@ class Logger {
       [FIELD.WRITTEN_TIME]: nowNanos,
       [FIELD.MESSAGE]: message ?? "",
     };
-    return Object.assign(
-      {},
-      cfAppData,
-      ...this.__dataList,
-      invocationErrorData,
-      invocationData,
-      this.__baseData,
-      cdsData
-    );
+    return Object.assign({}, cfAppData, ...this.__dataList, invocationData, this.__baseData, cdsData);
   }
 
   static _readableOutput(data) {
