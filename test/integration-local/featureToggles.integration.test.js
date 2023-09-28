@@ -109,12 +109,16 @@ describe("local integration test", () => {
     it("init fails resolving for bad config paths", async () => {
       const { readFile: readFileSpy } = require("fs");
       readFileSpy.mockImplementationOnce(fs.readFile);
-      await expect(initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`);
+      await expect(initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`
+      );
     });
 
     it("init fails processing for bad formats", async () => {
       const badConfig = { ...config, bla: undefined };
-      await expect(initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: Cannot read properties of undefined (reading 'type')]`);
+      await expect(initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: Cannot read properties of undefined (reading 'type')]`
+      );
     });
   });
 
