@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "test": "jest",
+    "test:remove-inline-snapshots": "npx replace '\\.toMatchInlineSnapshot\\(\\s*`[\\s\\S]*?`\\s*\\);' '.toMatchInlineSnapshot();' test -r --include='*.test.js'",
     "lint": "npm run prettier && npm run eslint",
     "lint:ci": "npm run prettier:ci && npm run eslint:ci",
     "eslint": "eslint --fix .",
