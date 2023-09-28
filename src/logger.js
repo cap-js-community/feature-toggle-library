@@ -3,7 +3,7 @@ const util = require("util");
 const VError = require("verror");
 
 const { cfEnv } = require("./env");
-const { tryRequire } = require("./shared/static");
+const { ENV, tryRequire } = require("./shared/static");
 const cds = tryRequire("@sap/cds");
 
 // NOTE: logger levels are tricky. looking at console, npm, winston, and cap there is no real consistency. we will
@@ -87,6 +87,24 @@ const cfAppData = cfEnv.isOnCf
   : undefined;
 
 class Logger {
+  static get envMaxLevelNumber() {
+    if (Logger.__envMaxLevelNumber === undefined) {
+      Logger.__envMaxLevelNumber = null;
+      let envLogLevel = process.env[ENV.LOG_LEVEL]?.trim().toUpperCase();
+      if (envLogLevel) {
+        const level = Object.values(LEVEL).find((level) => level.startsWith(envLogLevel));
+        if (level) {
+          Logger.__envMaxLevelNumber = LEVEL_NUMBER[level];
+        }
+      }
+    }
+    return Logger.__envMaxLevelNumber;
+  }
+
+  static _reset() {
+    Reflect.deleteProperty(Logger, "__envMaxLevelNumber");
+  }
+
   constructor(
     layer = undefined,
     {
@@ -119,7 +137,6 @@ class Logger {
 
   _logData(level, args) {
     let message;
-    let invocationErrorData;
     if (args.length > 0) {
       const firstArg = args[0];
 
@@ -165,15 +182,7 @@ class Logger {
       [FIELD.WRITTEN_TIME]: nowNanos,
       [FIELD.MESSAGE]: message ?? "",
     };
-    return Object.assign(
-      {},
-      cfAppData,
-      ...this.__dataList,
-      invocationErrorData,
-      invocationData,
-      this.__baseData,
-      cdsData
-    );
+    return Object.assign({}, cfAppData, ...this.__dataList, invocationData, this.__baseData, cdsData);
   }
 
   static _readableOutput(data) {
@@ -193,7 +202,13 @@ class Logger {
   }
 
   _log(level, args) {
-    if (this.__maxLevelNumber < LEVEL_NUMBER[level]) {
+    const levelNumber = LEVEL_NUMBER[level];
+    if (
+      (Logger.envMaxLevelNumber !== undefined &&
+        Logger.envMaxLevelNumber !== null &&
+        Logger.envMaxLevelNumber < levelNumber) ||
+      this.__maxLevelNumber < levelNumber
+    ) {
       return;
     }
     const streamOut = level === LEVEL.ERROR ? process.stderr : process.stdout;
