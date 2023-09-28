@@ -77,31 +77,31 @@ describe("logger test", () => {
     await featureToggles.initializeFeatures({ config: mockConfig });
 
     expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)).toMatchInlineSnapshot(`
-[
-  [
-    "88:88:88.888 | WARN | /test | FeatureTogglesError: found invalid fallback values during initialization
-{
-  validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
-}",
-  ],
-  [
-    "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles with CF_REDIS",
-  ],
-]
-`);
+      [
+        [
+          "88:88:88.888 | WARN | /test | FeatureTogglesError: found invalid fallback values during initialization
+      {
+        validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"registered validator \\\\"{0}\\\\" failed for value \\\\"{1}\\\\" with error {2}","errorMessageValues":["mockConstructor",1,"bad validator"]}]'
+      }",
+        ],
+        [
+          "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles with CF_REDIS",
+        ],
+      ]
+    `);
     expect(processStreamSpy.stderr.mock.calls.map(cleanupTextLogCalls)).toMatchInlineSnapshot(`
-[
-  [
-    "88:88:88.888 | ERROR | /test | FeatureTogglesError: error during registered validator: bad validator
-caused by: Error: bad validator
-{
-  validator: 'mockConstructor',
-  featureKey: 'test/feature_b',
-  value: 1
-}",
-  ],
-]
-`);
+      [
+        [
+          "88:88:88.888 | ERROR | /test | FeatureTogglesError: error during registered validator: bad validator
+      caused by: Error: bad validator
+      {
+        validator: 'mockConstructor',
+        featureKey: 'test/feature_b',
+        value: 1
+      }",
+        ],
+      ]
+    `);
   });
 
   it("check json logging for invalid fallback values during initialization", async () => {
@@ -115,22 +115,22 @@ caused by: Error: bad validator
     const logStderrCalls = processStreamSpy.stderr.mock.calls.map(cleanupJsonLogCalls);
     const logStdoutCalls = processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls);
     expect(logStderrCalls).toMatchInlineSnapshot(`
-[
-  [
-    "{"level":"error","msg":"FeatureTogglesError: error during registered validator: bad validator\\ncaused by: Error: bad validator\\n{\\n  validator: 'mockConstructor',\\n  featureKey: 'test/feature_b',\\n  value: 1\\n}","type":"log","layer":"/test"}",
-  ],
-]
-`);
+      [
+        [
+          "{"level":"error","msg":"FeatureTogglesError: error during registered validator: bad validator\\ncaused by: Error: bad validator\\n{\\n  validator: 'mockConstructor',\\n  featureKey: 'test/feature_b',\\n  value: 1\\n}","type":"log","layer":"/test"}",
+        ],
+      ]
+    `);
     expect(logStdoutCalls).toMatchInlineSnapshot(`
-[
-  [
-    "{"level":"warn","msg":"FeatureTogglesError: found invalid fallback values during initialization\\n{\\n  validationErrors: '[{\\"featureKey\\":\\"test/feature_b\\",\\"errorMessage\\":\\"registered validator \\\\\\\\\\"{0}\\\\\\\\\\" failed for value \\\\\\\\\\"{1}\\\\\\\\\\" with error {2}\\",\\"errorMessageValues\\":[\\"mockConstructor\\",1,\\"bad validator\\"]}]'\\n}","type":"log","layer":"/test"}",
-  ],
-  [
-    "{"level":"info","msg":"finished initialization with 9 feature toggles with CF_REDIS","type":"log","layer":"/test"}",
-  ],
-]
-`);
+      [
+        [
+          "{"level":"warn","msg":"FeatureTogglesError: found invalid fallback values during initialization\\n{\\n  validationErrors: '[{\\"featureKey\\":\\"test/feature_b\\",\\"errorMessage\\":\\"registered validator \\\\\\\\\\"{0}\\\\\\\\\\" failed for value \\\\\\\\\\"{1}\\\\\\\\\\" with error {2}\\",\\"errorMessageValues\\":[\\"mockConstructor\\",1,\\"bad validator\\"]}]'\\n}","type":"log","layer":"/test"}",
+        ],
+        [
+          "{"level":"info","msg":"finished initialization with 9 feature toggles with CF_REDIS","type":"log","layer":"/test"}",
+        ],
+      ]
+    `);
     const [registerValidatorError] = logStderrCalls.map(([log]) => JSON.parse(log));
     const [initializeError] = logStdoutCalls.map(([log]) => JSON.parse(log));
     expect(registerValidatorError.msg).toContain("bad validator");
@@ -142,10 +142,10 @@ caused by: Error: bad validator
       logger = new Logger("", { format: FORMAT.TEXT });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "88:88:88.888 | INFO | some info",
-]
-`);
+        [
+          "88:88:88.888 | INFO | some info",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
@@ -153,10 +153,10 @@ caused by: Error: bad validator
       logger = new Logger(layer, { format: FORMAT.JSON });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "{"level":"info","msg":"some info","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"level":"info","msg":"some info","type":"log","layer":"/test"}",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
@@ -164,10 +164,10 @@ caused by: Error: bad validator
       logger = new Logger(layer, { format: FORMAT.TEXT });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "88:88:88.888 | INFO | /test | some info",
-]
-`);
+        [
+          "88:88:88.888 | INFO | /test | some info",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
@@ -176,10 +176,10 @@ caused by: Error: bad validator
       logger = new Logger(layer);
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "{"level":"info","msg":"some info","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"level":"info","msg":"some info","type":"log","layer":"/test"}",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
@@ -193,19 +193,19 @@ caused by: Error: bad validator
       expect(processStreamSpy.stderr.mock.calls.length).toBe(0);
       logger.warning("some warning");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "88:88:88.888 | WARN | /test | some warning",
-]
-`);
+        [
+          "88:88:88.888 | WARN | /test | some warning",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
       expect(processStreamSpy.stderr.mock.calls.length).toBe(0);
       processStreamSpy.stdout.mockClear();
       logger.error("some error");
       expect(processStreamSpy.stderr.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "88:88:88.888 | ERROR | /test | some error",
-]
-`);
+        [
+          "88:88:88.888 | ERROR | /test | some error",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(0);
       expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
       Reflect.deleteProperty(process.env, ENV.LOG_LEVEL);
@@ -222,10 +222,10 @@ caused by: Error: bad validator
       expect(processStreamSpy.stderr.mock.calls.length).toBe(0);
       logger.error("some error");
       expect(processStreamSpy.stderr.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "88:88:88.888 | ERROR | /test | some error",
-]
-`);
+        [
+          "88:88:88.888 | ERROR | /test | some error",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(0);
       expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
       Reflect.deleteProperty(process.env, ENV.LOG_LEVEL);
@@ -235,10 +235,10 @@ caused by: Error: bad validator
       logger = new Logger(layer, { format: FORMAT.JSON });
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stderr.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
-[
-  "{"level":"error","msg":"VError: bla error","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"level":"error","msg":"VError: bla error","type":"log","layer":"/test"}",
+        ]
+      `);
       expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
     });
 
@@ -251,28 +251,28 @@ caused by: Error: bad validator
 
       logger.info("base");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
-[
-  "{"level":"info","msg":"base","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"level":"info","msg":"base","type":"log","layer":"/test"}",
+        ]
+      `);
       childLogger.info("child");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
-[
-  "{"isChild":true,"level":"info","msg":"child","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"isChild":true,"level":"info","msg":"child","type":"log","layer":"/test"}",
+        ]
+      `);
       siblingLogger.info("sibling");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
-[
-  "{"isSibling":true,"level":"info","msg":"sibling","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"isSibling":true,"level":"info","msg":"sibling","type":"log","layer":"/test"}",
+        ]
+      `);
       childChildLogger.info("child child");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[i++]).toMatchInlineSnapshot(`
-[
-  "{"isChild":true,"isChildChild":true,"level":"info","msg":"child child","type":"log","layer":"/test"}",
-]
-`);
+        [
+          "{"isChild":true,"isChildChild":true,"level":"info","msg":"child child","type":"log","layer":"/test"}",
+        ]
+      `);
       expect(processStreamSpy.stdout.mock.calls.length).toBe(i);
     });
   });

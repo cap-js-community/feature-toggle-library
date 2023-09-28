@@ -119,9 +119,9 @@ describe("feature toggles test", () => {
       `);
       expect(loggerSpy.error).not.toHaveBeenCalled();
       loggerSpy.error.mockClear();
-      expect(allSuperScopeKeys({ tenantId: "t1", label: "l1", bla: "b1", naa: "n1", xxx: "x1" })).toMatchInlineSnapshot(
-        `[]`
-      );
+      expect(
+          allSuperScopeKeys({ tenantId: "t1", label: "l1", bla: "b1", naa: "n1", xxx: "x1" })
+      ).toMatchInlineSnapshot(`[]`);
       expect(loggerSpy.error).toHaveBeenCalledTimes(1);
       expect(loggerSpy.error.mock.calls[0]).toMatchInlineSnapshot(`
         [
@@ -154,9 +154,7 @@ describe("feature toggles test", () => {
       expect(FeatureToggles.getScopeKey(scopeMaps[i++])).toMatchInlineSnapshot(`"label::l1##tenantId::t1"`);
       expect(FeatureToggles.getScopeKey(scopeMaps[i++])).toMatchInlineSnapshot(`"bla::b1##label::l1##tenantId::t1"`);
       expect(FeatureToggles.getScopeKey(scopeMaps[i++])).toMatchInlineSnapshot(`"bla::b1##label::l1##tenantId::t1"`);
-      expect(FeatureToggles.getScopeKey(scopeMaps[i++])).toMatchInlineSnapshot(
-        `"bla::b1##label::l1##naa::n1##tenantId::t1"`
-      );
+      expect(FeatureToggles.getScopeKey(scopeMaps[i++])).toMatchInlineSnapshot(`"bla::b1##label::l1##naa::n1##tenantId::t1"`);
       expect(i).toBe(Object.keys(scopeMaps).length);
 
       expect(loggerSpy.error).not.toHaveBeenCalled();

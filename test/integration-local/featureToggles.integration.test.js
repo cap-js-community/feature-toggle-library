@@ -109,16 +109,12 @@ describe("local integration test", () => {
     it("init fails resolving for bad config paths", async () => {
       const { readFile: readFileSpy } = require("fs");
       readFileSpy.mockImplementationOnce(fs.readFile);
-      await expect(initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`
-      );
+      await expect(initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`);
     });
 
     it("init fails processing for bad formats", async () => {
       const badConfig = { ...config, bla: undefined };
-      await expect(initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: Cannot read properties of undefined (reading 'type')]`
-      );
+      await expect(initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: Cannot read properties of undefined (reading 'type')]`);
     });
   });
 
@@ -259,29 +255,29 @@ describe("local integration test", () => {
 
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
-              [
-                [
-                  "finished initialization with %i feature toggle%s with %s",
-                  8,
-                  "s",
-                  "NO_REDIS",
-                ],
-              ]
-          `);
+        [
+          [
+            "finished initialization with %i feature toggle%s with %s",
+            8,
+            "s",
+            "NO_REDIS",
+          ],
+        ]
+      `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
       expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
       expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
-              [
-                [
-                  "%s | %O",
-                  "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-                  {
-                    "clientName": "main",
-                  },
-                ],
-              ]
-          `);
+        [
+          [
+            "%s | %O",
+            "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+            {
+              "clientName": "main",
+            },
+          ],
+        ]
+      `);
     });
 
     it("getFeatureValue, changeFeatureValue without scopes", async () => {
@@ -295,22 +291,22 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, newValue)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "rootValue": 9,
-              }
-          `);
+        {
+          "rootValue": 9,
+        }
+      `);
       expect(getFeatureValue(FEATURE.E)).toEqual(newValue);
 
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
-              [
-                [
-                  "finished initialization with %i feature toggle%s with %s",
-                  8,
-                  "s",
-                  "NO_REDIS",
-                ],
-              ]
-          `);
+        [
+          [
+            "finished initialization with %i feature toggle%s with %s",
+            8,
+            "s",
+            "NO_REDIS",
+          ],
+        ]
+      `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
       expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
@@ -385,12 +381,12 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "scopedValues": {
-                  "component::c1##tenant::t1": 3,
-                },
-              }
-          `);
+        {
+          "scopedValues": {
+            "component::c1##tenant::t1": 3,
+          },
+        }
+      `);
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootOldValue);
@@ -398,13 +394,13 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, superScopeNewValue, superScopeMap)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "scopedValues": {
-                  "component::c1##tenant::t1": 3,
-                  "tenant::t1": 2,
-                },
-              }
-          `);
+        {
+          "scopedValues": {
+            "component::c1##tenant::t1": 3,
+            "tenant::t1": 2,
+          },
+        }
+      `);
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
@@ -412,14 +408,14 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, subScopeNewValue, subScopeMap)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "scopedValues": {
-                  "component::c1##layer::l1##tenant::t1": 4,
-                  "component::c1##tenant::t1": 3,
-                  "tenant::t1": 2,
-                },
-              }
-          `);
+        {
+          "scopedValues": {
+            "component::c1##layer::l1##tenant::t1": 4,
+            "component::c1##tenant::t1": 3,
+            "tenant::t1": 2,
+          },
+        }
+      `);
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(subScopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
@@ -427,30 +423,30 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, rootNewValue)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "rootValue": 1,
-                "scopedValues": {
-                  "component::c1##layer::l1##tenant::t1": 4,
-                  "component::c1##tenant::t1": 3,
-                  "tenant::t1": 2,
-                },
-              }
-          `);
+        {
+          "rootValue": 1,
+          "scopedValues": {
+            "component::c1##layer::l1##tenant::t1": 4,
+            "component::c1##tenant::t1": 3,
+            "tenant::t1": 2,
+          },
+        }
+      `);
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(subScopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
       expect(getFeatureValue(FEATURE.E)).toEqual(rootNewValue);
 
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
-              [
-                [
-                  "finished initialization with %i feature toggle%s with %s",
-                  8,
-                  "s",
-                  "NO_REDIS",
-                ],
-              ]
-          `);
+        [
+          [
+            "finished initialization with %i feature toggle%s with %s",
+            8,
+            "s",
+            "NO_REDIS",
+          ],
+        ]
+      `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
       expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
@@ -474,15 +470,15 @@ describe("local integration test", () => {
       expect(await changeFeatureValue(FEATURE.E, subScopeNewValue, subScopeMap)).toBeUndefined();
       expect(await changeFeatureValue(FEATURE.E, rootNewValue)).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "rootValue": 1,
-                "scopedValues": {
-                  "component::c1##layer::l1##tenant::t1": 4,
-                  "component::c1##tenant::t1": 3,
-                  "tenant::t1": 2,
-                },
-              }
-          `);
+        {
+          "rootValue": 1,
+          "scopedValues": {
+            "component::c1##layer::l1##tenant::t1": 4,
+            "component::c1##tenant::t1": 3,
+            "tenant::t1": 2,
+          },
+        }
+      `);
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(subScopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
@@ -490,14 +486,14 @@ describe("local integration test", () => {
 
       expect(await changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap, { clearSubScopes: true })).toBeUndefined();
       expect(stateFromInfo(getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
-              {
-                "rootValue": 1,
-                "scopedValues": {
-                  "component::c1##tenant::t1": 3,
-                  "tenant::t1": 2,
-                },
-              }
-          `);
+        {
+          "rootValue": 1,
+          "scopedValues": {
+            "component::c1##tenant::t1": 3,
+            "tenant::t1": 2,
+          },
+        }
+      `);
       expect(getFeatureValue(FEATURE.E, subScopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
@@ -511,15 +507,15 @@ describe("local integration test", () => {
       expect(getFeatureValue(FEATURE.E)).toEqual(rootOldValue);
 
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
-              [
-                [
-                  "finished initialization with %i feature toggle%s with %s",
-                  8,
-                  "s",
-                  "NO_REDIS",
-                ],
-              ]
-          `);
+        [
+          [
+            "finished initialization with %i feature toggle%s with %s",
+            8,
+            "s",
+            "NO_REDIS",
+          ],
+        ]
+      `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
       expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
@@ -592,41 +588,41 @@ describe("local integration test", () => {
       expect(await validateFeatureValue(FEATURE.C, "")).toMatchInlineSnapshot(`[]`);
       registerFeatureValueValidation(FEATURE.C, failingValidator1);
       expect(await validateFeatureValue(FEATURE.C, "")).toMatchInlineSnapshot(`
-              [
-                {
-                  "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
-                  "errorMessageValues": [
-                    "failingValidator1",
-                    "",
-                    "bla1",
-                  ],
-                  "featureKey": "test/feature_c",
-                },
-              ]
-          `);
+        [
+          {
+            "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
+            "errorMessageValues": [
+              "failingValidator1",
+              "",
+              "bla1",
+            ],
+            "featureKey": "test/feature_c",
+          },
+        ]
+      `);
       registerFeatureValueValidation(FEATURE.C, failingValidator2);
       expect(await validateFeatureValue(FEATURE.C, "")).toMatchInlineSnapshot(`
-              [
-                {
-                  "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
-                  "errorMessageValues": [
-                    "failingValidator1",
-                    "",
-                    "bla1",
-                  ],
-                  "featureKey": "test/feature_c",
-                },
-                {
-                  "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
-                  "errorMessageValues": [
-                    "failingValidator2",
-                    "",
-                    "bla2",
-                  ],
-                  "featureKey": "test/feature_c",
-                },
-              ]
-          `);
+        [
+          {
+            "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
+            "errorMessageValues": [
+              "failingValidator1",
+              "",
+              "bla1",
+            ],
+            "featureKey": "test/feature_c",
+          },
+          {
+            "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
+            "errorMessageValues": [
+              "failingValidator2",
+              "",
+              "bla2",
+            ],
+            "featureKey": "test/feature_c",
+          },
+        ]
+      `);
     });
   });
 });
