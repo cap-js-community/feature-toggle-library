@@ -27,6 +27,4 @@ const activate = async () => {
   }
 };
 
-module.exports = {
-  activate,
-};
+module.exports = activate;
