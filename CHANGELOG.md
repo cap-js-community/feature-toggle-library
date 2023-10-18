@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v0.7.2 - 2023-10-18
+
+### Added
+
+- support for redis cluster configurations.
+- enable setting maximal log level through env variable `BTP_FEATURES_LOG_LEVEL`. this can be used to silence the
+  library during tests.
+
+### Changed
+
+- implement new cds-plugin API, where plugins export a promise instead of an activate property and stay compatible for
+  older cds versions.
+
 ## v0.7.1 - 2023-09-13
 
 ### Fixed
