@@ -36,4 +36,4 @@ module.exports = doExportActivateAsProperty
   ? {
       activate,
     }
-  : activate;
+  : activate();
