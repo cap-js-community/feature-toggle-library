@@ -21,12 +21,16 @@
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
     "@sap/cds": "^7.3.0",
+    "@sap/cds-mtxs": "^1.13.0",
     "express": "^4.18.2"
   },
   "devDependencies": {
     "@sap/cds-dk": "^7.3.0"
   },
   "cds": {
+    "requires": {
+      "toggles": true
+    },
     "featureToggles": {
       "configFile": "./srv/feature/features.yaml",
       "serviceAccessRoles": [

@@ -5,26 +5,43 @@ const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const { initializeFeatures } = require("./src/singleton");
 
+const _overwriteServiceAccessRoles = (envFeatureToggles) => {
+  if (Array.isArray(envFeatureToggles.serviceAccessRoles)) {
+    cds.on("loaded", (csn) => {
+      if (csn.definitions.FeatureService) {
+        csn.definitions.FeatureService["@requires"] = envFeatureToggles.serviceAccessRoles;
+      }
+    });
+  }
+};
+
+const _registerFeatureProvider = () => {
+  if (cds.env.requires.toggles) {
+    // TODO move to cds.middlewares after ctx_auth before ctx_model
+    cds.on("bootstrap", (app) =>
+      app.use((req, res, next) => {
+        const blauser = cds.context.user.id;
+        const blatenant = cds.context.tenant;
+        req.features = req.headers.features || "isbn";
+        next();
+      })
+    );
+  }
+};
+
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
   if (envFeatureToggles?.config || envFeatureToggles?.configFile) {
-    // TODO this is currently done in package.json, because "cds build" ignores it otherwise. However, it should happen
-    //  dynamically.
-    // cds.env.requires["FeatureService"] = { model: "@cap-js-community/feature-toggle-library" };
-
-    if (Array.isArray(envFeatureToggles.serviceAccessRoles)) {
-      cds.on("loaded", (csn) => {
-        if (csn.definitions.FeatureService) {
-          csn.definitions.FeatureService["@requires"] = envFeatureToggles.serviceAccessRoles;
-        }
-      });
-    }
+    _overwriteServiceAccessRoles(envFeatureToggles);
+    _registerFeatureProvider();
 
     // TODO for the "cds build" use case, this initialize makes no sense
     await initializeFeatures({
       config: envFeatureToggles.config,
       configFile: envFeatureToggles.configFile,
     });
+
+    _registerFeatureProvider();
   }
 };
 

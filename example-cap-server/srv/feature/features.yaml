@@ -1,4 +1,8 @@
 ---
+check-priority-extension:
+  type: cds-feature
+  fallbackValue: false
+
 # info: check api priority; 0 means access is disabled
 /check/priority:
   type: number
