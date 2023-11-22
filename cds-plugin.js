@@ -17,15 +17,16 @@ const _overwriteServiceAccessRoles = (envFeatureToggles) => {
 
 const _registerFeatureProvider = () => {
   if (cds.env.requires.toggles) {
-    // TODO move to cds.middlewares after ctx_auth before ctx_model
-    cds.on("bootstrap", (app) =>
-      app.use((req, res, next) => {
-        const blauser = cds.context.user.id;
-        const blatenant = cds.context.tenant;
-        req.features = req.headers.features || "isbn";
+    const contextAuthIndex = cds.middlewares.before.findIndex((entry) => entry.name === "cds_context_auth");
+    if (contextAuthIndex !== -1) {
+      cds.middlewares.before.splice(contextAuthIndex + 1, 0, function cds_feature_provider(req, res, next) {
+        let i = 0;
+        const user = cds.context?.user.id;
+        const tenant = cds.context?.tenant;
+        req.features = req.headers.features || "check-service-extension";
         next();
-      })
-    );
+      });
+    }
   }
 };
 
@@ -33,7 +34,6 @@ const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
   if (envFeatureToggles?.config || envFeatureToggles?.configFile) {
     _overwriteServiceAccessRoles(envFeatureToggles);
-    _registerFeatureProvider();
 
     // TODO for the "cds build" use case, this initialize makes no sense
     await initializeFeatures({
