@@ -1,6 +1,7 @@
 ---
-check-priority-extension:
-  type: cds-feature
+# info: new cds toggle. this is marked by the fts/bla name. needs to be boolean
+/check/fts/check-service-extension:
+  type: boolean
   fallbackValue: false
 
 # info: check api priority; 0 means access is disabled

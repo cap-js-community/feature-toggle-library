@@ -15,6 +15,8 @@ const HIGH_VALUE_RESPONSES = ["well done", "full success", "huzzah", "celebratio
 const HIGH_BOUNDARY = 100;
 
 const priorityHandler = async (context) => {
+  const { "CheckService.priority": priority } = context.model.definitions;
+  const isToggled = priority["@marked"];
   const value = getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
     value >= HIGH_BOUNDARY
@@ -22,7 +24,8 @@ const priorityHandler = async (context) => {
       : value >= MEDIUM_BOUNDARY
       ? MEDIUM_VALUE_RESPONSES
       : LOW_VALUE_RESPONSES;
-  return context.reply(value + " | " + messages[Math.floor(Math.random() * messages.length)]);
+  const message = [value, messages[Math.floor(Math.random() * messages.length)], `isToggled ${isToggled}`].join(" | ");
+  return context.reply(message);
 };
 
 module.exports = async (srv) => {
