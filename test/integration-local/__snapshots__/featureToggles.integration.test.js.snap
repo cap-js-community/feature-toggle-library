@@ -64,7 +64,7 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
 ]
 `;
 
-exports[`local integration test common config init getFeatureValues, getFeaturesInfos 1`] = `
+exports[`local integration test common config init getFeaturesKeys, getFeatureValues, getFeaturesInfos 1`] = `
 {
   "test/feature_a": {
     "config": {

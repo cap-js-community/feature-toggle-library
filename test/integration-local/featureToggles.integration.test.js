@@ -13,6 +13,7 @@ let redisWrapperLoggerSpy;
 let initializeFeatures;
 let getFeatureInfo;
 let getFeaturesInfos;
+let getFeaturesKeys;
 let getFeatureValue;
 let changeFeatureValue;
 let resetFeatureValue;
@@ -78,6 +79,7 @@ describe("local integration test", () => {
         initializeFeatures,
         getFeatureInfo,
         getFeaturesInfos,
+        getFeaturesKeys,
         getFeatureValue,
         changeFeatureValue,
         resetFeatureValue,
@@ -246,9 +248,10 @@ describe("local integration test", () => {
       await initializeFeatures({ config });
     });
 
-    it("getFeatureValues, getFeaturesInfos", async () => {
-      const featureStatesResult = await getFeaturesInfos();
+    it("getFeaturesKeys, getFeatureValues, getFeaturesInfos", async () => {
+      expect(getFeaturesKeys()).toEqual(Object.keys(config));
 
+      const featureStatesResult = await getFeaturesInfos();
       expect(Object.keys(featureStatesResult)).toEqual(Object.keys(config));
       Object.entries(featureStatesResult).forEach(([key, featureState]) => {
         expect(featureState.config.TYPE).toEqual(config[key].type);
