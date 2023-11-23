@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Plugin and Service
-nav_order: 3
+nav_order: 4
 ---
 
 <!-- prettier-ignore-start -->
@@ -29,6 +29,10 @@ Per default the service endpoints are accessible only to users with the CAP pseu
 [system-user](https://cap.cloud.sap/docs/guides/authorization#pseudo-roles). Different projects have their own access
 role preferences, so this setting allows them to set a list of strings, which represent the roles required to access
 the service. For details see [@requires](https://cap.cloud.sap/docs/guides/authorization#requires).
+
+## Feature Vector Provider
+
+The plugin acts
 
 ## Service Endpoints
 

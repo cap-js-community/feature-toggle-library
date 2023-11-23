@@ -24,9 +24,14 @@ npm install --save @cap-js-community/feature-toggle-library
 - users can register custom input validation callbacks for specific toggles
 - works as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles
 
-## Further topics
+## Related Projects
+
+- [CAP Extensibility Feature Toggles](related/#cap-extensibility-feature-toggles)
+- [SAP Feature Flags Service](related/#sap-feature-flags-service)
+
+## Further Topics
 
 - Configuration and code snippets: [Usage](usage)
-- Plugin and REST service for CAP projects: [Plugin and Service](service)
+- Plugin and REST service for CAP projects: [Plugin and Service](plugin)
 - Architecture and related concepts: [Architecture](architecture)
 - Example CAP server: [CAP Example](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server)

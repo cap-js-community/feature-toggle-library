@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Usage
-nav_order: 2
+nav_order: 3
 ---
 
 <!-- prettier-ignore-start -->
@@ -138,7 +138,7 @@ these settings in place, the `singleton` instance of the library will be initial
 after the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstrap) event.
 
 {: .info }
-Using the feature toggles in CAP projects also enables a [REST service]({{ site.baseurl }}/service/), where toggles can
+Using the feature toggles in CAP projects also enables a [REST service]({{ site.baseurl }}/plugin/), where toggles can
 be read and manipulated.
 
 ### For Non-CAP Projects
