@@ -38,10 +38,11 @@ const _registerFeatureProvider = () => {
     return;
   }
   cds.middlewares.before.splice(contextAuthIndex + 1, 0, function cds_feature_provider(req, res, next) {
-    const user = cds.context?.user.id;
+    const user = cds.context?.user?.id;
     const tenant = cds.context?.tenant;
     req.features =
       req.headers.features ||
+      cds.context?.user?.features ||
       cdsFeatures.reduce((result, [key, feature]) => {
         if (getFeatureValue(key, { user, tenant })) {
           result.push(feature);
