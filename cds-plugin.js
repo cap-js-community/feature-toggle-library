@@ -25,7 +25,8 @@ const _registerFeatureProvider = () => {
   const cdsFeatures = getFeaturesKeys().reduce((result, key) => {
     const match = FEATURE_KEY_REGEX.exec(key);
     if (match) {
-      result.push({ key, feature: match[1] });
+      const feature = match[1];
+      result.push([key, feature]);
     }
     return result;
   }, []);
@@ -41,7 +42,7 @@ const _registerFeatureProvider = () => {
     const tenant = cds.context?.tenant;
     req.features =
       req.headers.features ||
-      cdsFeatures.reduce((result, { key, feature }) => {
+      cdsFeatures.reduce((result, [key, feature]) => {
         if (getFeatureValue(key, { user, tenant })) {
           result.push(feature);
         }
