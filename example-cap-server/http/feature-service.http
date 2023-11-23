@@ -8,7 +8,7 @@ Authorization: Basic system system
 Content-Type: application/json
 
 {
-  "key": "/check/fts/check-service-extension",
+  "key": "/fts/check-service-extension",
   "value": true
 }
 
@@ -18,7 +18,7 @@ Authorization: Basic system system
 Content-Type: application/json
 
 {
-  "key": "/check/fts/check-service-extension",
+  "key": "/fts/check-service-extension",
   "value": false,
   "scope": { "user": "alice@wonderland.com" }
 }

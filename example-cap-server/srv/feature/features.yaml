@@ -1,6 +1,6 @@
 ---
-# info: new cds toggle. this is marked by the fts/bla name. needs to be boolean
-/check/fts/check-service-extension:
+# info: this is a cds feature, identified by the /fts/<feature-name> pattern. it is active if the value is truthy.
+/fts/check-service-extension:
   type: boolean
   fallbackValue: false
 
