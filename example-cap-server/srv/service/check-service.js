@@ -16,7 +16,7 @@ const HIGH_BOUNDARY = 100;
 
 const priorityHandler = async (context) => {
   const { "CheckService.priority": priority } = context.model.definitions;
-  const isToggled = priority["@marked"];
+  const isToggled = Boolean(priority["@marked"]);
   const value = getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
     value >= HIGH_BOUNDARY

@@ -832,6 +832,23 @@ class FeatureToggles {
   // END OF GET_FEATURES_INFOS SECTION
   // ========================================
   // ========================================
+  // START OF GET_FEATURES_KEYS SECTION
+  // ========================================
+
+  /**
+   * Get the names of all configured feature keys.
+   *
+   * @returns {Array<string>}
+   */
+  getFeaturesKeys() {
+    this._ensureInitialized();
+    return this.__featureKeys.slice();
+  }
+
+  // ========================================
+  // END OF GET_FEATURES_KEYS SECTION
+  // ========================================
+  // ========================================
   // START OF GET_FEATURE_VALUE SECTION
   // ========================================
 

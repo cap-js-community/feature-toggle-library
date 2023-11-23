@@ -3,46 +3,66 @@
 
 const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
-const { initializeFeatures } = require("./src/singleton");
+const { initializeFeatures, getFeaturesKeys, getFeatureValue } = require("./src/singleton");
+
+const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
-  if (Array.isArray(envFeatureToggles.serviceAccessRoles)) {
-    cds.on("loaded", (csn) => {
-      if (csn.definitions.FeatureService) {
-        csn.definitions.FeatureService["@requires"] = envFeatureToggles.serviceAccessRoles;
-      }
-    });
+  if (!Array.isArray(envFeatureToggles.serviceAccessRoles)) {
+    return;
   }
+  cds.on("loaded", (csn) => {
+    if (csn.definitions.FeatureService) {
+      csn.definitions.FeatureService["@requires"] = envFeatureToggles.serviceAccessRoles;
+    }
+  });
 };
 
 const _registerFeatureProvider = () => {
-  if (cds.env.requires.toggles) {
-    const contextAuthIndex = cds.middlewares.before.findIndex((entry) => entry.name === "cds_context_auth");
-    if (contextAuthIndex !== -1) {
-      cds.middlewares.before.splice(contextAuthIndex + 1, 0, function cds_feature_provider(req, res, next) {
-        let i = 0;
-        const user = cds.context?.user.id;
-        const tenant = cds.context?.tenant;
-        req.features = req.headers.features || "check-service-extension";
-        next();
-      });
-    }
+  if (!cds.env.requires?.toggles || !cds.middlewares?.before) {
+    return;
   }
+  const cdsFeatures = getFeaturesKeys().reduce((result, key) => {
+    const match = FEATURE_KEY_REGEX.exec(key);
+    if (match) {
+      result.push({ key, feature: match[1] });
+    }
+    return result;
+  }, []);
+  if (cdsFeatures.length === 0) {
+    return;
+  }
+  const contextAuthIndex = cds.middlewares.before.findIndex((entry) => entry.name === "cds_context_auth");
+  if (contextAuthIndex === -1) {
+    return;
+  }
+  cds.middlewares.before.splice(contextAuthIndex + 1, 0, function cds_feature_provider(req, res, next) {
+    req.features =
+      req.headers.features ||
+      cdsFeatures.reduce((result, { key, feature }) => {
+        if (getFeatureValue(key, { user: cds.context?.user.id, tenant: cds.context?.tenant })) {
+          result.push(feature);
+        }
+        return result;
+      }, []);
+    next();
+  });
 };
 
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
-  if (envFeatureToggles?.config || envFeatureToggles?.configFile) {
-    _overwriteServiceAccessRoles(envFeatureToggles);
-
-    // TODO for the "cds build" use case, this initialize makes no sense
-    await initializeFeatures({
-      config: envFeatureToggles.config,
-      configFile: envFeatureToggles.configFile,
-    });
-
-    _registerFeatureProvider();
+  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile) {
+    return;
   }
+  _overwriteServiceAccessRoles(envFeatureToggles);
+
+  // TODO for the "cds build" use case, this initialize makes no sense
+  await initializeFeatures({
+    config: envFeatureToggles.config,
+    configFile: envFeatureToggles.configFile,
+  });
+
+  _registerFeatureProvider();
 };
 
 // NOTE: for sap/cds < 7.3.0 it was expected to export activate as function property, otherwise export the promise of
