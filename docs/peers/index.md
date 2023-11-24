@@ -18,11 +18,13 @@ nav_order: 2
 Reference documentation:
 [https://cap.cloud.sap/docs/guides/extensibility/feature-toggles](https://cap.cloud.sap/docs/guides/extensibility/feature-toggles)
 
-cap extensibility feature toggles are concerned with the data model and how this can be adapted for specific tenants or
-users. => these toggles can only be boolean and the full set of possible resulting models needs to be pre-computed at
-build time to enable the dynamic switching.
+In CAP, the features to be toggled are _pre-built extensions_ of CDS models. These extensions are either active or
+inactive, i.e., boolean in nature. They are dynamic in the sense that they can be active for one request and inactive
+for another based on the requesting user or tenant. However, their state never changes within the handling of a
+request.
 
-For details see: [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider)
+Our library supports these types of toggles, by acting as a _Feature Vector Provider_ for CDS, when the library is used
+as a cds-plugin. For details see: [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
 
 ## SAP Feature Flags Service
 
