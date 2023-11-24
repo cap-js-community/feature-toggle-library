@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Related Projects
+title: Peers
 nav_order: 2
 ---
 
 <!-- prettier-ignore-start -->
-# Related Projects
+# Peers
 {: .no_toc }
 <!-- prettier-ignore-end -->
 
