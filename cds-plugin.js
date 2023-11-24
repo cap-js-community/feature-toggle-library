@@ -19,7 +19,7 @@ const _overwriteServiceAccessRoles = (envFeatureToggles) => {
 };
 
 const _registerFeatureProvider = () => {
-  if (!cds.env.requires?.toggles || !cds.middlewares?.before) {
+  if (!cds.env.requires?.toggles) {
     return;
   }
   const cdsFeatures = getFeaturesKeys().reduce((result, key) => {
