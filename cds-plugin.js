@@ -33,24 +33,23 @@ const _registerFeatureProvider = () => {
   if (cdsFeatures.length === 0) {
     return;
   }
-  const contextAuthIndex = cds.middlewares.before.findIndex((entry) => entry.name === "cds_context_auth");
-  if (contextAuthIndex === -1) {
-    return;
-  }
-  cds.middlewares.before.splice(contextAuthIndex + 1, 0, function cds_feature_provider(req, res, next) {
-    const user = cds.context?.user?.id;
-    const tenant = cds.context?.tenant;
-    req.features =
-      req.headers.features ||
-      cds.context?.user?.features ||
-      cdsFeatures.reduce((result, [key, feature]) => {
-        if (getFeatureValue(key, { user, tenant })) {
-          result.push(feature);
-        }
-        return result;
-      }, []);
-    next();
-  });
+  cds.middlewares.add(
+    function cds_feature_provider(req, res, next) {
+      const user = cds.context?.user?.id;
+      const tenant = cds.context?.tenant;
+      req.features =
+        req.headers.features ||
+        cds.context?.user?.features ||
+        cdsFeatures.reduce((result, [key, feature]) => {
+          if (getFeatureValue(key, { user, tenant })) {
+            result.push(feature);
+          }
+          return result;
+        }, []);
+      next();
+    },
+    { before: "ctx_model" }
+  );
 };
 
 const activate = async () => {
