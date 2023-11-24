@@ -24,7 +24,7 @@ for another based on the requesting user or tenant. However, their state never c
 request.
 
 Our library supports these types of toggles, by acting as a _Feature Vector Provider_ for CDS, when the library is used
-as a cds-plugin. For details see: [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
+as a CDS-plugin. For details see: [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
 
 ## SAP Feature Flags Service
 

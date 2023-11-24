@@ -32,7 +32,23 @@ the service. For details see [@requires](https://cap.cloud.sap/docs/guides/autho
 
 ## Feature Vector Provider
 
-The plugin acts
+When used as a CDS-plugin, the library will automatically act as a Feature Vector Provider. This means feature
+toggles which match the `<optional-prefix>/fts/<feature-name>` pattern and have a truthy current value at the
+start of a request will be passed to CDS on the express request in `req.features`.
+
+In practice, if you have a CDS model extension feature in the directory `/fts/my-feature`, and you configure it inline
+or in your config file with:
+
+```yaml
+/fts/my-feature:
+  type: boolean
+  fallbackValue: false
+  validations:
+    - scopes: [user, tenant]
+```
+
+then you can control the feature's state, like you would for any other runtime feature, and it will be provided to CDS
+and respected for the related requests.
 
 ## Service Endpoints
 

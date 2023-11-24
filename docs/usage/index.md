@@ -120,7 +120,7 @@ anchor, e.g., `module: $CONFIG_DIR/validation.js`.
 
 ### For CAP Projects
 
-CAP projects, will use the library as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). Their
+CAP projects, will use the library as a [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). Their
 initialization settings are in `package.json`. For example:
 
 ```json

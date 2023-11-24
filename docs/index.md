@@ -22,7 +22,7 @@ npm install --save @cap-js-community/feature-toggle-library
 - feature toggle values can be changed specifically for accessors with certain scopes, e.g., for specific tenants, users,...
 - users can register change handler callbacks for specific toggles
 - users can register custom input validation callbacks for specific toggles
-- works as a [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles
+- works as a [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles
 
 ## Peers
 
