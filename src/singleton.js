@@ -10,6 +10,7 @@ module.exports = {
   initializeFeatures: instance.initializeFeatures.bind(instance),
   getFeatureInfo: instance.getFeatureInfo.bind(instance),
   getFeaturesInfos: instance.getFeaturesInfos.bind(instance),
+  getFeaturesKeys: instance.getFeaturesKeys.bind(instance),
   getFeatureValue: instance.getFeatureValue.bind(instance),
   refreshFeatureValues: instance.refreshFeatureValues.bind(instance),
   changeFeatureValue: instance.changeFeatureValue.bind(instance),

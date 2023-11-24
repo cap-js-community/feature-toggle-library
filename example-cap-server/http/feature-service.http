@@ -2,6 +2,27 @@
 GET {{base_url}}/rest/feature/state
 Authorization: Basic system system
 
+### redis_update | fts 1
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic system system
+Content-Type: application/json
+
+{
+  "key": "/fts/check-service-extension",
+  "value": true
+}
+
+### redis_update | fts 2
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic system system
+Content-Type: application/json
+
+{
+  "key": "/fts/check-service-extension",
+  "value": false,
+  "scope": { "user": "alice@wonderland.com" }
+}
+
 ### redis_update | memory 1
 POST {{base_url}}/rest/feature/redisUpdate
 Authorization: Basic system system

@@ -17,7 +17,8 @@
         "bob": {
           "tenant": "people",
           "password": "bob",
-          "id": "bob@builder.com"
+          "id": "bob@builder.com",
+          "features": ["*"]
         },
         "clark": {
           "tenant": "pets",

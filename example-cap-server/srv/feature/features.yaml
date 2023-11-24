@@ -1,4 +1,11 @@
 ---
+# info: this is a cds feature, identified by the /fts/<feature-name> pattern. it is active if the value is truthy.
+/fts/check-service-extension:
+  type: boolean
+  fallbackValue: false
+  validations:
+    - scopes: [user, tenant]
+
 # info: check api priority; 0 means access is disabled
 /check/priority:
   type: number
