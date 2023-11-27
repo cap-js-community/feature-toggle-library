@@ -18,6 +18,7 @@ We are releasing 1.0, after 2 years of continuous usage, testing, and small impr
 - act as
   [Feature Vector Provider](https://cap.cloud.sap/docs/guides/extensibility/feature-toggles#feature-vector-providers)
   when used as a CDS-plugin.
+- allow graceful shutdown by closing redis clients on cds shutdown event (fixes #34).
 
 ## v0.7.2 - 2023-10-18
 
