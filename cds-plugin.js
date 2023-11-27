@@ -4,6 +4,7 @@
 const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const { initializeFeatures, getFeaturesKeys, getFeatureValue } = require("./src/singleton");
+const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 
@@ -52,12 +53,19 @@ const _registerFeatureProvider = () => {
   );
 };
 
+const _registerClientCloseOnShutdown = () => {
+  cds.on("shutdown", async () => {
+    await Promise.allSettled([closeMainClient(), closeSubscriberClient()]);
+  });
+};
+
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
   if (!envFeatureToggles?.config && !envFeatureToggles?.configFile) {
     return;
   }
   _overwriteServiceAccessRoles(envFeatureToggles);
+  _registerClientCloseOnShutdown();
 
   // TODO for the "cds build" use case, this initialize makes no sense
   await initializeFeatures({
