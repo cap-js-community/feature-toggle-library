@@ -130,20 +130,17 @@ const _createClientAndConnect = async (errorHandler) => {
 
 const _closeClientBase = async (client) => {
   if (client?.isOpen) {
-    try {
-      await client.quit();
-    } catch (err) {
-      return err;
-    }
+    await client.quit();
   }
 };
 
 const _clientErrorHandlerBase = async (client, err, clientName) => {
   _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
-  const quitError = await _closeClientBase(client);
-  if (quitError) {
+  try {
+    await _closeClientBase(client);
+  } catch (closeError) {
     _logErrorOnEvent(
-      new VError({ name: VERROR_CLUSTER_NAME, cause: quitError, info: { clientName } }, "error during client quit")
+      new VError({ name: VERROR_CLUSTER_NAME, cause: closeError, info: { clientName } }, "error during client close")
     );
   }
 };
@@ -169,9 +166,8 @@ const getMainClient = async () => {
 };
 
 /**
- * Closes the main Redis client if it is open. Returns any error that occurs during close or undefined.
+ * Closes the main Redis client if it is open.
  *
- * @returns {Error|undefined}
  * @private
  */
 const closeMainClient = async () => await _closeClientBase(mainClient);
@@ -196,9 +192,8 @@ const getSubscriberClient = async () => {
 };
 
 /**
- * Closes the subscriber Redis client if it is open. Returns any error that occurs during close or undefined.
+ * Closes the subscriber Redis client if it is open.
  *
- * @returns {Error|undefined}
  * @private
  */
 const closeSubscriberClient = async () => await _closeClientBase(subscriberClient);
