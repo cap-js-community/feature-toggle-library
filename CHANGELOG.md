@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v1.0.0 - 2023-11-27
+
+We are releasing 1.0, after 2 years of continuous usage, testing, and small improvements.
+
+### Removed
+
+- restrict to node v18+
+
+### Added
+
+- act as
+  [Feature Vector Provider](https://cap.cloud.sap/docs/guides/extensibility/feature-toggles#feature-vector-providers)
+  when used as a CDS-plugin.
+
 ## v0.7.2 - 2023-10-18
 
 ### Added
@@ -15,14 +29,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- implement new cds-plugin API, where plugins export a promise instead of an activate property and stay compatible for
+- implement new CDS-plugin API, where plugins export a promise instead of an activate property and stay compatible for
   older cds versions.
 
 ## v0.7.1 - 2023-09-13
 
 ### Fixed
 
-- cds-plugin integration now works for projects that run `cds build --production` and only use the resulting
+- CDS-plugin integration now works for projects that run `cds build --production` and only use the resulting
   `csn.json` at runtime.
 
 ## v0.7.0 - 2023-09-08
@@ -32,7 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - new harmonized validation configuration for scope and regex checks, as well as external validation with user
   provided modules.
 
-- new (optional) [cds-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) integration. for details, see the new
+- new (optional) [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) integration. for details, see the new
   [plugin and service](https://cap-js-community.github.io/feature-toggle-library/service/) documentation.
 
 - new logger implementation which replaces
