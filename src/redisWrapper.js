@@ -128,20 +128,23 @@ const _createClientAndConnect = async (errorHandler) => {
   return client;
 };
 
-const _clientErrorHandlerBase = async (client, err, clientName) => {
-  _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
-  if (client.isOpen) {
-    let quitError = null;
+const _closeClientBase = async (client) => {
+  if (client?.isOpen) {
     try {
       await client.quit();
     } catch (err) {
-      quitError = err;
+      return err;
     }
-    if (quitError) {
-      _logErrorOnEvent(
-        new VError({ name: VERROR_CLUSTER_NAME, cause: quitError, info: { clientName } }, "error during client quit")
-      );
-    }
+  }
+};
+
+const _clientErrorHandlerBase = async (client, err, clientName) => {
+  _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
+  const quitError = await _closeClientBase(client);
+  if (quitError) {
+    _logErrorOnEvent(
+      new VError({ name: VERROR_CLUSTER_NAME, cause: quitError, info: { clientName } }, "error during client quit")
+    );
   }
 };
 
@@ -166,6 +169,14 @@ const getMainClient = async () => {
 };
 
 /**
+ * Closes the main Redis client if it is open. Returns any error that occurs during close or undefined.
+ *
+ * @returns {Error|undefined}
+ * @private
+ */
+const closeMainClient = async () => await _closeClientBase(mainClient);
+
+/**
  * Lazily create a client to be used as a subscriber. Subscriber clients are in a special state and cannot be used for
  * other commands.
  *
@@ -183,6 +194,14 @@ const getSubscriberClient = async () => {
   }
   return subscriberClient;
 };
+
+/**
+ * Closes the subscriber Redis client if it is open. Returns any error that occurs during close or undefined.
+ *
+ * @returns {Error|undefined}
+ * @private
+ */
+const closeSubscriberClient = async () => await _closeClientBase(subscriberClient);
 
 const _clientExec = async (functionName, argsObject) => {
   if (!mainClient) {
@@ -513,7 +532,9 @@ const getIntegrationMode = async () => {
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
   getMainClient,
+  closeMainClient,
   getSubscriberClient,
+  closeSubscriberClient,
   getIntegrationMode,
   sendCommand,
   type,
