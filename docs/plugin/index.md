@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Plugin and Service
-nav_order: 3
+nav_order: 4
 ---
 
 <!-- prettier-ignore-start -->
@@ -29,6 +29,26 @@ Per default the service endpoints are accessible only to users with the CAP pseu
 [system-user](https://cap.cloud.sap/docs/guides/authorization#pseudo-roles). Different projects have their own access
 role preferences, so this setting allows them to set a list of strings, which represent the roles required to access
 the service. For details see [@requires](https://cap.cloud.sap/docs/guides/authorization#requires).
+
+## Feature Vector Provider
+
+When used as a CDS-plugin, the library will automatically act as a Feature Vector Provider. This means feature
+toggles which match the `<optional-prefix>/fts/<feature-name>` pattern and have a truthy current value at the
+start of a request will be passed to CDS on the express request in `req.features`.
+
+In practice, if you have a CDS model extension feature in the directory `/fts/my-feature`, and you configure it inline
+or in your config file with:
+
+```yaml
+/fts/my-feature:
+  type: boolean
+  fallbackValue: false
+  validations:
+    - scopes: [user, tenant]
+```
+
+then you can control the feature's state, like you would for any other runtime feature, and it will be provided to CDS
+and respected for the related requests.
 
 ## Service Endpoints
 
