@@ -22,8 +22,8 @@ const priorityHandler = async (context) => {
     value >= HIGH_BOUNDARY
       ? HIGH_VALUE_RESPONSES
       : value >= MEDIUM_BOUNDARY
-      ? MEDIUM_VALUE_RESPONSES
-      : LOW_VALUE_RESPONSES;
+        ? MEDIUM_VALUE_RESPONSES
+        : LOW_VALUE_RESPONSES;
   const message = [value, messages[Math.floor(Math.random() * messages.length)], `isToggled ${isToggled}`].join(" | ");
   return context.reply(message);
 };
