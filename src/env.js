@@ -3,12 +3,7 @@
 const { ENV } = require("./shared/static");
 
 class CfEnv {
-  isOnCf;
-  cfApp;
-  cfServices;
-  cfInstanceGuid;
-  cfInstanceIp;
-  cfInstanceIndex;
+  static __instance;
 
   static parseEnvVar(env, envVar) {
     try {
@@ -59,7 +54,4 @@ class CfEnv {
 
 const cfEnv = CfEnv.instance;
 
-module.exports = {
-  CfEnv,
-  cfEnv,
-};
+module.exports = cfEnv;

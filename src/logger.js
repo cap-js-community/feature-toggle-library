@@ -2,7 +2,7 @@
 const util = require("util");
 const VError = require("verror");
 
-const { cfEnv } = require("./env");
+const cfEnv = require("./env");
 const { ENV, tryRequire } = require("./shared/static");
 const cds = tryRequire("@sap/cds");
 
