@@ -172,7 +172,7 @@ describe("logger test", () => {
     });
 
     it("info on cf defaults to json format", async () => {
-      envMock.cfEnv.isOnCf = true;
+      envMock.isOnCf = true;
       logger = new Logger(layer);
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`

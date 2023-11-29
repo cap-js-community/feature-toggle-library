@@ -8,8 +8,12 @@ const { LimitedLazyCache } = require("../src/shared/cache");
 const { FEATURE, mockConfig, redisKey, redisChannel } = require("./__common__/mockdata");
 const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/fromInfo");
 
-const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;
-const { CONFIG_KEY, CONFIG_INFO_KEY } = featureTogglesModule._;
+const {
+  FeatureToggles,
+  _: { CONFIG_KEY, CONFIG_INFO_KEY },
+} = featureTogglesModule;
+
+const SCOPE_ROOT_KEY = FeatureToggles.SCOPE_ROOT_KEY;
 
 const { readFile: readFileSpy } = require("fs");
 jest.mock("fs", () => ({ readFile: jest.fn() }));
@@ -818,7 +822,7 @@ describe("feature toggles test", () => {
     });
 
     it("FeatureValueValidation and appUrl working", async () => {
-      envMock.cfEnv.cfApp = { uris: ["https://it.cfapps.sap.hana.ondemand.com"] };
+      envMock.cfApp = { uris: ["https://it.cfapps.sap.hana.ondemand.com"] };
       const newValue = "newValue";
       await featureToggles.initializeFeatures({ config: mockConfig });
       const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
@@ -830,7 +834,7 @@ describe("feature toggles test", () => {
     });
 
     it("FeatureValueValidation and appUrl failing", async () => {
-      envMock.cfEnv.cfApp = { uris: ["https://not-it.com"] };
+      envMock.cfApp = { uris: ["https://not-it.com"] };
       const newValue = "newValue";
       await featureToggles.initializeFeatures({ config: mockConfig });
       const oldValue = featureToggles.getFeatureValue(FEATURE.H);
@@ -890,7 +894,7 @@ describe("feature toggles test", () => {
       const mockFilePath = "inmemory.json";
       const mockConfigData = Buffer.from(JSON.stringify(mockConfig));
       readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
-      const config = await readConfigFromFile(mockFilePath);
+      const config = await FeatureToggles.readConfigFromFile(mockFilePath);
 
       expect(readFileSpy).toHaveBeenCalledTimes(1);
       expect(readFileSpy).toHaveBeenCalledWith(mockFilePath, expect.any(Function));
@@ -901,7 +905,7 @@ describe("feature toggles test", () => {
       const mockFilePath = "in_memory.yml";
       const mockConfigData = Buffer.from(yaml.stringify(mockConfig));
       readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
-      const config = await readConfigFromFile(mockFilePath);
+      const config = await FeatureToggles.readConfigFromFile(mockFilePath);
 
       expect(readFileSpy).toHaveBeenCalledTimes(1);
       expect(readFileSpy).toHaveBeenCalledWith(mockFilePath, expect.any(Function));
