@@ -149,7 +149,7 @@ Other projects will need to use the corresponding filepath, in order to initiali
 ```javascript
 const pathlib = require("path");
 const toggles = require("@cap-js-community/feature-toggle-library");
-const FEATURES_FILEPATH = pathlib.join(__dirname, "featureTogglesConfig.yml");
+const FEATURES_FILEPATH = pathlib.join(__dirname, ".toggles.yml");
 
 // ... during application bootstrap
 await toggles.initializeFeatures({ configFile: FEATURES_FILEPATH });
@@ -181,7 +181,7 @@ feature toggles.
 ```javascript
 const pathlib = require("path");
 const toggles = require("@cap-js-community/feature-toggle-library");
-const FEATURES_FILEPATH = pathlib.join(__dirname, "featureTogglesConfig.yml");
+const FEATURES_FILEPATH = pathlib.join(__dirname, ".toggles.yml");
 
 // ... during application bootstrap
 const config = await toggles.readConfigFromFile(FEATURES_FILEPATH);
