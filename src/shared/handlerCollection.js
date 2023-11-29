@@ -8,10 +8,6 @@ class HandlerCollection {
     this.__handlers = Object.create(null);
   }
 
-  _handlers() {
-    return this.__handlers;
-  }
-
   /**
    * hasHandlers is true if and only if the collection has handlers for the given key.
    *
