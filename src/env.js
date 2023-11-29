@@ -57,7 +57,9 @@ class CfEnv {
   }
 }
 
+const cfEnv = CfEnv.instance;
+
 module.exports = {
   CfEnv,
-  cfEnv: CfEnv.instance,
+  cfEnv,
 };

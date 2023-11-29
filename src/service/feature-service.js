@@ -2,7 +2,7 @@
 
 const cds = require("@sap/cds");
 const redis = require("../redisWrapper");
-const { getFeaturesInfos, refreshFeatureValues, changeFeatureValue } = require("../singleton");
+const toggles = require("../index");
 
 const COMPONENT_NAME = "featureService";
 const VALIDATION_ERROR_HTTP_CODE = 422;
@@ -19,7 +19,7 @@ const textFormat = (pattern, values) =>
  * Read all feature values.
  */
 const stateHandler = async (context) => {
-  const result = getFeaturesInfos();
+  const result = toggles.getFeaturesInfos();
   return context.reply(result);
 };
 
@@ -28,8 +28,8 @@ const stateHandler = async (context) => {
  */
 const redisReadHandler = async (context) => {
   try {
-    await refreshFeatureValues();
-    const result = getFeaturesInfos();
+    await toggles.refreshFeatureValues();
+    const result = toggles.getFeaturesInfos();
     context.reply(result);
   } catch (err) {
     cds.log(COMPONENT_NAME).error(err);
@@ -43,12 +43,12 @@ const redisReadHandler = async (context) => {
  * scope changes to only take effect in specific contexts.
  *
  * Examples:
- *   single feature input = { "key": "a", "value": true }
- *   multi feature input = [
+ *   single feature input   = { "key": "a", "value": true }
+ *   multiple feature input = [
  *     { "key": "a", "value": true },
  *     { "key": "b", "value": 10 }
  *   ]
- *   scoped change input = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
+ *   scoped change input   = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
  *
  * NOTE this will answer 204 if the input was accepted and sent to redis, otherwise 422 with a list of validation
  * errors.
@@ -58,7 +58,7 @@ const redisUpdateHandler = async (context) => {
   try {
     const processEntry = async (entry) => {
       const { key, value, scope: scopeMap, options } = entry ?? {};
-      const validationErrors = await changeFeatureValue(key, value, scopeMap, options);
+      const validationErrors = await toggles.changeFeatureValue(key, value, scopeMap, options);
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
         for (const { featureKey: target, errorMessage, errorMessageValues } of validationErrors) {
           const errorMessageWithValues = textFormat(errorMessage, errorMessageValues);

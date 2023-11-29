@@ -93,24 +93,11 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 const readFileAsync = promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
-const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
-  const fileData = await readFileAsync(configFilepath);
-  if (/\.ya?ml$/i.test(configFilepath)) {
-    return yaml.parse(fileData.toString());
-  }
-  if (/\.json$/i.test(configFilepath)) {
-    return JSON.parse(fileData.toString());
-  }
-  throw new VError(
-    {
-      name: VERROR_CLUSTER_NAME,
-      info: { configFilepath },
-    },
-    "configFilepath with unsupported extension, allowed extensions are .yaml and .json"
-  );
-};
-
 class FeatureToggles {
+  static SCOPE_ROOT_KEY = SCOPE_ROOT_KEY;
+  static FeatureToggles = FeatureToggles;
+  static __instance;
+
   // ========================================
   // START OF CONSTRUCTOR SECTION
   // ========================================
@@ -304,7 +291,8 @@ class FeatureToggles {
    *
    * @return FeatureToggles
    */
-  static getInstance() {
+
+  static get instance() {
     if (!FeatureToggles.__instance) {
       const uniqueName = FeatureToggles._getInstanceUniqueName();
       FeatureToggles.__instance = new FeatureToggles({ uniqueName });
@@ -646,6 +634,23 @@ class FeatureToggles {
     return migrationCount;
   }
 
+  static async readConfigFromFile(configFilepath = DEFAULT_CONFIG_FILEPATH) {
+    const fileData = await readFileAsync(configFilepath);
+    if (/\.ya?ml$/i.test(configFilepath)) {
+      return yaml.parse(fileData.toString());
+    }
+    if (/\.json$/i.test(configFilepath)) {
+      return JSON.parse(fileData.toString());
+    }
+    throw new VError(
+      {
+        name: VERROR_CLUSTER_NAME,
+        info: { configFilepath },
+      },
+      "configFilepath with unsupported extension, allowed extensions are .yaml and .json"
+    );
+  }
+
   /**
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
@@ -657,7 +662,7 @@ class FeatureToggles {
 
     let config;
     try {
-      config = configInput ? configInput : await readConfigFromFile(configFilepath);
+      config = configInput ? configInput : await FeatureToggles.readConfigFromFile(configFilepath);
     } catch (err) {
       throw new VError(
         {
@@ -1432,9 +1437,7 @@ class FeatureToggles {
 }
 
 module.exports = {
-  SCOPE_ROOT_KEY,
   FeatureToggles,
-  readConfigFromFile,
 
   _: {
     CONFIG_KEY,

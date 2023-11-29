@@ -1,39 +1,7 @@
 "use strict";
 
-const { SCOPE_ROOT_KEY, FeatureToggles, readConfigFromFile } = require("./featureToggles");
-const singleton = require("./singleton");
-const redis = require("./redisWrapper");
-const {
-  DEFAULT_SEPARATOR,
-  DEFAULT_EXPIRATION_GAP,
-  DEFAULT_SIZE_LIMIT,
-  LazyCache,
-  ExpiringLazyCache,
-  LimitedLazyCache,
-} = require("./shared/cache");
-const { DynamicIntervalController } = require("./shared/dynamicIntervalController");
-const { HandlerCollection } = require("./shared/handlerCollection");
-const { promiseAllDone } = require("./shared/promiseAllDone");
-const { Semaphore } = require("./shared/semaphore");
+const { FeatureToggles } = require("./featureToggles");
 
-module.exports = {
-  SCOPE_ROOT_KEY,
-  FeatureToggles,
-  readConfigFromFile,
+const toggles = FeatureToggles.instance;
 
-  singleton,
-
-  redis,
-
-  DEFAULT_SEPARATOR,
-  DEFAULT_EXPIRATION_GAP,
-  DEFAULT_SIZE_LIMIT,
-  LazyCache,
-  ExpiringLazyCache,
-  LimitedLazyCache,
-
-  DynamicIntervalController,
-  HandlerCollection,
-  promiseAllDone,
-  Semaphore,
-};
+module.exports = toggles;
