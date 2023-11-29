@@ -21,15 +21,16 @@ Redis don't access the same data, unless this is intended. Whenever two or more 
 must be _initialized_ with the same configuration.
 
 ```javascript
-const { FeatureToggles } = require("@cap-js-community/feature-toggle-library");
+const FeatureToggles = require("@cap-js-community/feature-toggle-library").FeatureToggles;
 const instance = new FeatureToggles({ uniqueName: "snowflake" });
 ```
 
-The library prepares a convenient `singleton` instance of FeatureToggles for out-of-the-box usage, where the Cloud
-Foundry _app name_ is used as unique name. This should be sufficient for most use-cases.
+The library prepares a convenient singleton instance of FeatureToggles for out-of-the-box usage, where the Cloud
+Foundry _app name_ is used as unique name. This should be sufficient for most use-cases and is the default export of
+the library.
 
 ```javascript
-const { singleton } = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 ```
 
 {: .warn }
@@ -134,8 +135,8 @@ initialization settings are in `package.json`. For example:
 ```
 
 In this example, the path `./srv/feature/feature.yaml` points to the previously discussed configuration file. With
-these settings in place, the `singleton` instance of the library will be initialized and is ready for usage at and
-after the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstrap) event.
+these settings in place, the singleton instance of the library will be initialized and is ready for usage at and after
+the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstrap) event.
 
 {: .info }
 Using the feature toggles in CAP projects also enables a [REST service]({{ site.baseurl }}/plugin/), where toggles can
@@ -147,24 +148,20 @@ Other projects will need to use the corresponding filepath, in order to initiali
 
 ```javascript
 const pathlib = require("path");
-const {
-  singleton: { initializeFeatures },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 const FEATURES_FILEPATH = pathlib.join(__dirname, "featureTogglesConfig.yml");
 
 // ... during application bootstrap
-await initializeFeatures({ configFile: FEATURES_FILEPATH });
+await toggles.initializeFeatures({ configFile: FEATURES_FILEPATH });
 ```
 
 Alternatively, a runtime configuration object is also supported.
 
 ```javascript
-const {
-  singleton: { initializeFeatures },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
 // ... during application bootstrap
-await initializeFeatures({
+await toggles.initializeFeatures({
   config: {
     runNewCode: {
       type: "boolean",
@@ -183,16 +180,13 @@ feature toggles.
 
 ```javascript
 const pathlib = require("path");
-const {
-  singleton: { initializeFeatures },
-  readConfigFromFile,
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 const FEATURES_FILEPATH = pathlib.join(__dirname, "featureTogglesConfig.yml");
 
 // ... during application bootstrap
-const config = await readConfigFromFile(FEATURES_FILEPATH);
+const config = await toggles.readConfigFromFile(FEATURES_FILEPATH);
 // ... manipulate
-await initializeFeatures({ config });
+await toggles.initializeFeatures({ config });
 ```
 
 ## Integration Mode
@@ -232,15 +226,13 @@ a feature toggle with the key `/srv/util/logger/logLevel`, similar to the one de
 You can read the current in memory state of any feature toggle:
 
 ```javascript
-const {
-  singleton: { getFeatureValue },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
 // ... in some function
-const logLevel = getFeatureValue("/srv/util/logger/logLevel");
+const logLevel = toggles.getFeatureValue("/srv/util/logger/logLevel");
 
 // ... with runtime scope information
-const logLevel = getFeatureValue("/srv/util/logger/logLevel", {
+const logLevel = toggles.getFeatureValue("/srv/util/logger/logLevel", {
   tenant: cds.context.tenant,
   user: cds.context.user.id,
 });
@@ -248,25 +240,22 @@ const logLevel = getFeatureValue("/srv/util/logger/logLevel", {
 
 {: .warn }
 While `getFeatureValue` is synchronous, and could happen on the top-level of a module. The function will throw, if it
-is called _before_ `initializeFeatures`, which is asynchronous. So, it's never sensible to have this on
-top-level.
+is called _before_ `initializeFeatures`, which is asynchronous. So, it's never sensible to have this on top-level.
 
 ### Observing Feature Value Changes
 
 You can register a callback for all updates to a feature toggle:
 
 ```javascript
-const {
-  singleton: { registerFeatureValueChangeHandler },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
-registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue, scopeMap) => {
+toggles.registerFeatureValueChangeHandler("/srv/util/logger/logLevel", (newValue, oldValue, scopeMap) => {
   console.log("changing log level from %s to %s (scope %j)", oldValue, newValue, scopeMap);
   updateLogLevel(newValue);
 });
 
 // ... or for async APIs
-registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (newValue, oldValue, scopeMap) => {
+toggles.registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (newValue, oldValue, scopeMap) => {
   await updateLogLevel(newValue);
 });
 ```
@@ -279,13 +268,11 @@ Registering any callback will not require that the feature toggles are initializ
 Finally, updating the feature toggle value:
 
 ```javascript
-const {
-  singleton: { changeFeatureValue },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
 // optionally pass in a scopeMap, which describes the least specific scope where the change should happen
 async function changeIt(newValue, scopeMap) {
-  const validationErrors = await changeFeatureValue("/srv/util/logger/logLevel", newValue, scopeMap);
+  const validationErrors = await toggles.changeFeatureValue("/srv/util/logger/logLevel", newValue, scopeMap);
   if (Array.isArray(validationErrors) && validationErrors.length > 0) {
     for (const { errorMessage, errorMessageValues } of validationErrors) {
       // show errors to the user, the change did not happen
@@ -306,7 +293,7 @@ scope-combination, which overrides that value, then you can use the option `{ cl
 argument. For example
 
 ```javascript
-await changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { clearSubScopes: true });
+await toggles.changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { clearSubScopes: true });
 ```
 
 will set the root-scope value to `"error"` and remove all sub-scopes. See
@@ -318,15 +305,13 @@ There is a convenience reset API just to reset a feature toggle and remove all a
 the feature toggle afterward will only yield the fallback value until new changes are made.
 
 ```javascript
-const {
-  singleton: { resetFeatureValue, changeFeatureValue },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
 // ... in some function
-await resetFeatureValue("/srv/util/logger/logLevel");
+await toggles.resetFeatureValue("/srv/util/logger/logLevel");
 
 // this is functionally equivalent to
-await changeFeatureValue("/srv/util/logger/logLevel", null, {}, { clearSubScopes: true });
+await toggles.changeFeatureValue("/srv/util/logger/logLevel", null, {}, { clearSubScopes: true });
 ```
 
 ### External Validation
@@ -335,11 +320,9 @@ The `string`-type feature toggles can theoretically encode very complex data str
 inputs in-depth before allowing changes to be published and propagated.
 
 ```javascript
-const {
-  singleton: { registerFeatureValueValidation },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
-registerFeatureValueValidation("/srv/util/logger/logLevel", (newValue) => {
+toggles.registerFeatureValueValidation("/srv/util/logger/logLevel", (newValue) => {
   if (isBad(newValue)) {
     return { errorMessage: "got bad value" };
   }
