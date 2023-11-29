@@ -1,8 +1,6 @@
 "use strict";
 
-const {
-  singleton: { getFeatureValue },
-} = require("@cap-js-community/feature-toggle-library");
+const toggles = require("@cap-js-community/feature-toggle-library");
 
 const { CHECK_API_PRIORITY } = require("../feature");
 
@@ -17,7 +15,7 @@ const HIGH_BOUNDARY = 100;
 const priorityHandler = async (context) => {
   const { "CheckService.priority": priority } = context.model.definitions;
   const isToggled = Boolean(priority["@marked"]);
-  const value = getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
+  const value = toggles.getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
     value >= HIGH_BOUNDARY
       ? HIGH_VALUE_RESPONSES

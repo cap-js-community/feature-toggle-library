@@ -3,7 +3,7 @@
 
 const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
-const { initializeFeatures, getFeaturesKeys, getFeatureValue } = require("./src/singleton");
+const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
@@ -23,7 +23,7 @@ const _registerFeatureProvider = () => {
   if (!cds.env.requires?.toggles) {
     return;
   }
-  const cdsFeatures = getFeaturesKeys().reduce((result, key) => {
+  const cdsFeatures = toggles.getFeaturesKeys().reduce((result, key) => {
     const match = FEATURE_KEY_REGEX.exec(key);
     if (match) {
       const feature = match[1];
@@ -42,7 +42,7 @@ const _registerFeatureProvider = () => {
         req.headers.features ||
         cds.context?.user?.features ||
         cdsFeatures.reduce((result, [key, feature]) => {
-          if (getFeatureValue(key, { user, tenant })) {
+          if (toggles.getFeatureValue(key, { user, tenant })) {
             result.push(feature);
           }
           return result;
@@ -68,7 +68,7 @@ const activate = async () => {
   _registerClientCloseOnShutdown();
 
   // TODO for the "cds build" use case, this initialize makes no sense
-  await initializeFeatures({
+  await toggles.initializeFeatures({
     config: envFeatureToggles.config,
     configFile: envFeatureToggles.configFile,
   });
