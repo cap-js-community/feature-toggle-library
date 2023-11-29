@@ -30,7 +30,7 @@ const { LimitedLazyCache } = require("./shared/cache");
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
 const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
-const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
+const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".toggles.yml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
 const SUPER_SCOPE_CACHE_SIZE_LIMIT = 15;
@@ -865,7 +865,7 @@ class FeatureToggles {
    * This is used to make sure scopeMap is either undefined or a shallow map with string entries. This happens for all
    * public interfaces with a scopeMap parameter, except {@link validateFeatureValue} and {@link changeFeatureValue}.
    * For these two interfaces, we want the "bad" scopeMaps to cause validation errors.
-   * Also not for {@link getScopeKey}, where the sanitization must not happen in place.
+   * Also, not for {@link getScopeKey}, where the sanitization must not happen in place.
    */
   static _sanitizeScopeMap(scopeMap) {
     if (!isObject(scopeMap)) {
