@@ -43,12 +43,12 @@ const redisReadHandler = async (context) => {
  * scope changes to only take effect in specific contexts.
  *
  * Examples:
- *   single feature input   = { "key": "a", "value": true }
- *   multiple feature input = [
+ *   single-feature input = { "key": "a", "value": true }
+ *   multi-feature input  = [
  *     { "key": "a", "value": true },
  *     { "key": "b", "value": 10 }
  *   ]
- *   scoped change input   = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
+ *   scoped change input  = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
  *
  * NOTE this will answer 204 if the input was accepted and sent to redis, otherwise 422 with a list of validation
  * errors.
