@@ -10,10 +10,8 @@ const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/fromIn
 
 const {
   FeatureToggles,
-  _: { CONFIG_KEY, CONFIG_INFO_KEY },
+  _: { SCOPE_ROOT_KEY, CONFIG_KEY, CONFIG_INFO_KEY },
 } = featureTogglesModule;
-
-const SCOPE_ROOT_KEY = FeatureToggles.SCOPE_ROOT_KEY;
 
 const { readFile: readFileSpy } = require("fs");
 jest.mock("fs", () => ({ readFile: jest.fn() }));

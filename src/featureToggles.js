@@ -94,7 +94,6 @@ const readFileAsync = promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
 class FeatureToggles {
-  static SCOPE_ROOT_KEY = SCOPE_ROOT_KEY;
   static FeatureToggles = FeatureToggles;
   static __instance;
 
@@ -1439,6 +1438,7 @@ module.exports = {
   FeatureToggles,
 
   _: {
+    SCOPE_ROOT_KEY,
     CONFIG_KEY,
     CONFIG_INFO_KEY,
     _getLogger: () => logger,
