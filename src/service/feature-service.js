@@ -2,7 +2,7 @@
 
 const cds = require("@sap/cds");
 const redis = require("../redisWrapper");
-const toggles = require("../index");
+const toggles = require("../");
 
 const COMPONENT_NAME = "featureService";
 const VALIDATION_ERROR_HTTP_CODE = 422;

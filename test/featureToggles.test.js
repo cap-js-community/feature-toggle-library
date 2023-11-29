@@ -5,7 +5,7 @@ const yaml = require("yaml");
 const featureTogglesModule = require("../src/featureToggles");
 const { LimitedLazyCache } = require("../src/shared/cache");
 
-const { FEATURE, mockConfig, redisKey, redisChannel } = require("./mockdata");
+const { FEATURE, mockConfig, redisKey, redisChannel } = require("./__common__/mockdata");
 const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/fromInfo");
 
 const { FeatureToggles, readConfigFromFile, SCOPE_ROOT_KEY } = featureTogglesModule;

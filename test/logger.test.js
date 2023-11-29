@@ -12,7 +12,7 @@ jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
 const envMock = require("../src/env");
 jest.mock("../src/env", () => require("./__mocks__/env"));
 
-const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./mockdata");
+const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./__common__/mockdata");
 
 let featureToggles = null;
 

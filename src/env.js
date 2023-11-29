@@ -30,9 +30,9 @@ class CfEnv {
   }
 
   /**
-   * @return CfEnv
+   * @returns {CfEnv}
    */
-  static get instance() {
+  static getInstance() {
     if (!CfEnv.__instance) {
       CfEnv.__instance = new CfEnv();
     }
@@ -52,6 +52,4 @@ class CfEnv {
   }
 }
 
-const cfEnv = CfEnv.instance;
-
-module.exports = cfEnv;
+module.exports = CfEnv.getInstance();

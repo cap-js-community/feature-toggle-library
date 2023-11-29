@@ -289,10 +289,9 @@ class FeatureToggles {
   /**
    * Get singleton instance
    *
-   * @return FeatureToggles
+   * @returns {FeatureToggles}
    */
-
-  static get instance() {
+  static getInstance() {
     if (!FeatureToggles.__instance) {
       const uniqueName = FeatureToggles._getInstanceUniqueName();
       FeatureToggles.__instance = new FeatureToggles({ uniqueName });
