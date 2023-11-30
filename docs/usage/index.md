@@ -21,7 +21,7 @@ Redis don't access the same data, unless this is intended. Whenever two or more 
 must be _initialized_ with the same configuration.
 
 ```javascript
-const { constructor: FeatureToggles } = require("@cap-js-community/feature-toggle-library");
+const { FeatureToggles } = require("@cap-js-community/feature-toggle-library");
 const instance = new FeatureToggles({ uniqueName: "snowflake" });
 ```
 
@@ -182,7 +182,7 @@ feature toggles.
 const pathlib = require("path");
 const toggles = require("@cap-js-community/feature-toggle-library");
 const FEATURES_FILEPATH = pathlib.join(__dirname, ".toggles.yml");
-const FeatureToggles = toggles.constructor;
+const { FeatureToggles } = toggles;
 
 // ... during application bootstrap
 const config = await FeatureToggles.readConfigFromFile(FEATURES_FILEPATH);
