@@ -1,7 +1,6 @@
 "use strict";
 
 const DEFAULT_SEPARATOR = "##";
-const DEFAULT_EXPIRATION_GAP = 5000; // 5 seconds
 const DEFAULT_SIZE_LIMIT = 15;
 
 class LazyCache {
@@ -65,69 +64,6 @@ class LazyCache {
   }
 }
 
-class ExpiringLazyCache extends LazyCache {
-  constructor({ separator = DEFAULT_SEPARATOR, expirationGap = DEFAULT_EXPIRATION_GAP } = {}) {
-    super({ separator });
-    this.__expirationGap = expirationGap;
-  }
-  _expiringGap() {
-    return this.__expirationGap;
-  }
-  _isValid(expiration, currentTime = Date.now()) {
-    return expiration && currentTime + this.__expirationGap <= expiration;
-  }
-  has(keyOrKeys, currentTime = Date.now()) {
-    if (!super.has(keyOrKeys)) {
-      return false;
-    }
-    const [expiration] = super.get(keyOrKeys) ?? [];
-    return this._isValid(expiration, currentTime);
-  }
-  get(keyOrKeys, currentTime = Date.now()) {
-    const [expiration, value] = super.get(keyOrKeys) ?? [];
-    return this._isValid(expiration, currentTime) ? value : undefined;
-  }
-  set(keyOrKeys, expiration, value) {
-    return super.set(keyOrKeys, [expiration, value]);
-  }
-
-  static _extract(result, expirationExtractor, valueExtractor) {
-    return expirationExtractor && valueExtractor ? [expirationExtractor(result), valueExtractor(result)] : result;
-  }
-
-  setCb(keyOrKeys, callback, { expirationExtractor, valueExtractor } = {}) {
-    const resultOrPromise = callback();
-    if (!(resultOrPromise instanceof Promise)) {
-      const [expiration, value] = ExpiringLazyCache._extract(resultOrPromise, expirationExtractor, valueExtractor);
-      return this.set(keyOrKeys, expiration, value);
-    }
-    return this.set(
-      keyOrKeys,
-      Infinity,
-      resultOrPromise
-        .catch((err) => {
-          this.delete(keyOrKeys);
-          return Promise.reject(err);
-        })
-        .then((result) => {
-          const [expiration, value] = ExpiringLazyCache._extract(result, expirationExtractor, valueExtractor);
-          this.set(keyOrKeys, expiration, value);
-          return value;
-        })
-    );
-  }
-
-  getSetCb(keyOrKeys, callback, { currentTime = Date.now(), expirationExtractor, valueExtractor } = {}) {
-    const key = this._key(keyOrKeys);
-    if (!this.has(key, currentTime) || !super.has(key)) {
-      this.setCb(key, callback, { expirationExtractor, valueExtractor });
-      const [, value] = super.get(key);
-      return value;
-    }
-    return this.get(key, currentTime);
-  }
-}
-
 class LimitedLazyCache extends LazyCache {
   constructor({ separator = DEFAULT_SEPARATOR, sizeLimit = DEFAULT_SIZE_LIMIT } = {}) {
     super({ separator });
@@ -149,9 +85,7 @@ class LimitedLazyCache extends LazyCache {
 
 module.exports = {
   DEFAULT_SEPARATOR,
-  DEFAULT_EXPIRATION_GAP,
   DEFAULT_SIZE_LIMIT,
   LazyCache,
-  ExpiringLazyCache,
   LimitedLazyCache,
 };
