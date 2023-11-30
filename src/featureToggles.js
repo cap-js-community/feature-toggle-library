@@ -30,7 +30,7 @@ const { LimitedLazyCache } = require("./shared/cache");
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
 const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
-const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".toggles.yml");
+const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".features.yaml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
 const SUPER_SCOPE_CACHE_SIZE_LIMIT = 15;
