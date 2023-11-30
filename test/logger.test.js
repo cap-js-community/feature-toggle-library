@@ -12,7 +12,7 @@ jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
 const envMock = require("../src/env");
 jest.mock("../src/env", () => require("./__mocks__/env"));
 
-const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./mockdata");
+const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./__common__/mockdata");
 
 let featureToggles = null;
 
@@ -172,7 +172,7 @@ describe("logger test", () => {
     });
 
     it("info on cf defaults to json format", async () => {
-      envMock.cfEnv.isOnCf = true;
+      envMock.isOnCf = true;
       logger = new Logger(layer);
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`

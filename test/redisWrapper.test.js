@@ -65,7 +65,7 @@ describe("redis wrapper test", () => {
   });
 
   it("_createClientBase local", async () => {
-    envMock.cfEnv.isOnCf = false;
+    envMock.isOnCf = false;
     const client = redisWrapper._._createClientBase();
 
     expect(redis.createClient).toHaveBeenCalledTimes(1);
@@ -87,13 +87,13 @@ describe("redis wrapper test", () => {
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
     const mockUrlUsable = mockUrl.replace("BAD_USERNAME", "");
 
-    envMock.cfEnv.isOnCf = true;
-    envMock.cfEnv.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
+    envMock.isOnCf = true;
+    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     const client = redisWrapper._._createClientBase();
 
-    expect(envMock.cfEnv.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
-    expect(envMock.cfEnv.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
+    expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
+    expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveBeenCalledWith({ url: mockUrlUsable });
     expect(client).toBe(mockClient);
@@ -423,8 +423,8 @@ describe("redis wrapper test", () => {
   it("_subscribedMessageHandler error", async () => {
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
 
-    envMock.cfEnv.isOnCf = true;
-    envMock.cfEnv.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
+    envMock.isOnCf = true;
+    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     redisWrapper.registerMessageHandler(channel, mockMessageHandler);
     redisWrapper.registerMessageHandler(channel, mockMessageHandlerTwo);

@@ -21,7 +21,7 @@ const yaml = require("yaml");
 const redis = require("./redisWrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
-const { cfEnv } = require("./env");
+const cfEnv = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { ENV, isObject, tryRequire } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
@@ -30,7 +30,7 @@ const { LimitedLazyCache } = require("./shared/cache");
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
 const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
-const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".featuretogglesrc.yml");
+const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".features.yaml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
 const SUPER_SCOPE_CACHE_SIZE_LIMIT = 15;
@@ -93,24 +93,9 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 const readFileAsync = promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
-const readConfigFromFile = async (configFilepath = DEFAULT_CONFIG_FILEPATH) => {
-  const fileData = await readFileAsync(configFilepath);
-  if (/\.ya?ml$/i.test(configFilepath)) {
-    return yaml.parse(fileData.toString());
-  }
-  if (/\.json$/i.test(configFilepath)) {
-    return JSON.parse(fileData.toString());
-  }
-  throw new VError(
-    {
-      name: VERROR_CLUSTER_NAME,
-      info: { configFilepath },
-    },
-    "configFilepath with unsupported extension, allowed extensions are .yaml and .json"
-  );
-};
-
 class FeatureToggles {
+  static __instance;
+
   // ========================================
   // START OF CONSTRUCTOR SECTION
   // ========================================
@@ -302,7 +287,7 @@ class FeatureToggles {
   /**
    * Get singleton instance
    *
-   * @return FeatureToggles
+   * @returns {FeatureToggles}
    */
   static getInstance() {
     if (!FeatureToggles.__instance) {
@@ -646,6 +631,23 @@ class FeatureToggles {
     return migrationCount;
   }
 
+  static async readConfigFromFile(configFilepath = DEFAULT_CONFIG_FILEPATH) {
+    const fileData = await readFileAsync(configFilepath);
+    if (/\.ya?ml$/i.test(configFilepath)) {
+      return yaml.parse(fileData.toString());
+    }
+    if (/\.json$/i.test(configFilepath)) {
+      return JSON.parse(fileData.toString());
+    }
+    throw new VError(
+      {
+        name: VERROR_CLUSTER_NAME,
+        info: { configFilepath },
+      },
+      "configFilepath with unsupported extension, allowed extensions are .yaml and .json"
+    );
+  }
+
   /**
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
@@ -657,7 +659,7 @@ class FeatureToggles {
 
     let config;
     try {
-      config = configInput ? configInput : await readConfigFromFile(configFilepath);
+      config = configInput ? configInput : await FeatureToggles.readConfigFromFile(configFilepath);
     } catch (err) {
       throw new VError(
         {
@@ -860,7 +862,7 @@ class FeatureToggles {
    * This is used to make sure scopeMap is either undefined or a shallow map with string entries. This happens for all
    * public interfaces with a scopeMap parameter, except {@link validateFeatureValue} and {@link changeFeatureValue}.
    * For these two interfaces, we want the "bad" scopeMaps to cause validation errors.
-   * Also not for {@link getScopeKey}, where the sanitization must not happen in place.
+   * Also, not for {@link getScopeKey}, where the sanitization must not happen in place.
    */
   static _sanitizeScopeMap(scopeMap) {
     if (!isObject(scopeMap)) {
@@ -1432,11 +1434,10 @@ class FeatureToggles {
 }
 
 module.exports = {
-  SCOPE_ROOT_KEY,
   FeatureToggles,
-  readConfigFromFile,
 
   _: {
+    SCOPE_ROOT_KEY,
     CONFIG_KEY,
     CONFIG_INFO_KEY,
     _getLogger: () => logger,

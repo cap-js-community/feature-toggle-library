@@ -8,10 +8,6 @@ class HandlerCollection {
     this.__handlers = Object.create(null);
   }
 
-  _handlers() {
-    return this.__handlers;
-  }
-
   /**
    * hasHandlers is true if and only if the collection has handlers for the given key.
    *
@@ -36,7 +32,7 @@ class HandlerCollection {
    * Use registerHandler to register given handler(s) for a given key. Duplicate registrations are possible.
    *
    * @param {string} key identifier for the handler list
-   * @param {Array<function>} handlers
+   * @param {...function} handlers
    */
   registerHandler(key, ...handlers) {
     const hasHandlers = this.hasHandlers(key);
@@ -55,7 +51,7 @@ class HandlerCollection {
    * Use removeHandler to remove given handler(s) for a given key. Duplicate registrations will be removed together.
    *
    * @param {string} key identifier for the handler list
-   * @param {Array<function>} handlers
+   * @param {...function} handlers
    */
   removeHandler(key, ...handlers) {
     const hasHandlers = this.hasHandlers(key);
