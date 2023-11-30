@@ -21,7 +21,7 @@ Redis don't access the same data, unless this is intended. Whenever two or more 
 must be _initialized_ with the same configuration.
 
 ```javascript
-const FeatureToggles = require("@cap-js-community/feature-toggle-library").FeatureToggles;
+const { constructor: FeatureToggles } = require("@cap-js-community/feature-toggle-library");
 const instance = new FeatureToggles({ uniqueName: "snowflake" });
 ```
 

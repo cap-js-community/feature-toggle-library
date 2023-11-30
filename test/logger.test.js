@@ -1,8 +1,7 @@
 "use strict";
 
 const VError = require("verror");
-const featureTogglesModule = require("../src/featureToggles");
-const { FeatureToggles } = featureTogglesModule;
+const { constructor: FeatureToggles } = require("../src/");
 const { ENV } = require("../src/shared/static");
 const { LEVEL, FORMAT, Logger } = require("../src/logger");
 

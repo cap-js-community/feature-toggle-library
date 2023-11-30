@@ -3,7 +3,6 @@
 const { ENV } = require("./shared/static");
 
 class CfEnv {
-  static CfEnv = CfEnv;
   static __instance;
 
   static parseEnvVar(env, envVar) {
