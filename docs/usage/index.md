@@ -182,9 +182,10 @@ feature toggles.
 const pathlib = require("path");
 const toggles = require("@cap-js-community/feature-toggle-library");
 const FEATURES_FILEPATH = pathlib.join(__dirname, ".toggles.yml");
+const FeatureToggles = toggles.constructor;
 
 // ... during application bootstrap
-const config = await toggles.readConfigFromFile(FEATURES_FILEPATH);
+const config = await FeatureToggles.readConfigFromFile(FEATURES_FILEPATH);
 // ... manipulate
 await toggles.initializeFeatures({ config });
 ```
