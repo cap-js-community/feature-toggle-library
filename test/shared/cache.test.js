@@ -1,5 +1,5 @@
 "use strict";
-const { LazyCache, ExpiringLazyCache, LimitedLazyCache, DEFAULT_EXPIRATION_GAP } = require("../../src/shared/cache");
+const { LazyCache, LimitedLazyCache } = require("../../src/shared/cache");
 
 let cache;
 
