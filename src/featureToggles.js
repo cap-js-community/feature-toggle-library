@@ -94,7 +94,6 @@ const readFileAsync = promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
 class FeatureToggles {
-  static FeatureToggles = FeatureToggles;
   static __instance;
 
   // ========================================
