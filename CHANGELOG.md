@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v1.1.0 - 2023-12-01
+
+⚠️ User action required! This release will be more disruptive than usual. We re-thought that main `require` API and
+made it much leaner. These changes should have happened in 1.0, sorry for the inconvenience.
+
+```javascript
+// before
+const {
+  singleton: { getFeatureValue },
+} = require("@cap-js-community/feature-toggle-library");
+
+function someFunc() {
+  getFeatureValue(key);
+}
+
+// after
+const toggles = require("@cap-js-community/feature-toggle-library");
+
+function someFunc() {
+  toggles.getFeatureValue(key);
+}
+```
+
+For details see
+[https://cap-js-community.github.io/feature-toggle-library/usage/](https://cap-js-community.github.io/feature-toggle-library/usage/)
+
+### Changed
+
+- the library now exports _only_ the singleton instance (fixes #39).
+- cds-plugin: the request header features are only respected in development environments (fixes #41).
+
 ## v1.0.0 - 2023-11-27
 
 We are releasing 1.0, after 2 years of continuous usage, testing, and small improvements.
