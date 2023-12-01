@@ -8,6 +8,8 @@ const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper")
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 
+const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
+
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
   if (!Array.isArray(envFeatureToggles.serviceAccessRoles)) {
     return;
@@ -34,19 +36,26 @@ const _registerFeatureProvider = () => {
   if (cdsFeatures.length === 0) {
     return;
   }
+
+  const _getReqFeatures = (req) => {
+    if (doEnableHeaderFeatures && req.headers.features) {
+      return req.headers.features;
+    }
+    if (cds.context?.user?.features) {
+      return cds.context.user.features;
+    }
+    const user = cds.context?.user?.id;
+    const tenant = cds.context?.tenant;
+    return cdsFeatures.reduce((result, [key, feature]) => {
+      if (toggles.getFeatureValue(key, { user, tenant })) {
+        result.push(feature);
+      }
+      return result;
+    }, []);
+  };
   cds.middlewares.add(
     function cds_feature_provider(req, res, next) {
-      const user = cds.context?.user?.id;
-      const tenant = cds.context?.tenant;
-      req.features =
-        req.headers.features ||
-        cds.context?.user?.features ||
-        cdsFeatures.reduce((result, [key, feature]) => {
-          if (toggles.getFeatureValue(key, { user, tenant })) {
-            result.push(feature);
-          }
-          return result;
-        }, []);
+      req.features = _getReqFeatures(req);
       next();
     },
     { before: "ctx_model" }
