@@ -494,7 +494,7 @@ class FeatureToggles {
    *
    * @param {string}                      featureKey  feature key
    * @param {string|number|boolean|null}  value       intended value
-   * @param {Map<string, string>}         [scopeMap]  optional scope restrictions
+   * @param {Object}                      [scopeMap]  optional scope restrictions
    * @returns {Promise<Array<ValidationError>>}       validation errors if any are found or an empty array otherwise
    */
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
@@ -988,7 +988,7 @@ class FeatureToggles {
    *   const resultForTenant = getFeatureValue(FEATURE_VALUE_KEY, { tenant: "tenant123" });
    *
    * @param {string}               featureKey  valid feature key
-   * @param {Map<string, string>}  [scopeMap]  optional scope restrictions
+   * @param {Object}               [scopeMap]  optional scope restrictions
    * @returns {string|number|boolean|null}
    */
   getFeatureValue(featureKey, scopeMap = undefined) {
@@ -1305,7 +1305,7 @@ class FeatureToggles {
    *
    * @param {string}                      featureKey  valid feature key
    * @param {string|number|boolean|null}  newValue    new value of valid type or null for deletion
-   * @param {Map<string, string>}         [scopeMap]  optional object with scope restrictions
+   * @param {Object}                      [scopeMap]  optional scope restrictions
    * @param {ChangeOptions}               [options]   optional extra change options
    * @returns {Promise<Array<ValidationError> | void>}
    */
@@ -1333,7 +1333,7 @@ class FeatureToggles {
    *
    * @param {boolean | number | string | null}  newValue
    * @param {boolean | number | string}         oldValue
-   * @param {Map<string, string>}               [scopeMap]  optional value in case a scopeMap
+   * @param {Object}                            [scopeMap]  optional scope restrictions
    * @param {ChangeOptions}                     [options]   optional switch to clear all sub scopes
    */
   /**
@@ -1382,7 +1382,7 @@ class FeatureToggles {
    * scopeKey for reference.
    *
    * @param {boolean | number | string}  newValue
-   * @param {Map<string, string>}        [scopeMap]  optional scopeMap for reference
+   * @param {Object}                     [scopeMap]  optional scopeMap for reference
    * @param {string}                     [scopeKey]  optional scopeKey for reference
    * @returns {undefined | ValidationError | Array<ValidationError>} in case of failure a ValidationError, or an array
    *   of ValidationErrors, otherwise undefined
