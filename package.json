@@ -40,7 +40,7 @@
   "homepage": "https://cap-js-community.github.io/feature-toggle-library/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cap-js-community/feature-toggle-library.git"
+    "url": "git+https://github.com/cap-js-community/feature-toggle-library.git"
   },
   "bugs": {
     "url": "https://github.com/cap-js-community/feature-toggle-library/issues"
