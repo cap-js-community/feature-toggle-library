@@ -14,6 +14,55 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
 npm install --save @cap-js-community/feature-toggle-library
 ```
 
+## Getting Started
+
+- Set up project with `@sap/cds`
+- Install library `npm install --save @cap-js-community/feature-toggle-library`
+- Write `toggles.yaml` configuration file:
+
+  ```yaml
+  # info: check api priority; 0 means access is disabled
+  /check/priority:
+    type: number
+    fallbackValue: 0
+    validations:
+      - scopes: [user, tenant]
+      - regex: '^\d+$'
+  ```
+
+- Add configuration path to package.json
+
+  ```json
+  {
+    "cds": {
+      "featureToggles": {
+        "configFile": "./toggles.yaml"
+      }
+    }
+  }
+  ```
+
+- That's it. Write usage code
+
+  ```javascript
+  const toggles = require("@cap-js-community/feature-toggle-library");
+
+  const priorityHandler = async (context) => {
+    const user = context.user.id;
+    const tenant = context.tenant;
+    const value = toggles.getFeatureValue("/check/priority", { user, tenant });
+    if (value <= 0) {
+      return context.reject("blocked");
+    } else if (value < 10) {
+      return context.reply("welcome");
+    } else {
+      return context.reply("very welcome");
+    }
+  };
+  ```
+
+- For details see [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server).
+
 ## Features
 
 - Maintain feature toggle states consistently across multiple app instances.
@@ -34,4 +83,3 @@ npm install --save @cap-js-community/feature-toggle-library
 - Configuration and code snippets: [Usage](usage)
 - Plugin and REST service for CAP projects: [Plugin and Service](plugin)
 - Architecture and related concepts: [Architecture](architecture)
-- Example CAP server: [CAP Example](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server)
