@@ -1,11 +1,15 @@
 "use strict";
 
-const cds = require("@sap/cds");
+const VError = require("verror");
 const redis = require("../redisWrapper");
+const { Logger } = require("../logger");
 const toggles = require("../");
 
-const COMPONENT_NAME = "featureService";
+const COMPONENT_NAME = "/FeatureService";
+const VERROR_CLUSTER_NAME = "FeatureServiceError";
 const VALIDATION_ERROR_HTTP_CODE = 422;
+
+const logger = new Logger(COMPONENT_NAME);
 
 const textFormat = (pattern, values) =>
   pattern.replace(/\{(\d+)}/g, (match, group) => {
@@ -32,7 +36,15 @@ const redisReadHandler = async (context) => {
     const result = toggles.getFeaturesInfos();
     context.reply(result);
   } catch (err) {
-    cds.log(COMPONENT_NAME).error(err);
+    logger.error(
+      new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+        },
+        "error during redis read"
+      )
+    );
     context.reject(500, { message: "caught unexpected error during redis read, check server logs" });
   }
 };
@@ -56,6 +68,7 @@ const redisReadHandler = async (context) => {
  */
 const redisUpdateHandler = async (context) => {
   try {
+    logger.info("redis update triggered with %O", context.data);
     const processEntry = async (entry) => {
       const { key, value, scope: scopeMap, options } = entry ?? {};
       const validationErrors = await toggles.changeFeatureValue(key, value, scopeMap, options);
@@ -75,7 +88,15 @@ const redisUpdateHandler = async (context) => {
     }
     context.reply();
   } catch (err) {
-    cds.log(COMPONENT_NAME).error(err);
+    logger.error(
+      new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+        },
+        "error during redis update"
+      )
+    );
     context.reject(500, { message: "caught unexpected error during redis update, check server logs" });
   }
 };
