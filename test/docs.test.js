@@ -5,7 +5,7 @@ const { join } = require("path");
 
 describe("docs", () => {
   it("documentation README / overview consistency check", async () => {
-    const headings = ["Install or Upgrade", "Getting Started", "Features", "Peers"];
+    const headings = ["Getting Started", "Features", "Peers"];
     const readmeData = readFileSync(join(__dirname, "..", "README.md")).toString();
     const overviewData = readFileSync(join(__dirname, "..", "docs", "index.md")).toString();
     for (const heading of headings) {

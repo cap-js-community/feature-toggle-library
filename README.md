@@ -7,16 +7,15 @@
 
 SAP BTP feature toggle library enables Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.
 
-## Install or Upgrade
-
-```bash
-npm install --save @cap-js-community/feature-toggle-library
-```
-
 ## Getting Started
 
 - Set up project with `@sap/cds`
-- Install library `npm install --save @cap-js-community/feature-toggle-library`
+- Install library
+
+  ```bash
+  npm install --save @cap-js-community/feature-toggle-library
+  ```
+
 - Write `toggles.yaml` configuration file:
 
   ```yaml
