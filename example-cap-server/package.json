@@ -15,8 +15,7 @@
     "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
   },
   "engines": {
-    "node": "^18.0.0",
-    "npm": "^9.0.0"
+    "node": "^18.0.0"
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
