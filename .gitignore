@@ -11,3 +11,6 @@ temp/
 
 # cds
 gen/
+
+# test
+coverage

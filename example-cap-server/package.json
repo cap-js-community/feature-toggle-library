@@ -11,7 +11,7 @@
     "build:deps": "npm i --omit=dev --prefix=gen/srv",
     "build:copy-library": "npx shx rm -rf gen/srv/node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p gen/srv/node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src gen/srv/node_modules/@cap-js-community/feature-toggle-library",
     "deploy": "npm run build && cf push",
-    "cloc": "npx cloc --vcs=git --exclude-ext=def --read-lang-def=cloc.def .",
+    "cloc": "npx cloc --vcs=git --read-lang-def=../cloc.def .",
     "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
   },
   "engines": {
