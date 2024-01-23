@@ -9,6 +9,7 @@ const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper")
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
+const isBuild = cds.build?.register;
 
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
   if (!Array.isArray(envFeatureToggles.serviceAccessRoles)) {
@@ -76,7 +77,9 @@ const activate = async () => {
   _overwriteServiceAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
 
-  // TODO for the "cds build" use case, this initialize makes no sense
+  if (isBuild) {
+    return;
+  }
   await toggles.initializeFeatures({
     config: envFeatureToggles.config,
     configFile: envFeatureToggles.configFile,
