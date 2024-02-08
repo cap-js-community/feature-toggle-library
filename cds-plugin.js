@@ -11,6 +11,14 @@ const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
 const isBuild = cds.build?.register;
 
+const _overwriteUniqueName = (envFeatureToggles) => {
+  const uniqueName = envFeatureToggles.uniqueName;
+  if (!uniqueName) {
+    return;
+  }
+  toggles._reset({ uniqueName });
+};
+
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
   if (!Array.isArray(envFeatureToggles.serviceAccessRoles)) {
     return;
@@ -74,6 +82,7 @@ const activate = async () => {
   if (!envFeatureToggles?.config && !envFeatureToggles?.configFile) {
     return;
   }
+  _overwriteUniqueName(envFeatureToggles);
   _overwriteServiceAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
 

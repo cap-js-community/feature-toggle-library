@@ -240,14 +240,6 @@ class FeatureToggles {
     this.__isConfigProcessed = false;
   }
 
-  /**
-   * Call this with
-   * - your configuration object or
-   * - local filepath to a yaml file with your configuration object (recommended)
-   * to initialize the feature toggles. For example during service loading.
-   *
-   * For syntax and details regarding the configuration object refer to README.md.
-   */
   // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
   constructor({ uniqueName = undefined, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
     this._reset({ uniqueName, redisChannel, redisKey });
