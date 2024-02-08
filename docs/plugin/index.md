@@ -22,7 +22,14 @@ Here is a list of all plugin settings that can be used in `package.json` under t
 | :----------------- | :----- | :------------------------------------------------------------------------ |
 | configFile         | string | path of the [configuration]({{ site.baseurl }}/usage/#configuration) file |
 | config             | object | inline configuration (only recommended for toy projects)                  |
-| serviceAccessRoles | array  | see below                                                                 |
+| uniqueName         | string | optional setting, see below                                               |
+| serviceAccessRoles | array  | optional setting, see below                                               |
+
+_uniqueName_<br>
+The unique name is an identifier for the state data in redis. This defaults to the cloud foundry application name and
+usually need not be changed. Sometimes multiple apps want to access the same state though. In this case you would give
+all of them the same unique name. See
+[single-key-approach]({{ site.baseurl }}/architecture/#single-key-approach) for a diagram.
 
 _serviceAccessRoles_<br>
 Per default the service endpoints are accessible only to users with the CAP pseudo-role
