@@ -26,6 +26,7 @@ const { HandlerCollection } = require("./shared/handlerCollection");
 const { ENV, isObject, tryRequire } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
+const { Semaphore } = require("./shared/semaphore");
 
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
@@ -652,7 +653,7 @@ class FeatureToggles {
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
    */
-  async initializeFeatures({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH }) {
+  async _initializeFeatures({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH } = {}) {
     if (this.__isInitialized) {
       return;
     }
@@ -766,6 +767,10 @@ class FeatureToggles {
     );
     this.__isInitialized = true;
     return this;
+  }
+
+  async initializeFeatures(options) {
+    return await Semaphore.makeExclusive(this._initializeFeatures.bind(this))(options);
   }
 
   // ========================================

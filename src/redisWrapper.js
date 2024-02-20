@@ -22,7 +22,6 @@ const INTEGRATION_MODE = Object.freeze({
 const CF_REDIS_SERVICE_LABEL = "redis-cache";
 
 const logger = new Logger(COMPONENT_NAME);
-const watchedGetSetSemaphore = new Semaphore();
 
 const MODE = Object.freeze({
   RAW: "raw",
@@ -300,15 +299,6 @@ const setObject = async (key, value, options) => {
  */
 const del = async (key) => await _clientExec("DEL", { key });
 
-const _watchedGetSetExclusive = async (key, newValueCallback, options) => {
-  await watchedGetSetSemaphore.acquire();
-  try {
-    return await _watchedGetSet(key, newValueCallback, options);
-  } finally {
-    watchedGetSetSemaphore.release();
-  }
-};
-
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
   if (!mainClient) {
@@ -372,6 +362,8 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
     "exceeded watched get set attempt limit"
   );
 };
+
+const _watchedGetSetExclusive = Semaphore.makeExclusive(_watchedGetSet);
 
 /**
  * @callback NewValueCallback

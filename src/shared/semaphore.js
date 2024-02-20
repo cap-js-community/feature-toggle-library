@@ -53,6 +53,22 @@ class Semaphore {
       this.resolveCurrentSemaphore();
     }
   }
+
+  /**
+   * Take an async function and turn it into an exclusively executing async function. Meaning (near) simultaneous calls
+   * will have a serialized execution and not run in parallel.
+   */
+  static makeExclusive(cb) {
+    const semaphore = new Semaphore();
+    return async (...args) => {
+      await semaphore.acquire();
+      try {
+        return await cb(...args);
+      } finally {
+        semaphore.release();
+      }
+    };
+  }
 }
 
 module.exports = { Semaphore };
