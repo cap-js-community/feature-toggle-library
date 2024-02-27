@@ -770,7 +770,7 @@ class FeatureToggles {
   }
 
   async initializeFeatures(options) {
-    return await Semaphore.makeExclusive(this._initializeFeatures.bind(this))(options);
+    return await Semaphore.makeExclusiveReturning(this._initializeFeatures.bind(this))(options);
   }
 
   // ========================================

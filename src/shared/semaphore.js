@@ -55,10 +55,10 @@ class Semaphore {
   }
 
   /**
-   * Take an async function and turn it into an exclusively executing async function. Meaning (near) simultaneous calls
-   * will have a serialized execution and not run in parallel.
+   * Take an async function and turn it into an exclusively executing async function. Calls during async execution will
+   * be queued and executed serially.
    */
-  static makeExclusive(cb) {
+  static makeExclusiveQueuing(cb) {
     const semaphore = new Semaphore();
     return async (...args) => {
       await semaphore.acquire();
@@ -66,6 +66,25 @@ class Semaphore {
         return await cb(...args);
       } finally {
         semaphore.release();
+      }
+    };
+  }
+
+  /**
+   * Take an async function and turn it into an exclusively executing async function. Calls during async execution will
+   * be returned.
+   */
+  static makeExclusiveReturning(cb) {
+    let isRunning;
+    return async (...args) => {
+      if (isRunning) {
+        return;
+      }
+      isRunning = true;
+      try {
+        return await cb(...args);
+      } finally {
+        isRunning = false;
       }
     };
   }

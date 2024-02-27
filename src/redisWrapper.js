@@ -363,7 +363,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
   );
 };
 
-const _watchedGetSetExclusive = Semaphore.makeExclusive(_watchedGetSet);
+const _watchedGetSetExclusive = Semaphore.makeExclusiveQueuing(_watchedGetSet);
 
 /**
  * @callback NewValueCallback
