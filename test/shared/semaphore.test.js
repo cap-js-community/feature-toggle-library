@@ -22,40 +22,58 @@ describe("semaphore", () => {
 
   test("make exclusive queueing", async () => {
     const exclusiveRunner = Semaphore.makeExclusiveQueuing(runner);
-    const results = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i)));
-    expect(results).toMatchInlineSnapshot(`
+    const resultsPrimary = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i + 1)));
+
+    const resultsSecondary = await Promise.all([exclusiveRunner(n + 1)]);
+    expect(resultsPrimary).toMatchInlineSnapshot(`
       [
         "finished",
         "finished",
         "finished",
       ]
     `);
+    expect(resultsSecondary).toMatchInlineSnapshot(`
+      [
+        "finished",
+      ]
+    `);
     expect(executionLog).toMatchInlineSnapshot(`
       [
-        "started 0",
-        "finished 0",
         "started 1",
         "finished 1",
         "started 2",
         "finished 2",
+        "started 3",
+        "finished 3",
+        "started 4",
+        "finished 4",
       ]
     `);
   });
 
   test("make exclusive returning", async () => {
     const exclusiveRunner = Semaphore.makeExclusiveReturning(runner);
-    const results = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i)));
-    expect(results).toMatchInlineSnapshot(`
+    const resultsPrimary = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i + 1)));
+
+    const resultsSecondary = await Promise.all([exclusiveRunner(n + 1)]);
+    expect(resultsPrimary).toMatchInlineSnapshot(`
       [
         "finished",
         undefined,
         undefined,
       ]
     `);
+    expect(resultsSecondary).toMatchInlineSnapshot(`
+      [
+        "finished",
+      ]
+    `);
     expect(executionLog).toMatchInlineSnapshot(`
       [
-        "started 0",
-        "finished 0",
+        "started 1",
+        "finished 1",
+        "started 4",
+        "finished 4",
       ]
     `);
   });
