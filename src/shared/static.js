@@ -1,5 +1,10 @@
 "use strict";
 
+const fs = require("fs");
+const { promisify } = require("util");
+
+const accessAsync = promisify(fs.access);
+
 const ENV = Object.freeze({
   USER: "USER",
   CF_APP: "VCAP_APPLICATION",
@@ -23,9 +28,21 @@ const tryRequire = (module) => {
   } catch (err) {} // eslint-disable-line no-empty
 };
 
+const fileReadable = async (path) => (await accessAsync(path, fs.constants.R_OK)) ?? true;
+
+const tryFileReadable = async (path) => {
+  try {
+    return await fileReadable(path);
+  } catch (err) {
+    return false;
+  }
+};
+
 module.exports = {
   ENV,
   isNull,
   isObject,
   tryRequire,
+  fileReadable,
+  tryFileReadable,
 };

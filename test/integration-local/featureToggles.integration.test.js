@@ -4,7 +4,10 @@
 // and test only the local mode here.
 
 const fs = jest.requireActual("fs");
-jest.mock("fs", () => ({ readFile: jest.fn() }));
+jest.mock("fs", () => ({
+  readFile: jest.fn(),
+  access: jest.fn((cb) => cb()),
+}));
 
 const { stateFromInfo } = require("../__common__/fromInfo");
 
@@ -92,7 +95,7 @@ describe("local integration test", () => {
       const { readFile: readFileSpy } = require("fs");
       readFileSpy.mockImplementationOnce(fs.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`
+        `[FeatureTogglesError: initialization aborted, could not read config file: ENOENT: no such file or directory, open 'fantasy_name']`
       );
     });
 

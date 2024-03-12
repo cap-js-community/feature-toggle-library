@@ -14,7 +14,10 @@ const {
 } = featureTogglesModule;
 
 const { readFile: readFileSpy } = require("fs");
-jest.mock("fs", () => ({ readFile: jest.fn() }));
+jest.mock("fs", () => ({
+  readFile: jest.fn(),
+  access: jest.fn((cb) => cb()),
+}));
 
 const envMock = require("../src/env");
 jest.mock("../src/env", () => require("./__mocks__/env"));

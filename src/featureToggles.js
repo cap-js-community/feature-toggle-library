@@ -23,7 +23,7 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const cfEnv = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isObject, tryRequire } = require("./shared/static");
+const { ENV, isObject, tryRequire, fileReadable, tryFileReadable } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 const { Semaphore } = require("./shared/semaphore");
@@ -645,28 +645,32 @@ class FeatureToggles {
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
    */
-  async _initializeFeatures({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH } = {}) {
+  async _initializeFeatures({ config: configInput, configFile: configFilepath } = {}) {
     if (this.__isInitialized) {
       return;
     }
 
     let configFromFile;
-    if (configFilepath) {
-      try {
-        configFromFile = await FeatureToggles.readConfigFromFile(configFilepath);
-      } catch (err) {
-        throw new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            cause: err,
-            info: {
-              configFilepath,
-            },
-          },
-          "initialization aborted, could not read config file"
-        );
+    try {
+      if (!configFilepath && (await tryFileReadable(DEFAULT_CONFIG_FILEPATH))) {
+        configFilepath = DEFAULT_CONFIG_FILEPATH;
       }
+      if (configFilepath) {
+        configFromFile = await FeatureToggles.readConfigFromFile(configFilepath);
+      }
+    } catch (err) {
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            configFilepath,
+          },
+        },
+        "initialization aborted, could not read config file"
+      );
     }
+
     const config = Object.assign({}, configFromFile, configInput);
 
     let toggleCount;
