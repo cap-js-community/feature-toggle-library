@@ -53,6 +53,41 @@ class Semaphore {
       this.resolveCurrentSemaphore();
     }
   }
+
+  /**
+   * Take an async function and turn it into an exclusively executing async function. Calls during async execution will
+   * be queued and executed serially.
+   */
+  static makeExclusiveQueuing(cb) {
+    const semaphore = new Semaphore();
+    return async (...args) => {
+      await semaphore.acquire();
+      try {
+        return await cb(...args);
+      } finally {
+        semaphore.release();
+      }
+    };
+  }
+
+  /**
+   * Take an async function and turn it into an exclusively executing async function. Calls during async execution will
+   * be returned.
+   */
+  static makeExclusiveReturning(cb) {
+    let isRunning;
+    return async (...args) => {
+      if (isRunning) {
+        return;
+      }
+      isRunning = true;
+      try {
+        return await cb(...args);
+      } finally {
+        isRunning = false;
+      }
+    };
+  }
 }
 
 module.exports = { Semaphore };
