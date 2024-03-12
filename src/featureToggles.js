@@ -650,23 +650,24 @@ class FeatureToggles {
       return;
     }
 
-    let config;
-    try {
-      config = configInput ? configInput : await FeatureToggles.readConfigFromFile(configFilepath);
-    } catch (err) {
-      throw new VError(
-        {
-          name: VERROR_CLUSTER_NAME,
-          cause: err,
-          info: {
-            configFilepath,
-            ...(configInput && { configBaseInput: JSON.stringify(configInput) }),
-            ...(config && { configBase: JSON.stringify(config) }),
+    let configFromFile;
+    if (configFilepath) {
+      try {
+        configFromFile = await FeatureToggles.readConfigFromFile(configFilepath);
+      } catch (err) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            cause: err,
+            info: {
+              configFilepath,
+            },
           },
-        },
-        "initialization aborted, could not resolve configuration"
-      );
+          "initialization aborted, could not read config file"
+        );
+      }
     }
+    const config = Object.assign({}, configFromFile, configInput);
 
     let toggleCount;
     try {
