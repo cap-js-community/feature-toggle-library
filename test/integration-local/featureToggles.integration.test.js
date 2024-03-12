@@ -105,6 +105,35 @@ describe("local integration test", () => {
         `[FeatureTogglesError: initialization aborted, could not process configuration: Cannot read properties of undefined (reading 'type')]`
       );
     });
+
+    it("init mixing", async () => {
+      const { readFile: readFileSpy } = require("fs");
+
+      const configForFile = {
+        [FEATURE.A]: {
+          fallbackValue: "fallbackFile",
+          type: "string",
+        },
+      };
+      const configForRuntime = {
+        [FEATURE.A]: config[FEATURE.A],
+      };
+      readFileSpy.mockImplementationOnce((filepath, callback) =>
+        callback(null, Buffer.from(JSON.stringify(configForFile)))
+      );
+
+      await toggles.initializeFeatures({ config: configForRuntime, configFile: "somePath.json" });
+      expect(toggles.getFeaturesInfos()).toMatchInlineSnapshot(`
+        {
+          "test/feature_a": {
+            "config": {
+              "TYPE": "boolean",
+            },
+            "fallbackValue": false,
+          },
+        }
+      `);
+    });
   });
 
   describe("validations", () => {

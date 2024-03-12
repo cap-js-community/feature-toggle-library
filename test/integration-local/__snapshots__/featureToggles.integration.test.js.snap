@@ -140,3 +140,91 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
   },
 }
 `;
+
+exports[`local integration test init init mixing 1`] = `
+{
+  "test/feature_a": {
+    "config": {
+      "TYPE": "boolean",
+    },
+    "fallbackValue": false,
+  },
+}
+`;
+
+exports[`local integration test init init mixing 2`] = `
+{
+  "test/feature_a": {
+    "config": {
+      "TYPE": "boolean",
+    },
+    "fallbackValue": false,
+  },
+  "test/feature_b": {
+    "config": {
+      "TYPE": "number",
+    },
+    "fallbackValue": 1,
+  },
+  "test/feature_c": {
+    "config": {
+      "TYPE": "string",
+    },
+    "fallbackValue": "best",
+  },
+  "test/feature_d": {
+    "config": {
+      "TYPE": "boolean",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:true)$",
+        },
+      ],
+    },
+    "fallbackValue": true,
+  },
+  "test/feature_e": {
+    "config": {
+      "TYPE": "number",
+      "VALIDATIONS": [
+        {
+          "scopes": [
+            "component",
+            "layer",
+            "tenant",
+          ],
+        },
+        {
+          "regex": "^\\d{1}$",
+        },
+      ],
+    },
+    "fallbackValue": 5,
+  },
+  "test/feature_f": {
+    "config": {
+      "TYPE": "string",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:best|worst)$",
+        },
+      ],
+    },
+    "fallbackValue": "best",
+  },
+  "test/feature_g": {
+    "config": {
+      "ACTIVE": false,
+      "TYPE": "string",
+    },
+    "fallbackValue": "activeTest",
+  },
+  "test/feature_h": {
+    "config": {
+      "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+      "TYPE": "string",
+    },
+    "fallbackValue": "appUrlTest",
+  },
+}
+`;
