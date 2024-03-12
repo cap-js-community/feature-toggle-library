@@ -8,6 +8,7 @@ const sleep = promisify(setTimeout);
 describe("semaphore", () => {
   let executionLog;
   const n = 3;
+  const m = 2;
   const result = "finished";
   const runner = async (index) => {
     executionLog.push(format("started %d", index));
@@ -24,7 +25,7 @@ describe("semaphore", () => {
     const exclusiveRunner = Semaphore.makeExclusiveQueuing(runner);
     const resultsPrimary = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i + 1)));
 
-    const resultsSecondary = await Promise.all([exclusiveRunner(n + 1)]);
+    const resultsSecondary = await Promise.all(Array.from({ length: m }, (_, i) => exclusiveRunner(n + i + 1)));
     expect(resultsPrimary).toMatchInlineSnapshot(`
       [
         "finished",
@@ -34,6 +35,7 @@ describe("semaphore", () => {
     `);
     expect(resultsSecondary).toMatchInlineSnapshot(`
       [
+        "finished",
         "finished",
       ]
     `);
@@ -47,6 +49,8 @@ describe("semaphore", () => {
         "finished 3",
         "started 4",
         "finished 4",
+        "started 5",
+        "finished 5",
       ]
     `);
   });
@@ -55,7 +59,7 @@ describe("semaphore", () => {
     const exclusiveRunner = Semaphore.makeExclusiveReturning(runner);
     const resultsPrimary = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i + 1)));
 
-    const resultsSecondary = await Promise.all([exclusiveRunner(n + 1)]);
+    const resultsSecondary = await Promise.all(Array.from({ length: m }, (_, i) => exclusiveRunner(n + i + 1)));
     expect(resultsPrimary).toMatchInlineSnapshot(`
       [
         "finished",
@@ -66,6 +70,7 @@ describe("semaphore", () => {
     expect(resultsSecondary).toMatchInlineSnapshot(`
       [
         "finished",
+        undefined,
       ]
     `);
     expect(executionLog).toMatchInlineSnapshot(`
