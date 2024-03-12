@@ -103,7 +103,7 @@ class FeatureToggles {
 
   _processValidations(featureKey, validations, configFilepath) {
     const workingDir = process.cwd();
-    const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
+    const configDir = configFilepath ? path.dirname(configFilepath) : workingDir;
 
     const validationsScopesMap = {};
     const validationsRegex = [];
