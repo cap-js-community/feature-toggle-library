@@ -9,12 +9,11 @@ describe("semaphore", () => {
   let executionLog;
   const n = 3;
   const m = 2;
-  const result = "finished";
   const runner = async (index) => {
     executionLog.push(format("started %d", index));
     await sleep(10);
     executionLog.push(format("finished %d", index));
-    return result;
+    return format("result %d", index);
   };
 
   beforeEach(() => {
@@ -27,15 +26,15 @@ describe("semaphore", () => {
     const resultsSecondary = await Promise.all(Array.from({ length: m }, (_, i) => runner(n + i + 1)));
     expect(resultsPrimary).toMatchInlineSnapshot(`
       [
-        "finished",
-        "finished",
-        "finished",
+        "result 1",
+        "result 2",
+        "result 3",
       ]
     `);
     expect(resultsSecondary).toMatchInlineSnapshot(`
       [
-        "finished",
-        "finished",
+        "result 4",
+        "result 5",
       ]
     `);
     expect(executionLog).toMatchInlineSnapshot(`
@@ -61,15 +60,15 @@ describe("semaphore", () => {
     const resultsSecondary = await Promise.all(Array.from({ length: m }, (_, i) => exclusiveRunner(n + i + 1)));
     expect(resultsPrimary).toMatchInlineSnapshot(`
       [
-        "finished",
-        "finished",
-        "finished",
+        "result 1",
+        "result 2",
+        "result 3",
       ]
     `);
     expect(resultsSecondary).toMatchInlineSnapshot(`
       [
-        "finished",
-        "finished",
+        "result 4",
+        "result 5",
       ]
     `);
     expect(executionLog).toMatchInlineSnapshot(`
@@ -95,15 +94,15 @@ describe("semaphore", () => {
     const resultsSecondary = await Promise.all(Array.from({ length: m }, (_, i) => exclusiveRunner(n + i + 1)));
     expect(resultsPrimary).toMatchInlineSnapshot(`
       [
-        "finished",
-        undefined,
-        undefined,
+        "result 1",
+        "result 1",
+        "result 1",
       ]
     `);
     expect(resultsSecondary).toMatchInlineSnapshot(`
       [
-        "finished",
-        undefined,
+        "result 4",
+        "result 4",
       ]
     `);
     expect(executionLog).toMatchInlineSnapshot(`

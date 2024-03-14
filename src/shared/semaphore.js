@@ -72,17 +72,19 @@ class Semaphore {
 
   /**
    * Take an async function and turn it into an exclusively executing async function. Calls during async execution will
-   * be returned.
+   * get a promise for the result of the exclusive caller.
    */
   static makeExclusiveReturning(cb) {
     let isRunning;
+    let runningPromise;
     return async (...args) => {
       if (isRunning) {
-        return;
+        return runningPromise;
       }
       isRunning = true;
       try {
-        return await cb(...args);
+        runningPromise = cb(...args);
+        return await runningPromise;
       } finally {
         isRunning = false;
       }
