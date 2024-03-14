@@ -107,8 +107,12 @@ const _createClientBase = (clientName) => {
     }
   } else {
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
+    // NOTE: using localhost might be tempting here, but it creates some downstream trouble. in early node version
+    //   localhost resolved to 127.0.0.1 (ipv4). In node v18, they changed it to resolves to ::1 (ipv6). In
+    //   node v20, they changed it again, to now try both ipv4 _and_ ipv6 and through an AggregateError, which is not
+    //   handled well by verror.
     return redis.createClient({
-      url: "redis://localhost:6379",
+      url: "redis://127.0.0.1:6379",
       socket: { reconnectStrategy: _localReconnectStrategy },
     });
   }
@@ -133,7 +137,7 @@ const _createClientAndConnect = async (clientName) => {
   try {
     await client.connect();
   } catch (err) {
-    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during initial connect");
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "error during initial connect");
   }
   return client;
 };
