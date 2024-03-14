@@ -73,9 +73,9 @@ describe("redis wrapper test", () => {
       [
         {
           "socket": {
-            "host": "127.0.0.1",
             "reconnectStrategy": [Function],
           },
+          "url": "redis://localhost:6379",
         },
       ]
     `);
@@ -105,8 +105,9 @@ describe("redis wrapper test", () => {
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(client.connect).toHaveBeenCalledTimes(1);
     expect(redisWrapper._._getMainClient()).toBe(client);
-    expect(mockClient.on).toHaveBeenCalledTimes(1);
+    expect(mockClient.on).toHaveBeenCalledTimes(2);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
+    expect(mockClient.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
     expect(mockClient.SUBSCRIBE).not.toHaveBeenCalled();
     expect(mockClient.PUBLISH).not.toHaveBeenCalled();
     expect(loggerSpy.error).not.toHaveBeenCalled();
@@ -116,8 +117,9 @@ describe("redis wrapper test", () => {
     const client = await redisWrapper.getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redisWrapper._._getSubscriberClient()).toBe(client);
-    expect(mockClient.on).toHaveBeenCalledTimes(1);
+    expect(mockClient.on).toHaveBeenCalledTimes(2);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
+    expect(mockClient.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
     expect(mockClient.SUBSCRIBE).not.toHaveBeenCalled();
     expect(mockClient.PUBLISH).not.toHaveBeenCalled();
     expect(loggerSpy.error).not.toHaveBeenCalled();
@@ -128,8 +130,9 @@ describe("redis wrapper test", () => {
     const client = redisWrapper._._getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(client);
-    expect(client.on).toHaveBeenCalledTimes(1);
+    expect(client.on).toHaveBeenCalledTimes(2);
     expect(client.on).toHaveBeenCalledWith("error", expect.any(Function));
+    expect(client.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
     expect(mockClient.SET).toHaveBeenCalledTimes(1);
     expect(mockClient.SET).toHaveBeenCalledWith("key", "value");
     expect(result).toBe("SET_return");
@@ -449,8 +452,9 @@ describe("redis wrapper test", () => {
     const subscriber = redisWrapper._._getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(subscriber);
-    expect(subscriber.on).toHaveBeenCalledTimes(1);
+    expect(subscriber.on).toHaveBeenCalledTimes(2);
     expect(subscriber.on).toHaveBeenCalledWith("error", expect.any(Function));
+    expect(subscriber.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
     expect(subscriber.SUBSCRIBE).toHaveBeenCalledTimes(1);
     expect(subscriber.SUBSCRIBE).toHaveBeenCalledWith(channel, redisWrapper._._subscribedMessageHandler);
     expect(mockClient.PUBLISH).not.toHaveBeenCalled();
