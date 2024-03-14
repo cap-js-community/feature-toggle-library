@@ -80,7 +80,7 @@ const _localReconnectStrategy = () =>
  * @returns {RedisClient|RedisCluster}
  * @private
  */
-const _createClientBase = () => {
+const _createClientBase = (clientName) => {
   if (cfEnv.isOnCf) {
     try {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
@@ -100,29 +100,42 @@ const _createClientBase = () => {
       }
       return redis.createClient({ url });
     } catch (err) {
-      throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client with redis service");
+      throw new VError(
+        { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
+        "error during create client with redis service"
+      );
     }
   } else {
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
-    // NOTE: we make the host explicit here to avoid ipv4/ipv6 ambivalence problems that got introduced with node v18
-    return redis.createClient({ socket: { host: "127.0.0.1", reconnectStrategy: _localReconnectStrategy } });
+    // NOTE: redis behaves a bit odd if you don't make the socket family, aka. ip stack version explicit here. For the
+    //   default family value 0, it will be ipv4 in node v16, ipv6 in node v18 and ipv4+ipv6 in node v20...
+    return redis.createClient({
+      url: "redis://localhost:6379",
+      socket: { family: 4, reconnectStrategy: _localReconnectStrategy },
+    });
   }
 };
 
-const _createClientAndConnect = async (errorHandler) => {
+const _createClientAndConnect = async (clientName) => {
   let client = null;
   try {
-    client = _createClientBase();
+    client = _createClientBase(clientName);
   } catch (err) {
-    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during create client");
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "error during create client");
   }
 
-  client.on("error", errorHandler);
+  // NOTE: documentation about events is here https://github.com/redis/node-redis?tab=readme-ov-file#events
+  client.on("error", (err) => {
+    _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
+  });
+  client.on("reconnecting", () => {
+    logger.warning("client '%s' is reconnecting", clientName);
+  });
 
   try {
     await client.connect();
   } catch (err) {
-    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during initial connect");
+    throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "error during initial connect");
   }
   return client;
 };
@@ -130,17 +143,6 @@ const _createClientAndConnect = async (errorHandler) => {
 const _closeClientBase = async (client) => {
   if (client?.isOpen) {
     await client.quit();
-  }
-};
-
-const _clientErrorHandlerBase = async (client, err, clientName) => {
-  _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
-  try {
-    await _closeClientBase(client);
-  } catch (closeError) {
-    _logErrorOnEvent(
-      new VError({ name: VERROR_CLUSTER_NAME, cause: closeError, info: { clientName } }, "error during client close")
-    );
   }
 };
 
@@ -156,10 +158,7 @@ const _clientErrorHandlerBase = async (client, err, clientName) => {
  */
 const getMainClient = async () => {
   if (!mainClient) {
-    mainClient = await _createClientAndConnect(async function (err) {
-      mainClient = null;
-      await _clientErrorHandlerBase(this, err, "main");
-    });
+    mainClient = await _createClientAndConnect("main");
   }
   return mainClient;
 };
@@ -169,7 +168,10 @@ const getMainClient = async () => {
  *
  * @private
  */
-const closeMainClient = async () => await _closeClientBase(mainClient);
+const closeMainClient = async () => {
+  await _closeClientBase(mainClient);
+  mainClient = null;
+};
 
 /**
  * Lazily create a client to be used as a subscriber. Subscriber clients are in a special state and cannot be used for
@@ -182,10 +184,7 @@ const closeMainClient = async () => await _closeClientBase(mainClient);
  */
 const getSubscriberClient = async () => {
   if (!subscriberClient) {
-    subscriberClient = await _createClientAndConnect(async function (err) {
-      subscriberClient = null;
-      await _clientErrorHandlerBase(this, err, "subscriber");
-    });
+    subscriberClient = await _createClientAndConnect("subscriber");
   }
   return subscriberClient;
 };
@@ -195,7 +194,10 @@ const getSubscriberClient = async () => {
  *
  * @private
  */
-const closeSubscriberClient = async () => await _closeClientBase(subscriberClient);
+const closeSubscriberClient = async () => {
+  await _closeClientBase(subscriberClient);
+  subscriberClient = null;
+};
 
 const _clientExec = async (functionName, argsObject) => {
   if (!mainClient) {
