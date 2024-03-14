@@ -258,7 +258,7 @@ describe("local integration test", () => {
         [
           [
             "%s | %O",
-            "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
+            "caught error event: connect ECONNREFUSED ::1:6379",
             {
               "clientName": "main",
             },
