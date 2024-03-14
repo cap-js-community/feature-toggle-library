@@ -107,13 +107,11 @@ const _createClientBase = (clientName) => {
     }
   } else {
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
-    // NOTE: using localhost might be tempting here, but it creates some downstream trouble. in early node version
-    //   localhost resolved to 127.0.0.1 (ipv4). In node v18, they changed it to resolves to ::1 (ipv6). In
-    //   node v20, they changed it again, to now try both ipv4 _and_ ipv6 and through an AggregateError, which is not
-    //   handled well by verror.
+    // NOTE: redis behaves a bit odd if you don't make the socket family, aka. ip stack version explicit here. For the
+    //   default family value 0, it will be ipv4 in node v16, ipv6 in node v18 and ipv4+ipv6 in node v20...
     return redis.createClient({
-      url: "redis://127.0.0.1:6379",
-      socket: { reconnectStrategy: _localReconnectStrategy },
+      url: "redis://localhost:6379",
+      socket: { family: 4, reconnectStrategy: _localReconnectStrategy },
     });
   }
 };

@@ -73,9 +73,10 @@ describe("redis wrapper test", () => {
       [
         {
           "socket": {
+            "family": 4,
             "reconnectStrategy": [Function],
           },
-          "url": "redis://127.0.0.1:6379",
+          "url": "redis://localhost:6379",
         },
       ]
     `);
