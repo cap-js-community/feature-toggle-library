@@ -9,7 +9,6 @@ const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
-const { tryPathReadable } = require("./src/shared/static");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 const FTS_DEFAULT_CONFIG = {
@@ -17,7 +16,6 @@ const FTS_DEFAULT_CONFIG = {
   fallbackValue: false,
 };
 
-const FeatureToggles = toggles.FeatureToggles;
 const readDirAsync = promisify(fs.readdir);
 
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
@@ -90,9 +88,9 @@ const _registerClientCloseOnShutdown = () => {
 };
 
 const _discoverFtsConfig = async () => {
-  const root = process.env.ROOT || process.cwd();
+  const root = process.env.ROOT ?? process.cwd();
   const ftsRoot = pathlib.join(root, "fts");
-  let result = {};
+  let result;
   try {
     result = (await readDirAsync(ftsRoot, { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())
@@ -100,25 +98,17 @@ const _discoverFtsConfig = async () => {
         const key = `fts/${curr.name}`;
         acc[key] = Object.assign({}, FTS_DEFAULT_CONFIG);
         return acc;
-      }, result);
+      }, {});
   } catch (err) {} // eslint-disable-line no-empty
   return result;
 };
 
-const _consolidateConfig = async (envFeatureToggles) => {
-  const configFromFile = (await tryPathReadable(envFeatureToggles.configFile))
-    ? await FeatureToggles.readConfigFromFile(envFeatureToggles.configFile)
-    : undefined;
-  return Object.assign({}, await _discoverFtsConfig(), configFromFile, envFeatureToggles.config);
-};
-
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
-  const config = await _consolidateConfig(envFeatureToggles);
-  if (!Object.keys(config).length) {
+  const ftsConfig = await _discoverFtsConfig();
+  if (!ftsConfig && !envFeatureToggles?.configFile && !envFeatureToggles?.config) {
     return;
   }
-
   _overwriteUniqueName(envFeatureToggles);
   _overwriteServiceAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
@@ -126,8 +116,11 @@ const activate = async () => {
   if (isBuild) {
     return;
   }
-
-  await toggles.initializeFeatures({ config });
+  await toggles.initializeFeatures({
+    config: envFeatureToggles.config,
+    configFile: envFeatureToggles.configFile,
+    configAuto: ftsConfig,
+  });
 
   _registerFeatureProvider();
 };
