@@ -641,11 +641,7 @@ class FeatureToggles {
     );
   }
 
-  /**
-   * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
-   * related internal state, and starts communication with redis.
-   */
-  async _initializeFeatures({ config: configInput, configFile: configFilepath } = {}) {
+  async _initializeFeatures({ config: configInput, configFile: configFilepath, configAuto } = {}) {
     if (this.__isInitialized) {
       return;
     }
@@ -671,7 +667,7 @@ class FeatureToggles {
       );
     }
 
-    const config = Object.assign({}, configFromFile, configInput);
+    const config = Object.assign({}, configAuto, configFromFile, configInput);
 
     let toggleCount;
     try {
@@ -766,6 +762,10 @@ class FeatureToggles {
     return this;
   }
 
+  /**
+   * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
+   * related internal state, and starts communication with redis.
+   */
   async initializeFeatures(options) {
     return await Semaphore.makeExclusiveReturning(this._initializeFeatures.bind(this))(options);
   }
