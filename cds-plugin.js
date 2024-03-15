@@ -22,7 +22,7 @@ const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
 const isBuild = cds.build?.register;
 
 const _overwriteUniqueName = (envFeatureToggles) => {
-  const uniqueName = envFeatureToggles.uniqueName;
+  const uniqueName = envFeatureToggles?.uniqueName;
   if (!uniqueName) {
     return;
   }
@@ -30,7 +30,7 @@ const _overwriteUniqueName = (envFeatureToggles) => {
 };
 
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
-  if (!Array.isArray(envFeatureToggles.serviceAccessRoles)) {
+  if (!Array.isArray(envFeatureToggles?.serviceAccessRoles)) {
     return;
   }
   cds.on("loaded", (csn) => {
@@ -106,7 +106,7 @@ const _discoverFtsConfig = async () => {
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
   const ftsConfig = await _discoverFtsConfig();
-  if (!ftsConfig && !envFeatureToggles?.configFile && !envFeatureToggles?.config) {
+  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile && !ftsConfig) {
     return;
   }
   _overwriteUniqueName(envFeatureToggles);
@@ -117,8 +117,8 @@ const activate = async () => {
     return;
   }
   await toggles.initializeFeatures({
-    config: envFeatureToggles.config,
-    configFile: envFeatureToggles.configFile,
+    config: envFeatureToggles?.config,
+    configFile: envFeatureToggles?.configFile,
     configAuto: ftsConfig,
   });
 
