@@ -28,11 +28,11 @@ const tryRequire = (module) => {
   } catch (err) {} // eslint-disable-line no-empty
 };
 
-const fileReadable = async (path) => (await accessAsync(path, fs.constants.R_OK)) ?? true;
+const pathReadable = async (path) => (await accessAsync(path, fs.constants.R_OK)) ?? true;
 
-const tryFileReadable = async (path) => {
+const tryPathReadable = async (path) => {
   try {
-    return await fileReadable(path);
+    return await pathReadable(path);
   } catch (err) {
     return false;
   }
@@ -43,6 +43,6 @@ module.exports = {
   isNull,
   isObject,
   tryRequire,
-  fileReadable,
-  tryFileReadable,
+  pathReadable,
+  tryPathReadable,
 };

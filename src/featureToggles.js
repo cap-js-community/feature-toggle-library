@@ -23,7 +23,7 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const cfEnv = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isObject, tryRequire, tryFileReadable } = require("./shared/static");
+const { ENV, isObject, tryRequire, tryPathReadable } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 const { Semaphore } = require("./shared/semaphore");
@@ -652,7 +652,7 @@ class FeatureToggles {
 
     let configFromFile;
     try {
-      if (!configFilepath && (await tryFileReadable(DEFAULT_CONFIG_FILEPATH))) {
+      if (!configFilepath && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
         configFilepath = DEFAULT_CONFIG_FILEPATH;
       }
       if (configFilepath) {

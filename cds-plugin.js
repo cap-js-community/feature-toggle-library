@@ -1,15 +1,25 @@
 // https://cap.cloud.sap/docs/node.js/cds-plugins
 "use strict";
 
+const { promisify } = require("util");
+const fs = require("fs");
+const pathlib = require("path");
+
 const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
-const { tryFileReadable } = require("./src/shared/static");
+const { tryPathReadable } = require("./src/shared/static");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
+const FTS_DEFAULT_CONFIG = {
+  type: "boolean",
+  fallbackValue: false,
+};
 
 const FeatureToggles = toggles.FeatureToggles;
+const readDirAsync = promisify(fs.readdir);
+
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
 const isBuild = cds.build?.register;
 
@@ -79,11 +89,27 @@ const _registerClientCloseOnShutdown = () => {
   });
 };
 
+const _discoverFtsConfig = async () => {
+  const root = process.env.ROOT || process.cwd();
+  const ftsRoot = pathlib.join(root, "fts");
+  let result = {};
+  try {
+    result = (await readDirAsync(ftsRoot, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .reduce((acc, curr) => {
+        const key = `fts/${curr.name}`;
+        acc[key] = Object.assign({}, FTS_DEFAULT_CONFIG);
+        return acc;
+      }, result);
+  } catch (err) {} // eslint-disable-line no-empty
+  return result;
+};
+
 const _consolidateConfig = async (envFeatureToggles) => {
-  const configFromFile = (await tryFileReadable(envFeatureToggles.configFile))
+  const configFromFile = (await tryPathReadable(envFeatureToggles.configFile))
     ? await FeatureToggles.readConfigFromFile(envFeatureToggles.configFile)
     : undefined;
-  return Object.assign(ftsConfig, configFromFile, envFeatureToggles.config);
+  return Object.assign({}, await _discoverFtsConfig(), configFromFile, envFeatureToggles.config);
 };
 
 const activate = async () => {
