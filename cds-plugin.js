@@ -11,7 +11,7 @@ const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
-const FTS_DEFAULT_CONFIG = {
+const FTS_AUTO_CONFIG = {
   type: "boolean",
   fallbackValue: false,
 };
@@ -87,7 +87,7 @@ const _registerClientCloseOnShutdown = () => {
   });
 };
 
-const _discoverFtsConfig = async () => {
+const _discoverFtsAutoConfig = async () => {
   const root = process.env.ROOT ?? process.cwd();
   const ftsRoot = pathlib.join(root, "fts");
   let result;
@@ -96,7 +96,7 @@ const _discoverFtsConfig = async () => {
       .filter((entry) => entry.isDirectory())
       .reduce((acc, curr) => {
         const key = `fts/${curr.name}`;
-        acc[key] = Object.assign({}, FTS_DEFAULT_CONFIG);
+        acc[key] = Object.assign({}, FTS_AUTO_CONFIG);
         return acc;
       }, {});
   } catch (err) {} // eslint-disable-line no-empty
@@ -105,8 +105,8 @@ const _discoverFtsConfig = async () => {
 
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
-  const ftsConfig = await _discoverFtsConfig();
-  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile && !ftsConfig) {
+  const ftsAutoConfig = await _discoverFtsAutoConfig();
+  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile && !ftsAutoConfig) {
     return;
   }
   _overwriteUniqueName(envFeatureToggles);
@@ -119,7 +119,7 @@ const activate = async () => {
   await toggles.initializeFeatures({
     config: envFeatureToggles?.config,
     configFile: envFeatureToggles?.configFile,
-    configAuto: ftsConfig,
+    configAuto: ftsAutoConfig,
   });
 
   _registerFeatureProvider();
@@ -130,8 +130,4 @@ const activate = async () => {
 const doExportActivateAsProperty =
   cdsPackage.version.localeCompare("7.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 
-module.exports = doExportActivateAsProperty
-  ? {
-      activate,
-    }
-  : activate();
+module.exports = doExportActivateAsProperty ? { activate } : activate();
