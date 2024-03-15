@@ -106,17 +106,28 @@ describe("local integration test", () => {
       );
     });
 
-    it("init mixing", async () => {
+    it("init config precedence", async () => {
       const { readFile: readFileSpy } = require("fs");
 
       const configForFile = {
         [FEATURE.A]: {
-          fallbackValue: "fallbackFile",
+          fallbackValue: "fallbackFileA",
+          type: "string",
+        },
+        [FEATURE.B]: {
+          fallbackValue: "fallbackFileB",
           type: "string",
         },
       };
       const configForRuntime = {
-        [FEATURE.A]: config[FEATURE.A],
+        [FEATURE.A]: {
+          fallbackValue: "fallbackRuntimeA",
+          type: "string",
+        },
+        [FEATURE.C]: {
+          fallbackValue: "fallbackRuntimeC",
+          type: "string",
+        },
       };
       readFileSpy.mockImplementationOnce((filepath, callback) =>
         callback(null, Buffer.from(JSON.stringify(configForFile)))
@@ -127,9 +138,21 @@ describe("local integration test", () => {
         {
           "test/feature_a": {
             "config": {
-              "TYPE": "boolean",
+              "TYPE": "string",
             },
-            "fallbackValue": false,
+            "fallbackValue": "fallbackRuntimeA",
+          },
+          "test/feature_b": {
+            "config": {
+              "TYPE": "string",
+            },
+            "fallbackValue": "fallbackFileB",
+          },
+          "test/feature_c": {
+            "config": {
+              "TYPE": "string",
+            },
+            "fallbackValue": "fallbackRuntimeC",
           },
         }
       `);
