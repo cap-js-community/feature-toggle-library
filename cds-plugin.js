@@ -5,9 +5,11 @@ const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
+const { tryFileReadable } = require("./src/shared/static");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 
+const FeatureToggles = toggles.FeatureToggles;
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
 const isBuild = cds.build?.register;
 
@@ -77,11 +79,20 @@ const _registerClientCloseOnShutdown = () => {
   });
 };
 
+const _consolidateConfig = async (envFeatureToggles) => {
+  const configFromFile = (await tryFileReadable(envFeatureToggles.configFile))
+    ? await FeatureToggles.readConfigFromFile(envFeatureToggles.configFile)
+    : undefined;
+  return Object.assign(ftsConfig, configFromFile, envFeatureToggles.config);
+};
+
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
-  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile) {
+  const config = await _consolidateConfig(envFeatureToggles);
+  if (!Object.keys(config).length) {
     return;
   }
+
   _overwriteUniqueName(envFeatureToggles);
   _overwriteServiceAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
@@ -89,10 +100,8 @@ const activate = async () => {
   if (isBuild) {
     return;
   }
-  await toggles.initializeFeatures({
-    config: envFeatureToggles.config,
-    configFile: envFeatureToggles.configFile,
-  });
+
+  await toggles.initializeFeatures({ config });
 
   _registerFeatureProvider();
 };
