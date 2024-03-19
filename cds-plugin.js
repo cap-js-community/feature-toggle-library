@@ -1,18 +1,28 @@
 // https://cap.cloud.sap/docs/node.js/cds-plugins
 "use strict";
 
+const { promisify } = require("util");
+const fs = require("fs");
+const pathlib = require("path");
+
 const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
+const FTS_AUTO_CONFIG = {
+  type: "boolean",
+  fallbackValue: false,
+};
+
+const readDirAsync = promisify(fs.readdir);
 
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
 const isBuild = cds.build?.register;
 
 const _overwriteUniqueName = (envFeatureToggles) => {
-  const uniqueName = envFeatureToggles.uniqueName;
+  const uniqueName = envFeatureToggles?.uniqueName;
   if (!uniqueName) {
     return;
   }
@@ -20,7 +30,7 @@ const _overwriteUniqueName = (envFeatureToggles) => {
 };
 
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
-  if (!Array.isArray(envFeatureToggles.serviceAccessRoles)) {
+  if (!Array.isArray(envFeatureToggles?.serviceAccessRoles)) {
     return;
   }
   cds.on("loaded", (csn) => {
@@ -77,9 +87,26 @@ const _registerClientCloseOnShutdown = () => {
   });
 };
 
+const _discoverFtsAutoConfig = async () => {
+  const root = process.env.ROOT ?? process.cwd();
+  const ftsRoot = pathlib.join(root, "fts");
+  let result;
+  try {
+    result = (await readDirAsync(ftsRoot, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .reduce((acc, curr) => {
+        const key = `/fts/${curr.name}`; // NOTE: this has to match FEATURE_KEY_REGEX
+        acc[key] = Object.assign({}, FTS_AUTO_CONFIG);
+        return acc;
+      }, {});
+  } catch (err) {} // eslint-disable-line no-empty
+  return result;
+};
+
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
-  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile) {
+  const ftsAutoConfig = await _discoverFtsAutoConfig();
+  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile && !ftsAutoConfig) {
     return;
   }
   _overwriteUniqueName(envFeatureToggles);
@@ -90,8 +117,9 @@ const activate = async () => {
     return;
   }
   await toggles.initializeFeatures({
-    config: envFeatureToggles.config,
-    configFile: envFeatureToggles.configFile,
+    config: envFeatureToggles?.config,
+    configFile: envFeatureToggles?.configFile,
+    configAuto: ftsAutoConfig,
   });
 
   _registerFeatureProvider();
@@ -102,8 +130,4 @@ const activate = async () => {
 const doExportActivateAsProperty =
   cdsPackage.version.localeCompare("7.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 
-module.exports = doExportActivateAsProperty
-  ? {
-      activate,
-    }
-  : activate();
+module.exports = doExportActivateAsProperty ? { activate } : activate();

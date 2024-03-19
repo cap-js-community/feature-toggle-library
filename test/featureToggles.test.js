@@ -14,7 +14,10 @@ const {
 } = featureTogglesModule;
 
 const { readFile: readFileSpy } = require("fs");
-jest.mock("fs", () => ({ readFile: jest.fn() }));
+jest.mock("fs", () => ({
+  readFile: jest.fn(),
+  access: jest.fn((cb) => cb()),
+}));
 
 const envMock = require("../src/env");
 jest.mock("../src/env", () => require("./__mocks__/env"));
@@ -462,6 +465,7 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
         {
           "config": {
+            "SOURCE": "RUNTIME",
             "TYPE": "boolean",
           },
           "fallbackValue": false,
@@ -470,6 +474,7 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
         {
           "config": {
+            "SOURCE": "RUNTIME",
             "TYPE": "number",
           },
           "fallbackValue": 1,
@@ -478,6 +483,7 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
         {
           "config": {
+            "SOURCE": "RUNTIME",
             "TYPE": "string",
           },
           "fallbackValue": "best",

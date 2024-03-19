@@ -68,24 +68,28 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
 {
   "test/feature_a": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "boolean",
     },
     "fallbackValue": false,
   },
   "test/feature_b": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "number",
     },
     "fallbackValue": 1,
   },
   "test/feature_c": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "best",
   },
   "test/feature_d": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "boolean",
       "VALIDATIONS": [
         {
@@ -97,6 +101,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
   },
   "test/feature_e": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "number",
       "VALIDATIONS": [
         {
@@ -115,6 +120,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
   },
   "test/feature_f": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
       "VALIDATIONS": [
         {
@@ -127,6 +133,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
   "test/feature_g": {
     "config": {
       "ACTIVE": false,
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "activeTest",
@@ -134,6 +141,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
   "test/feature_h": {
     "config": {
       "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",

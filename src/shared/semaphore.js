@@ -78,12 +78,11 @@ class Semaphore {
     let isRunning;
     let runningPromise;
     return async (...args) => {
-      if (isRunning) {
-        return runningPromise;
-      }
-      isRunning = true;
       try {
-        runningPromise = cb(...args);
+        if (!isRunning) {
+          isRunning = true;
+          runningPromise = cb(...args);
+        }
         return await runningPromise;
       } finally {
         isRunning = false;

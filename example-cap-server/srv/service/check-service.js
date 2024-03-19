@@ -14,7 +14,7 @@ const HIGH_BOUNDARY = 100;
 
 const priorityHandler = async (context) => {
   const { "CheckService.priority": priority } = context.model.definitions;
-  const isToggled = Boolean(priority["@marked"]);
+  const isFtsToggled = Boolean(priority["@marked"]);
   const value = toggles.getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
     value >= HIGH_BOUNDARY
@@ -22,7 +22,9 @@ const priorityHandler = async (context) => {
       : value >= MEDIUM_BOUNDARY
         ? MEDIUM_VALUE_RESPONSES
         : LOW_VALUE_RESPONSES;
-  const message = [value, messages[Math.floor(Math.random() * messages.length)], `isToggled ${isToggled}`].join(" | ");
+  const message = [value, messages[Math.floor(Math.random() * messages.length)], `isFtsToggled ${isFtsToggled}`].join(
+    " | "
+  );
   return context.reply(message);
 };
 

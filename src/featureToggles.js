@@ -23,7 +23,7 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const { Logger } = require("./logger");
 const cfEnv = require("./env");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isObject, tryRequire } = require("./shared/static");
+const { ENV, isObject, tryRequire, tryPathReadable } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 const { Semaphore } = require("./shared/semaphore");
@@ -39,9 +39,16 @@ const SCOPE_KEY_INNER_SEPARATOR = "::";
 const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
 
+const CONFIG_SOURCE = Object.freeze({
+  RUNTIME: "RUNTIME",
+  FILE: "FILE",
+  AUTO: "AUTO",
+});
+
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
+  SOURCE: "SOURCE",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
   VALIDATIONS: "VALIDATIONS",
@@ -52,6 +59,7 @@ const CONFIG_KEY = Object.freeze({
 const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
   [CONFIG_KEY.ACTIVE]: true,
+  [CONFIG_KEY.SOURCE]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
   [CONFIG_KEY.VALIDATIONS]: true,
@@ -103,7 +111,7 @@ class FeatureToggles {
 
   _processValidations(featureKey, validations, configFilepath) {
     const workingDir = process.cwd();
-    const configDir = configFilepath ? path.dirname(configFilepath) : __dirname;
+    const configDir = configFilepath ? path.dirname(configFilepath) : workingDir;
 
     const validationsScopesMap = {};
     const validationsRegex = [];
@@ -177,16 +185,40 @@ class FeatureToggles {
     }
   }
 
-  /**
-   * Populate this.__config.
-   */
-  _processConfig(config, configFilepath) {
+  _processConfigSource(source, configFromSource, configFilepath) {
+    let count = 0;
+    if (!isObject(configFromSource)) {
+      return count;
+    }
+
     const { uris: cfAppUris } = cfEnv.cfApp;
-    const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, fallbackValue, validations }] of configEntries) {
+    const entries = Object.entries(configFromSource);
+    for (const [featureKey, value] of entries) {
+      if (this.__config[featureKey]) {
+        continue;
+      }
+      count++;
+
+      if (!isObject(value)) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+            },
+          },
+          "feature configuration is not an object"
+        );
+      }
+
+      const { type, active, appUrl, fallbackValue, validations } = value;
+
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
+
+      this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
 
       if (type) {
         this.__config[featureKey][CONFIG_KEY.TYPE] = type;
@@ -210,8 +242,23 @@ class FeatureToggles {
       }
     }
 
+    return count;
+  }
+
+  /**
+   * Populate this.__config.
+   */
+  _processConfig([configRuntime, configFromFile, configAuto], configFilepath) {
+    const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime, configFilepath);
+    const configFromFileCount = this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto, configFilepath);
+
     this.__isConfigProcessed = true;
-    return configEntries.length;
+    return {
+      [CONFIG_SOURCE.RUNTIME]: configRuntimeCount,
+      [CONFIG_SOURCE.FILE]: configFromFileCount,
+      [CONFIG_SOURCE.AUTO]: configAutoCount,
+    };
   }
 
   _ensureInitialized() {
@@ -641,18 +688,19 @@ class FeatureToggles {
     );
   }
 
-  /**
-   * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
-   * related internal state, and starts communication with redis.
-   */
-  async _initializeFeatures({ config: configInput, configFile: configFilepath = DEFAULT_CONFIG_FILEPATH } = {}) {
+  async _initializeFeatures({ config: configRuntime, configFile: configFilepath, configAuto } = {}) {
     if (this.__isInitialized) {
       return;
     }
 
-    let config;
+    let configFromFile;
     try {
-      config = configInput ? configInput : await FeatureToggles.readConfigFromFile(configFilepath);
+      if (!configFilepath && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
+        configFilepath = DEFAULT_CONFIG_FILEPATH;
+      }
+      if (configFilepath) {
+        configFromFile = await FeatureToggles.readConfigFromFile(configFilepath);
+      }
     } catch (err) {
       throw new VError(
         {
@@ -660,24 +708,25 @@ class FeatureToggles {
           cause: err,
           info: {
             configFilepath,
-            ...(configInput && { configBaseInput: JSON.stringify(configInput) }),
-            ...(config && { configBase: JSON.stringify(config) }),
           },
         },
-        "initialization aborted, could not resolve configuration"
+        "initialization aborted, could not read config file"
       );
     }
 
-    let toggleCount;
+    let toggleCounts;
     try {
-      toggleCount = this._processConfig(config, configFilepath);
+      toggleCounts = this._processConfig([configRuntime, configFromFile, configAuto], configFilepath);
     } catch (err) {
       throw new VError(
         {
           name: VERROR_CLUSTER_NAME,
           cause: err,
           info: {
-            ...(config && { config: JSON.stringify(config) }),
+            ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
+            ...(configFromFile && { configFromFile: JSON.stringify(configFromFile) }),
+            ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
+            configFilepath,
           },
         },
         "initialization aborted, could not process configuration"
@@ -751,16 +800,25 @@ class FeatureToggles {
       }
     }
 
+    const totalCount =
+      toggleCounts[CONFIG_SOURCE.RUNTIME] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.AUTO];
     logger.info(
-      "finished initialization with %i feature toggle%s with %s",
-      toggleCount,
-      toggleCount === 1 ? "" : "s",
+      "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
+      totalCount,
+      totalCount === 1 ? "" : "s",
+      toggleCounts[CONFIG_SOURCE.RUNTIME],
+      toggleCounts[CONFIG_SOURCE.FILE],
+      toggleCounts[CONFIG_SOURCE.AUTO],
       redisIntegrationMode
     );
     this.__isInitialized = true;
     return this;
   }
 
+  /**
+   * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
+   * related internal state, and starts communication with redis.
+   */
   async initializeFeatures(options) {
     return await Semaphore.makeExclusiveReturning(this._initializeFeatures.bind(this))(options);
   }

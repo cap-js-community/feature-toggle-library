@@ -4,7 +4,10 @@
 // and test only the local mode here.
 
 const fs = jest.requireActual("fs");
-jest.mock("fs", () => ({ readFile: jest.fn() }));
+jest.mock("fs", () => ({
+  readFile: jest.fn(),
+  access: jest.fn((cb) => cb()),
+}));
 
 const { stateFromInfo } = require("../__common__/fromInfo");
 
@@ -92,15 +95,113 @@ describe("local integration test", () => {
       const { readFile: readFileSpy } = require("fs");
       readFileSpy.mockImplementationOnce(fs.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not resolve configuration: ENOENT: no such file or directory, open 'fantasy_name']`
+        `[FeatureTogglesError: initialization aborted, could not read config file: ENOENT: no such file or directory, open 'fantasy_name']`
       );
     });
 
     it("init fails processing for bad formats", async () => {
       const badConfig = { ...config, bla: undefined };
       await expect(toggles.initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: Cannot read properties of undefined (reading 'type')]`
+        `[FeatureTogglesError: initialization aborted, could not process configuration: feature configuration is not an object]`
       );
+    });
+
+    it("init config precedence", async () => {
+      const { readFile: readFileSpy } = require("fs");
+
+      const configForRuntime = {
+        [FEATURE.A]: {
+          fallbackValue: "fallbackRuntimeA",
+          type: "string",
+        },
+        [FEATURE.B]: {
+          fallbackValue: "fallbackRuntimeB",
+          type: "string",
+        },
+      };
+      const configForFile = {
+        [FEATURE.A]: {
+          fallbackValue: "fallbackFileA",
+          type: "string",
+        },
+        [FEATURE.C]: {
+          fallbackValue: "fallbackFileC",
+          type: "string",
+        },
+      };
+      const configForAuto = {
+        [FEATURE.A]: {
+          fallbackValue: "fallbackAutoA",
+          type: "string",
+        },
+        [FEATURE.B]: {
+          fallbackValue: "fallbackAutoB",
+          type: "string",
+        },
+        [FEATURE.C]: {
+          fallbackValue: "fallbackAutoC",
+          type: "string",
+        },
+        [FEATURE.D]: {
+          fallbackValue: "fallbackAutoD",
+          type: "string",
+        },
+      };
+      readFileSpy.mockImplementationOnce((filepath, callback) =>
+        callback(null, Buffer.from(JSON.stringify(configForFile)))
+      );
+
+      await toggles.initializeFeatures({
+        config: configForRuntime,
+        configFile: "somePath.json",
+        configAuto: configForAuto,
+      });
+      expect(toggles.getFeaturesInfos()).toMatchInlineSnapshot(`
+        {
+          "test/feature_a": {
+            "config": {
+              "SOURCE": "RUNTIME",
+              "TYPE": "string",
+            },
+            "fallbackValue": "fallbackRuntimeA",
+          },
+          "test/feature_b": {
+            "config": {
+              "SOURCE": "RUNTIME",
+              "TYPE": "string",
+            },
+            "fallbackValue": "fallbackRuntimeB",
+          },
+          "test/feature_c": {
+            "config": {
+              "SOURCE": "FILE",
+              "TYPE": "string",
+            },
+            "fallbackValue": "fallbackFileC",
+          },
+          "test/feature_d": {
+            "config": {
+              "SOURCE": "AUTO",
+              "TYPE": "string",
+            },
+            "fallbackValue": "fallbackAutoD",
+          },
+        }
+      `);
+
+      expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
+        [
+          [
+            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
+            4,
+            "s",
+            2,
+            1,
+            1,
+            "NO_REDIS",
+          ],
+        ]
+      `);
     });
   });
 
@@ -244,9 +345,12 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s with %s",
+            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
             8,
             "s",
+            8,
+            0,
+            0,
             "NO_REDIS",
           ],
         ]
@@ -287,9 +391,12 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s with %s",
+            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
             8,
             "s",
+            8,
+            0,
+            0,
             "NO_REDIS",
           ],
         ]
@@ -427,9 +534,12 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s with %s",
+            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
             8,
             "s",
+            8,
+            0,
+            0,
             "NO_REDIS",
           ],
         ]
@@ -498,9 +608,12 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s with %s",
+            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
             8,
             "s",
+            8,
+            0,
+            0,
             "NO_REDIS",
           ],
         ]
