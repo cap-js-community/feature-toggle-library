@@ -14,7 +14,7 @@
 // TODO locale for validation messages
 
 const { promisify } = require("util");
-const path = require("path");
+const pathlib = require("path");
 const { readFile } = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
@@ -31,7 +31,7 @@ const { Semaphore } = require("./shared/semaphore");
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
 const DEFAULT_REDIS_KEY = process.env[ENV.REDIS_KEY] || "features";
-const DEFAULT_CONFIG_FILEPATH = path.join(process.cwd(), ".features.yaml");
+const DEFAULT_CONFIG_FILEPATH = pathlib.join(process.cwd(), ".features.yaml");
 const FEATURE_VALID_TYPES = ["string", "number", "boolean"];
 
 const SUPER_SCOPE_CACHE_SIZE_LIMIT = 15;
@@ -110,7 +110,7 @@ class FeatureToggles {
   // ========================================
 
   _processValidations(featureKey, validations, configFilepath) {
-    const configDir = configFilepath ? path.dirname(configFilepath) : process.cwd();
+    const configDir = configFilepath ? pathlib.dirname(configFilepath) : process.cwd();
 
     const validationsScopesMap = {};
     const validationsRegex = [];
@@ -130,7 +130,7 @@ class FeatureToggles {
 
       if (validation.module) {
         let modulePath = validation.module.replace("$CONFIG_DIR", configDir);
-        let validator = tryRequire(path.resolve(modulePath));
+        let validator = tryRequire(pathlib.resolve(modulePath));
 
         if (validation.call) {
           validator = validator?.[validation.call];
