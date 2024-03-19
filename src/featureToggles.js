@@ -43,7 +43,6 @@ const CONFIG_SOURCE = Object.freeze({
   RUNTIME: "RUNTIME",
   FILE: "FILE",
   AUTO: "AUTO",
-  ALL: "ALL",
 });
 
 const CONFIG_KEY = Object.freeze({
@@ -261,7 +260,6 @@ class FeatureToggles {
       [CONFIG_SOURCE.RUNTIME]: configRuntimeCount,
       [CONFIG_SOURCE.FILE]: configFromFileCount,
       [CONFIG_SOURCE.AUTO]: configAutoCount,
-      [CONFIG_SOURCE.ALL]: configRuntimeCount + configFromFileCount + configAutoCount,
     };
   }
 
@@ -804,10 +802,11 @@ class FeatureToggles {
       }
     }
 
+    const totalCount = Object.values(toggleCounts).reduce((acc, current) => acc + current, 0);
     logger.info(
       "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-      toggleCounts[CONFIG_SOURCE.ALL],
-      toggleCounts[CONFIG_SOURCE.ALL] === 1 ? "" : "s",
+      totalCount,
+      totalCount === 1 ? "" : "s",
       toggleCounts[CONFIG_SOURCE.RUNTIME],
       toggleCounts[CONFIG_SOURCE.FILE],
       toggleCounts[CONFIG_SOURCE.AUTO],
