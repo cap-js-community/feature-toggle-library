@@ -95,7 +95,7 @@ const _discoverFtsAutoConfig = async () => {
     result = (await readDirAsync(ftsRoot, { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())
       .reduce((acc, curr) => {
-        const key = `/fts/${curr.name}`;
+        const key = `/fts/${curr.name}`; // NOTE: this has to match FEATURE_KEY_REGEX
         acc[key] = Object.assign({}, FTS_AUTO_CONFIG);
         return acc;
       }, {});
