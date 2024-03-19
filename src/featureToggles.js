@@ -723,9 +723,9 @@ class FeatureToggles {
           name: VERROR_CLUSTER_NAME,
           cause: err,
           info: {
-            ...(configAuto && { config: JSON.stringify(configAuto) }),
-            ...(configFromFile && { config: JSON.stringify(configFromFile) }),
-            ...(configRuntime && { config: JSON.stringify(configRuntime) }),
+            ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
+            ...(configFromFile && { configFromFile: JSON.stringify(configFromFile) }),
+            ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
             configFilepath,
           },
         },
