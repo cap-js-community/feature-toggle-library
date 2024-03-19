@@ -186,20 +186,34 @@ class FeatureToggles {
     }
   }
 
-  /**
-   * Populate this.__config.
-   */
-  _processConfig(config, configFilepath) {
+  _processConfigSource(source, configFromSource, configFilepath) {
+    let count = 0;
+    if (!isObject(configFromSource)) {
+      return count;
+    }
+
     const { uris: cfAppUris } = cfEnv.cfApp;
-    const configEntries = Object.entries(config);
-    const toggleCounts = {
-      [CONFIG_SOURCE.ALL]: configEntries.length,
-      [CONFIG_SOURCE.RUNTIME]: 0,
-      [CONFIG_SOURCE.FILE]: 0,
-      [CONFIG_SOURCE.AUTO]: 0,
-    };
-    for (const [featureKey, { type, source, active, appUrl, fallbackValue, validations }] of configEntries) {
-      toggleCounts[source]++;
+    const entries = Object.entries(configFromSource);
+    for (const [featureKey, value] of entries) {
+      if (this.__config[featureKey]) {
+        continue;
+      }
+      count++;
+
+      if (!isObject(value)) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+            },
+          },
+          "feature configuration is not an object"
+        );
+      }
+
+      const { type, active, appUrl, fallbackValue, validations } = value;
 
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
@@ -231,8 +245,24 @@ class FeatureToggles {
       }
     }
 
+    return count;
+  }
+
+  /**
+   * Populate this.__config.
+   */
+  _processConfig([configRuntime, configFromFile, configAuto], configFilepath) {
+    const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime, configFilepath);
+    const configFromFileCount = this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto, configFilepath);
+
     this.__isConfigProcessed = true;
-    return toggleCounts;
+    return {
+      [CONFIG_SOURCE.RUNTIME]: configRuntimeCount,
+      [CONFIG_SOURCE.FILE]: configFromFileCount,
+      [CONFIG_SOURCE.AUTO]: configAutoCount,
+      [CONFIG_SOURCE.ALL]: configRuntimeCount + configFromFileCount + configAutoCount,
+    };
   }
 
   _ensureInitialized() {
@@ -688,31 +718,19 @@ class FeatureToggles {
       );
     }
 
-    const configBySource = {
-      [CONFIG_SOURCE.RUNTIME]: configRuntime,
-      [CONFIG_SOURCE.FILE]: configFromFile,
-      [CONFIG_SOURCE.AUTO]: configAuto,
-    };
-    for (const [source, config] of Object.entries(configBySource)) {
-      if (config) {
-        for (const value of Object.values(config)) {
-          value.source = source;
-        }
-      }
-    }
-
-    const config = Object.assign({}, configAuto, configFromFile, configRuntime);
-
     let toggleCounts;
     try {
-      toggleCounts = this._processConfig(config, configFilepath);
+      toggleCounts = this._processConfig([configRuntime, configFromFile, configAuto], configFilepath);
     } catch (err) {
       throw new VError(
         {
           name: VERROR_CLUSTER_NAME,
           cause: err,
           info: {
-            ...(config && { config: JSON.stringify(config) }),
+            ...(configAuto && { config: JSON.stringify(configAuto) }),
+            ...(configFromFile && { config: JSON.stringify(configFromFile) }),
+            ...(configRuntime && { config: JSON.stringify(configRuntime) }),
+            configFilepath,
           },
         },
         "initialization aborted, could not process configuration"
