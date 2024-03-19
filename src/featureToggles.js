@@ -39,6 +39,13 @@ const SCOPE_KEY_INNER_SEPARATOR = "::";
 const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
 
+const CONFIG_SOURCE = Object.freeze({
+  RUNTIME: "RUNTIME",
+  FILE: "FILE",
+  AUTO: "AUTO",
+  ALL: "ALL",
+});
+
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
@@ -183,7 +190,15 @@ class FeatureToggles {
   _processConfig(config, configFilepath) {
     const { uris: cfAppUris } = cfEnv.cfApp;
     const configEntries = Object.entries(config);
-    for (const [featureKey, { type, active, appUrl, fallbackValue, validations }] of configEntries) {
+    const toggleCounts = {
+      [CONFIG_SOURCE.ALL]: configEntries.length,
+      [CONFIG_SOURCE.RUNTIME]: 0,
+      [CONFIG_SOURCE.FILE]: 0,
+      [CONFIG_SOURCE.AUTO]: 0,
+    };
+    for (const [featureKey, { type, source, active, appUrl, fallbackValue, validations }] of configEntries) {
+      toggleCounts[source]++;
+
       this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
@@ -211,7 +226,7 @@ class FeatureToggles {
     }
 
     this.__isConfigProcessed = true;
-    return configEntries.length;
+    return toggleCounts;
   }
 
   _ensureInitialized() {
@@ -641,7 +656,7 @@ class FeatureToggles {
     );
   }
 
-  async _initializeFeatures({ config: configInput, configFile: configFilepath, configAuto } = {}) {
+  async _initializeFeatures({ config: configRuntime, configFile: configFilepath, configAuto } = {}) {
     if (this.__isInitialized) {
       return;
     }
@@ -667,11 +682,24 @@ class FeatureToggles {
       );
     }
 
-    const config = Object.assign({}, configAuto, configFromFile, configInput);
+    const configBySource = {
+      [CONFIG_SOURCE.RUNTIME]: configRuntime,
+      [CONFIG_SOURCE.FILE]: configFromFile,
+      [CONFIG_SOURCE.AUTO]: configAuto,
+    };
+    for (const [source, config] of Object.entries(configBySource)) {
+      if (config) {
+        for (const value of Object.values(config)) {
+          value.source = source;
+        }
+      }
+    }
 
-    let toggleCount;
+    const config = Object.assign({}, configAuto, configFromFile, configRuntime);
+
+    let toggleCounts;
     try {
-      toggleCount = this._processConfig(config, configFilepath);
+      toggleCounts = this._processConfig(config, configFilepath);
     } catch (err) {
       throw new VError(
         {
@@ -753,9 +781,12 @@ class FeatureToggles {
     }
 
     logger.info(
-      "finished initialization with %i feature toggle%s with %s",
-      toggleCount,
-      toggleCount === 1 ? "" : "s",
+      "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
+      toggleCounts[CONFIG_SOURCE.ALL],
+      toggleCounts[CONFIG_SOURCE.ALL] === 1 ? "" : "s",
+      toggleCounts[CONFIG_SOURCE.RUNTIME],
+      toggleCounts[CONFIG_SOURCE.FILE],
+      toggleCounts[CONFIG_SOURCE.AUTO],
       redisIntegrationMode
     );
     this.__isInitialized = true;
