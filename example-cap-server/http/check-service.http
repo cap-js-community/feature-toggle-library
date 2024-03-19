@@ -13,3 +13,7 @@ Authorization: Basic clark clark
 ### priority | danny
 GET {{base_url}}/rest/check/priority
 Authorization: Basic danny danny
+
+### priority | zork | features = [*]
+GET {{base_url}}/rest/check/priority
+Authorization: Basic zork zork
