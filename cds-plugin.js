@@ -57,10 +57,9 @@ const _registerFeatureProvider = (envFeatureToggles) => {
     return;
   }
 
-  const defaultFtsScopeCallback = (context, key) => ({ user: context?.user?.id, tenant: context?.tenant });
-  const ftsScopeCallback = envFeatureToggles?.ftsScopeCallback
-    ? tryRequire(envFeatureToggles?.ftsScopeCallback)
-    : defaultFtsScopeCallback;
+  const defaultFtsScopeCallback = (context) => ({ user: context?.user?.id, tenant: context?.tenant });
+  const ftsScopeCallbackModule = envFeatureToggles?.ftsScopeCallback?.replace(/^./, process.cwd());
+  const ftsScopeCallback = ftsScopeCallbackModule ? tryRequire(ftsScopeCallbackModule) : defaultFtsScopeCallback;
 
   const _getReqFeatures = (req) => {
     if (doEnableHeaderFeatures && req.headers.features) {
