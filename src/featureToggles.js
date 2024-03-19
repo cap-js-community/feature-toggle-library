@@ -49,6 +49,7 @@ const CONFIG_SOURCE = Object.freeze({
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
+  SOURCE: "SOURCE",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
   VALIDATIONS: "VALIDATIONS",
@@ -59,6 +60,7 @@ const CONFIG_KEY = Object.freeze({
 const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
   [CONFIG_KEY.ACTIVE]: true,
+  [CONFIG_KEY.SOURCE]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
   [CONFIG_KEY.VALIDATIONS]: true,
@@ -209,6 +211,10 @@ class FeatureToggles {
 
       if (active === false) {
         this.__config[featureKey][CONFIG_KEY.ACTIVE] = false;
+      }
+
+      if (source) {
+        this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
       }
 
       if (appUrl) {
