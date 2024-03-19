@@ -465,6 +465,7 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
         {
           "config": {
+            "SOURCE": "RUNTIME",
             "TYPE": "boolean",
           },
           "fallbackValue": false,
@@ -473,6 +474,7 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
         {
           "config": {
+            "SOURCE": "RUNTIME",
             "TYPE": "number",
           },
           "fallbackValue": 1,
@@ -481,6 +483,7 @@ describe("feature toggles test", () => {
       expect(featureToggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
         {
           "config": {
+            "SOURCE": "RUNTIME",
             "TYPE": "string",
           },
           "fallbackValue": "best",

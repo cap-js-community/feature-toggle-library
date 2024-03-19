@@ -34,12 +34,14 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 {
   "test/feature_a": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "boolean",
     },
     "fallbackValue": false,
   },
   "test/feature_aa": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "boolean",
       "VALIDATIONS": [
         {
@@ -54,18 +56,21 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   },
   "test/feature_b": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "number",
     },
     "fallbackValue": 1,
   },
   "test/feature_c": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "best",
   },
   "test/feature_d": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "boolean",
       "VALIDATIONS": [
         {
@@ -77,6 +82,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   },
   "test/feature_e": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "number",
       "VALIDATIONS": [
         {
@@ -88,6 +94,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   },
   "test/feature_f": {
     "config": {
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
       "VALIDATIONS": [
         {
@@ -100,6 +107,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   "test/feature_g": {
     "config": {
       "ACTIVE": false,
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "activeTest",
@@ -107,6 +115,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
   "test/feature_h": {
     "config": {
       "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+      "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "appUrlTest",
@@ -117,9 +126,11 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
 {
   "test/feature_a": {
+    "SOURCE": "RUNTIME",
     "TYPE": "boolean",
   },
   "test/feature_aa": {
+    "SOURCE": "RUNTIME",
     "TYPE": "boolean",
     "VALIDATIONS": [
       {
@@ -135,12 +146,15 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     },
   },
   "test/feature_b": {
+    "SOURCE": "RUNTIME",
     "TYPE": "number",
   },
   "test/feature_c": {
+    "SOURCE": "RUNTIME",
     "TYPE": "string",
   },
   "test/feature_d": {
+    "SOURCE": "RUNTIME",
     "TYPE": "boolean",
     "VALIDATIONS": [
       {
@@ -152,6 +166,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     ],
   },
   "test/feature_e": {
+    "SOURCE": "RUNTIME",
     "TYPE": "number",
     "VALIDATIONS": [
       {
@@ -163,6 +178,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     ],
   },
   "test/feature_f": {
+    "SOURCE": "RUNTIME",
     "TYPE": "string",
     "VALIDATIONS": [
       {
@@ -175,10 +191,12 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
   },
   "test/feature_g": {
     "ACTIVE": false,
+    "SOURCE": "RUNTIME",
     "TYPE": "string",
   },
   "test/feature_h": {
     "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+    "SOURCE": "RUNTIME",
     "TYPE": "string",
   },
 }
