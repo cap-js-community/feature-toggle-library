@@ -1,10 +1,11 @@
 ---
-# info: this is a cds feature, identified by the /fts/<feature-name> pattern. it is active if the value is truthy.
-/fts/check-service-extension:
-  type: boolean
-  fallbackValue: false
-  validations:
-    - scopes: [user, tenant]
+# NOTE: uncomment in case you want to define custom validation for this fts toggle
+# info: this is a cds feature, identified by the /fts/<feature-name> pattern
+#/fts/check-service-extension:
+#  type: boolean
+#  fallbackValue: false
+#  validations:
+#    - scopes: [user, tenant]
 
 # info: check api priority; 0 means access is disabled
 /check/priority:
