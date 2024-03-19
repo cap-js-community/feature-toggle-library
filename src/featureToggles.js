@@ -800,7 +800,8 @@ class FeatureToggles {
       }
     }
 
-    const totalCount = Object.values(toggleCounts).reduce((acc, current) => acc + current, 0);
+    const totalCount =
+      toggleCounts[CONFIG_SOURCE.RUNTIME] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.AUTO];
     logger.info(
       "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
       totalCount,
