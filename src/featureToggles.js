@@ -218,16 +218,14 @@ class FeatureToggles {
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
 
+      this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
+
       if (type) {
         this.__config[featureKey][CONFIG_KEY.TYPE] = type;
       }
 
       if (active === false) {
         this.__config[featureKey][CONFIG_KEY.ACTIVE] = false;
-      }
-
-      if (source) {
-        this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
       }
 
       if (appUrl) {
