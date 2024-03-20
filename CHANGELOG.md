@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## v1.1.2 - tbd
+
+### Added
+
+- cds-plugin: fts feature toggles are detected and configured automatically (fixes #50).
+- cds-plugin: allow custom scope map callback for fts feature toggles (fixes #51).
+- cds-plugin: can configure unique name, i.e. which apps store the same toggles in redis, as part of cds configuration.
+
+### Fixed
+
+- cds-plugin: feature toggles will not initialize during cds build.
+- redis: proper usage of redis-client built-in reconnect capabilities.
+
 ## v1.1.1 - 2023-12-05
 
 ### Changed
