@@ -56,7 +56,7 @@ const _registerFeatureProvider = (envFeatureToggles) => {
     return;
   }
 
-  const defaultFtsScopeCallback = (context) => ({ user: context?.user?.id, tenant: context?.tenant });
+  const defaultFtsScopeCallback = (context) => ({ user: context.user?.id, tenant: context.tenant });
   const ftsScopeCallback = envFeatureToggles?.ftsScopeCallback
     ? require(pathlib.resolve(envFeatureToggles.ftsScopeCallback))
     : defaultFtsScopeCallback;
@@ -65,7 +65,7 @@ const _registerFeatureProvider = (envFeatureToggles) => {
     if (doEnableHeaderFeatures && req.headers.features) {
       return req.headers.features;
     }
-    if (cds.context?.user?.features) {
+    if (cds.context.user?.features) {
       return cds.context.user.features;
     }
     return cdsFeatures.reduce((result, [key, feature]) => {
