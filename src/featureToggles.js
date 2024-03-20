@@ -129,12 +129,9 @@ class FeatureToggles {
       }
 
       if (validation.module) {
-        let modulePath = validation.module.replace("$CONFIG_DIR", configDir);
-        let validator = tryRequire(pathlib.resolve(modulePath));
-
-        if (validation.call) {
-          validator = validator?.[validation.call];
-        }
+        const modulePath = validation.module.replace("$CONFIG_DIR", configDir);
+        const validatorModule = tryRequire(pathlib.resolve(modulePath));
+        const validator = validation.call ? validatorModule?.[validation.call] : validatorModule;
 
         const validatorType = typeof validator;
         if (validatorType === "function") {
