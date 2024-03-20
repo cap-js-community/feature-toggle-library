@@ -9,7 +9,6 @@ const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./src/");
 const { closeMainClient, closeSubscriberClient } = require("./src/redisWrapper");
-const { tryRequire } = require("./src/shared/static");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 const FTS_AUTO_CONFIG = {
@@ -59,7 +58,7 @@ const _registerFeatureProvider = (envFeatureToggles) => {
 
   const defaultFtsScopeCallback = (context) => ({ user: context?.user?.id, tenant: context?.tenant });
   const ftsScopeCallback = envFeatureToggles?.ftsScopeCallback
-    ? tryRequire(pathlib.resolve(envFeatureToggles.ftsScopeCallback))
+    ? require(pathlib.resolve(envFeatureToggles.ftsScopeCallback))
     : defaultFtsScopeCallback;
 
   const _getReqFeatures = (req) => {
