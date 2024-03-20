@@ -40,7 +40,7 @@ const _overwriteServiceAccessRoles = (envFeatureToggles) => {
   });
 };
 
-const _registerFeatureProvider = () => {
+const _registerFeatureProvider = (envFeatureToggles) => {
   if (!cds.env.requires?.toggles) {
     return;
   }
@@ -56,17 +56,20 @@ const _registerFeatureProvider = () => {
     return;
   }
 
+  const defaultFtsScopeCallback = (context) => ({ user: context.user?.id, tenant: context.tenant });
+  const ftsScopeCallback = envFeatureToggles?.ftsScopeCallback
+    ? require(pathlib.resolve(envFeatureToggles.ftsScopeCallback))
+    : defaultFtsScopeCallback;
+
   const _getReqFeatures = (req) => {
     if (doEnableHeaderFeatures && req.headers.features) {
       return req.headers.features;
     }
-    if (cds.context?.user?.features) {
+    if (cds.context.user?.features) {
       return cds.context.user.features;
     }
-    const user = cds.context?.user?.id;
-    const tenant = cds.context?.tenant;
     return cdsFeatures.reduce((result, [key, feature]) => {
-      if (toggles.getFeatureValue(key, { user, tenant })) {
+      if (toggles.getFeatureValue(key, ftsScopeCallback(cds.context, key))) {
         result.push(feature);
       }
       return result;
@@ -122,7 +125,7 @@ const activate = async () => {
     configAuto: ftsAutoConfig,
   });
 
-  _registerFeatureProvider();
+  _registerFeatureProvider(envFeatureToggles);
 };
 
 // NOTE: for sap/cds < 7.3.0 it was expected to export activate as function property, otherwise export the promise of
