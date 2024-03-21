@@ -155,7 +155,7 @@ const canGetClient = async () => {
     const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
     await _closeClientBase(silentClient);
     return true;
-  } catch {} // eslint-ignore-line no-empty
+  } catch {} // eslint-disable-line no-empty
   return false;
 };
 
