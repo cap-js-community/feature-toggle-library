@@ -116,7 +116,7 @@ const _createClientBase = (clientName) => {
   }
 };
 
-const _createClientAndConnect = async (clientName) => {
+const _createClientAndConnect = async (clientName, { doLogEvents = true } = {}) => {
   let client = null;
   try {
     client = _createClientBase(clientName);
@@ -125,12 +125,16 @@ const _createClientAndConnect = async (clientName) => {
   }
 
   // NOTE: documentation about events is here https://github.com/redis/node-redis?tab=readme-ov-file#events
-  client.on("error", (err) => {
-    _logErrorOnEvent(new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event"));
-  });
-  client.on("reconnecting", () => {
-    logger.warning("client '%s' is reconnecting", clientName);
-  });
+  if (doLogEvents) {
+    client.on("error", (err) => {
+      _logErrorOnEvent(
+        new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event")
+      );
+    });
+    client.on("reconnecting", () => {
+      logger.warning("client '%s' is reconnecting", clientName);
+    });
+  }
 
   try {
     await client.connect();
@@ -144,6 +148,15 @@ const _closeClientBase = async (client) => {
   if (client?.isOpen) {
     await client.quit();
   }
+};
+
+const canGetClient = async () => {
+  try {
+    const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
+    await _closeClientBase(silentClient);
+    return true;
+  } catch {} // eslint-ignore-line no-empty
+  return false;
 };
 
 /**
@@ -502,11 +515,8 @@ const _getIntegrationMode = async () => {
     const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
     return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
-  try {
-    await getMainClient();
+  if (await canGetClient()) {
     return INTEGRATION_MODE.LOCAL_REDIS;
-  } catch {
-    // eslint-ignore-line no-empty
   }
   return INTEGRATION_MODE.NO_REDIS;
 };
