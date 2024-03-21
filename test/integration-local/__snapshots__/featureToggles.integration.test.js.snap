@@ -14,29 +14,9 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
 ]
 `;
 
-exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 8`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
+exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 8`] = `[]`;
 
-exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
+exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `[]`;
 
 exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 1`] = `
 [
@@ -52,17 +32,7 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
 ]
 `;
 
-exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 4`] = `
-[
-  [
-    "%s | %O",
-    "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-    {
-      "clientName": "main",
-    },
-  ],
-]
-`;
+exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 4`] = `[]`;
 
 exports[`local integration test common config init getFeaturesKeys, getFeatureValues, getFeaturesInfos 1`] = `
 {

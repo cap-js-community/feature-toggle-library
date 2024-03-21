@@ -358,17 +358,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
       expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
-        [
-          [
-            "%s | %O",
-            "caught error event: connect ECONNREFUSED 127.0.0.1:6379",
-            {
-              "clientName": "main",
-            },
-          ],
-        ]
-      `);
+      expect(redisWrapperLoggerSpy.warning).toHaveBeenCalledTimes(0);
     });
 
     it("getFeatureValue, changeFeatureValue without scopes", async () => {
