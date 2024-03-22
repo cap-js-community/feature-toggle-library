@@ -14,7 +14,7 @@
   validations:
     - scopes: [user, tenant]
     - regex: '^\d+$'
-    - { module: "$CONFIG_DIR/validators.js", call: validateTenantScope }
+    - { module: "$CONFIG_DIR/validators", call: validateTenantScope }
 
 # info: memory statistics logging interval (in milliseconds); 0 means disabled
 /memory/logInterval:
