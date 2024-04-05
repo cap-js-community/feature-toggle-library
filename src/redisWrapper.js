@@ -511,14 +511,14 @@ const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler
 const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
 
 const _getIntegrationMode = async () => {
+  if (!(await canGetClient())) {
+    return INTEGRATION_MODE.NO_REDIS;
+  }
   if (cfEnv.isOnCf) {
     const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
     return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
-  if (await canGetClient()) {
-    return INTEGRATION_MODE.LOCAL_REDIS;
-  }
-  return INTEGRATION_MODE.NO_REDIS;
+  return INTEGRATION_MODE.LOCAL_REDIS;
 };
 
 const getIntegrationMode = async () => {
