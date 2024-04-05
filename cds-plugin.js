@@ -57,12 +57,10 @@ const _getAccessRole = (envFeatureToggles, access) => {
 
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
   if (
-    [
-      envFeatureToggles?.serviceAccessRoles,
-      envFeatureToggles?.readAccessRoles,
-      envFeatureToggles?.writeAccessRoles,
-      envFeatureToggles?.adminAccessRoles,
-    ].every((accessRoles) => accessRoles === undefined || accessRoles === null)
+    !envFeatureToggles?.serviceAccessRoles &&
+    !envFeatureToggles?.readAccessRoles &&
+    !envFeatureToggles?.writeAccessRoles &&
+    !envFeatureToggles?.adminAccessRoles
   ) {
     return;
   }
