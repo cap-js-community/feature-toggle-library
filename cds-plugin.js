@@ -17,16 +17,16 @@ const FTS_AUTO_CONFIG = {
 };
 
 const SERVICE_NAME = "FeatureService";
-const ACCESS = {
+const ACCESS = Object.freeze({
   READ: "READ",
   WRITE: "WRITE",
   ADMIN: "ADMIN",
-};
-const SERVICE_ENDPOINTS = {
+});
+const SERVICE_ENDPOINTS = Object.freeze({
   [ACCESS.READ]: [`${SERVICE_NAME}.state`, `${SERVICE_NAME}.redisRead`],
   [ACCESS.WRITE]: [`${SERVICE_NAME}.redisUpdate`],
   [ACCESS.ADMIN]: [`${SERVICE_NAME}.redisSendCommand`],
-};
+});
 
 const readDirAsync = promisify(fs.readdir);
 
