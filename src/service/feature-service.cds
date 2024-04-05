@@ -1,16 +1,18 @@
 @protocol: 'rest'
 
-@(requires: ['system-user'])
 service FeatureService {
-    type JSON {};
-    function state() returns JSON;
-    action redisRead() returns JSON;
+    @(requires: ['system-user'])
+    function state() returns {};
+    @(requires: ['system-user'])
+    action redisRead() returns {};
 
     // NOTE: expects an object as input
+    @(requires: ['system-user'])
     @open
-    action redisUpdate(newValues: JSON);
+    action redisUpdate(newValues: {});
 
     // NOTE: expects an object as input
+    @(requires: [])
     @open
-    action redisSendCommand(command: JSON) returns String;
+    action redisSendCommand(command: {}) returns String;
 }

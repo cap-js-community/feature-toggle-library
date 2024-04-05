@@ -16,6 +16,18 @@ const FTS_AUTO_CONFIG = {
   fallbackValue: false,
 };
 
+const SERVICE_NAME = "FeatureService";
+const ACCESS = {
+  READ: "READ",
+  WRITE: "WRITE",
+  ADMIN: "ADMIN",
+};
+const SERVICE_ENDPOINTS = {
+  [ACCESS.READ]: [`${SERVICE_NAME}.state`, `${SERVICE_NAME}.redisRead`],
+  [ACCESS.WRITE]: [`${SERVICE_NAME}.redisUpdate`],
+  [ACCESS.ADMIN]: [`${SERVICE_NAME}.redisSendCommand`],
+};
+
 const readDirAsync = promisify(fs.readdir);
 
 const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
@@ -29,13 +41,39 @@ const _overwriteUniqueName = (envFeatureToggles) => {
   toggles._reset({ uniqueName });
 };
 
+const _getAccessRole = (envFeatureToggles, access) => {
+  switch (access) {
+    case ACCESS.READ: {
+      return envFeatureToggles.readAccessRoles ?? envFeatureToggles.serviceAccessRoles;
+    }
+    case ACCESS.WRITE: {
+      return envFeatureToggles.writeAccessRoles ?? envFeatureToggles.serviceAccessRoles;
+    }
+    case ACCESS.ADMIN: {
+      return envFeatureToggles.adminAccessRoles;
+    }
+  }
+};
+
 const _overwriteServiceAccessRoles = (envFeatureToggles) => {
-  if (!Array.isArray(envFeatureToggles?.serviceAccessRoles)) {
+  if (
+    [
+      envFeatureToggles?.serviceAccessRoles,
+      envFeatureToggles?.readAccessRoles,
+      envFeatureToggles?.writeAccessRoles,
+      envFeatureToggles?.adminAccessRoles,
+    ].every((accessRoles) => accessRoles === undefined || accessRoles === null)
+  ) {
     return;
   }
   cds.on("loaded", (csn) => {
-    if (csn.definitions.FeatureService) {
-      csn.definitions.FeatureService["@requires"] = envFeatureToggles.serviceAccessRoles;
+    for (const [access, endpoints] of Object.entries(SERVICE_ENDPOINTS)) {
+      const accessRole = _getAccessRole(envFeatureToggles, access);
+      if (accessRole) {
+        for (const endpoint of endpoints) {
+          csn.definitions[endpoint]["@requires"] = accessRole;
+        }
+      }
     }
   });
 };
