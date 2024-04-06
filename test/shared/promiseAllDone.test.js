@@ -1,7 +1,7 @@
 "use strict";
 
 const { promisify } = require("util");
-const { promiseAllDone } = require("../src/shared/promiseAllDone");
+const { promiseAllDone } = require("../../src/shared/promiseAllDone");
 
 describe("promiseAllDone", () => {
   it("second reject is caught", async () => {
