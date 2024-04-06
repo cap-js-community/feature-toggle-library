@@ -108,3 +108,11 @@ Content-Type: application/json
   }
 ]
 
+### redis | send command
+POST {{base_url}}/rest/feature/redisSendCommand
+Authorization: Basic system system
+Content-Type: application/json
+
+{
+  "command": ["INFO"]
+}
