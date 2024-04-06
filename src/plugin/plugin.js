@@ -61,7 +61,7 @@ const _getAccessRole = (envFeatureToggles, access) => {
   }
 };
 
-const _overwriteServiceAccessRoles = (envFeatureToggles) => {
+const _overwriteAccessRoles = (envFeatureToggles) => {
   if (
     !envFeatureToggles?.serviceAccessRoles &&
     !envFeatureToggles?.readAccessRoles &&
@@ -155,7 +155,7 @@ const activate = async () => {
     return;
   }
   _overwriteUniqueName(envFeatureToggles);
-  _overwriteServiceAccessRoles(envFeatureToggles);
+  _overwriteAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
 
   if (isBuild) {
@@ -186,7 +186,7 @@ module.exports = {
   _: {
     _overwriteUniqueName,
     _getAccessRole,
-    _overwriteServiceAccessRoles,
+    _overwriteServiceAccessRoles: _overwriteAccessRoles,
     _registerFeatureProvider,
     _registerClientCloseOnShutdown,
     _discoverFtsAutoConfig,
