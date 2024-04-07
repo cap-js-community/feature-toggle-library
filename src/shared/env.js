@@ -1,6 +1,6 @@
 "use strict";
 
-const { ENV } = require("./shared/static");
+const { ENV } = require("./static");
 
 class CfEnv {
   static __instance;

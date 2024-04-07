@@ -20,13 +20,13 @@ const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redisWrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
-const { Logger } = require("./logger");
-const cfEnv = require("./env");
+const cfEnv = require("./shared/env");
+const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { ENV, isObject, tryRequire, tryPathReadable } = require("./shared/static");
 const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 const { Semaphore } = require("./shared/semaphore");
+const { ENV, isObject, tryRequire, tryPathReadable } = require("./shared/static");
 
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";

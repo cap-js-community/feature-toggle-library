@@ -1,18 +1,18 @@
 "use strict";
 
 const VError = require("verror");
-const featureTogglesModule = require("../src/featureToggles");
+const featureTogglesModule = require("../../src/featureToggles");
 const { FeatureToggles } = featureTogglesModule;
-const { ENV } = require("../src/shared/static");
-const { LEVEL, FORMAT, Logger } = require("../src/logger");
+const { ENV } = require("../../src/shared/static");
+const { LEVEL, FORMAT, Logger } = require("../../src/shared/logger");
 
-const redisWrapperMock = require("../src/redisWrapper");
-jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
+const redisWrapperMock = require("../../src/redisWrapper");
+jest.mock("../../src/redisWrapper", () => require("../__mocks__/redisWrapper"));
 
-const envMock = require("../src/env");
-jest.mock("../src/env", () => require("./__mocks__/env"));
+const envMock = require("../../src/shared/env");
+jest.mock("../../src/shared/env", () => require("../__mocks__/env"));
 
-const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("./__common__/mockdata");
+const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("../__common__/mockdata");
 
 let featureToggles = null;
 

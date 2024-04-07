@@ -1,7 +1,7 @@
 "use strict";
 
-const envMock = require("../src/env");
-jest.mock("../src/env", () => require("./__mocks__/env"));
+const envMock = require("../src/shared/env");
+jest.mock("../src/shared/env", () => require("./__mocks__/env"));
 
 const mockMessageHandler = jest.fn();
 const mockMessageHandlerTwo = jest.fn();

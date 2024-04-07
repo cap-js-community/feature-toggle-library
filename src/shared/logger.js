@@ -3,7 +3,7 @@ const util = require("util");
 const VError = require("verror");
 
 const cfEnv = require("./env");
-const { ENV, tryRequire } = require("./shared/static");
+const { ENV, tryRequire } = require("./static");
 const cds = tryRequire("@sap/cds");
 
 // NOTE: logger levels are tricky. looking at console, npm, winston, and cap there is no real consistency. we will

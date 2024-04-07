@@ -1,7 +1,7 @@
 "use strict";
 
 const cds = require("@sap/cds");
-const { SERVICE_ENDPOINTS } = require("../../src/plugin/plugin");
+const { SERVICE_ENDPOINTS } = require("../src/plugin");
 
 describe("plugin", () => {
   it("all endpoints are covered", async () => {

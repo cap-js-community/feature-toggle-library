@@ -1,9 +1,9 @@
 "use strict";
 
 const VError = require("verror");
-const redis = require("../redisWrapper");
-const { Logger } = require("../logger");
 const toggles = require("../");
+const redis = require("../redisWrapper");
+const { Logger } = require("../shared/logger");
 
 const COMPONENT_NAME = "/FeatureService";
 const VERROR_CLUSTER_NAME = "FeatureServiceError";
