@@ -84,23 +84,25 @@ module.exports = (context, key) => {
 
 ## Feature Vector Provider
 
-When used as a CDS-Plugin, the library will automatically act as a Feature Vector Provider. This means feature
-toggles which match the `<optional-prefix>/fts/<feature-name>` pattern and have a truthy current value at the
-start of a request will be passed to CDS on the express request in `req.features`.
+When used as a CDS-Plugin, the library will automatically act as a [Feature Vector Provider](https://cap.cloud.sap/docs/guides/extensibility/feature-toggles#feature-vector-providers). This means feature toggles
+which match the `/fts/<feature-name>` pattern and have a truthy current value at the start of a request will be passed
+to CDS, as they expect it, in `req.features`.
 
-In practice, if you have a CDS model extension feature in the directory `/fts/my-feature`, and you configure it inline
-or in your config file with:
+In practice, if you have a CDS model extension feature in the directory `<project>/fts/my-feature`, the library will
+automatically detect it and configure it as follows:
 
 ```yaml
 /fts/my-feature:
   type: boolean
   fallbackValue: false
-  validations:
-    - scopes: [user, tenant]
 ```
 
-then you can control the feature's state, like you would for any other runtime feature, and it will be provided to CDS
-and respected for the related requests.
+{: .info}
+This automatic configuration can be _overwritten_, by using a configuration file and adding a dedicated configuration
+with the same key `/fts/my-feature`.
+
+You can check and modify these feature toggles similarly to all others, and it will be provided to CDS and respected
+for the related requests. For an example check out the [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/).
 
 ## Service Endpoints for Read Privilege
 
