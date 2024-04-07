@@ -298,7 +298,7 @@ await toggles.changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { cle
 ```
 
 will set the root-scope value to `"error"` and remove all sub-scopes. See
-[scoping]({{ site.baseurl }}/architecture/#scoping) for context.
+[scoping]({{ site.baseurl }}/concepts/#scoping) for context.
 
 ### Resetting Feature Value
 

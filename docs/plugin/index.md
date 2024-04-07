@@ -29,7 +29,7 @@ _uniqueName_<br>
 The unique name is an identifier for the state data in redis. This defaults to the cloud foundry application name and
 usually need not be changed. Sometimes multiple apps want to access the same state though. In this case you would give
 all of them the same unique name. See
-[single-key-approach]({{ site.baseurl }}/architecture/#single-key-approach) for a diagram.
+[single-key-approach]({{ site.baseurl }}/concepts/#single-key-approach) for a diagram.
 
 _serviceAccessRoles_<br>
 Per default the service endpoints are accessible only to users with the CAP pseudo-role

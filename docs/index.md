@@ -81,4 +81,4 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
 
 - Configuration and code snippets: [Usage](usage)
 - Plugin and REST service for CAP projects: [Plugin and Service](plugin)
-- Architecture and related concepts: [Architecture](architecture)
+- Fundamental concepts: [Concepts](concepts)

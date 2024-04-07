@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Architecture
+title: Concepts
 nav_order: 5
 ---
 
 <!-- prettier-ignore-start -->
-# Architecture
+# Concepts
 {: .no_toc }
 <!-- prettier-ignore-end -->
 
@@ -34,9 +34,9 @@ if possible, validated values from Redis.
 
 ## Single Key Approach
 
-| ![](architecture-single-key.drawio.png) |
-| :-------------------------------------: |
-|        _Single Key Architecture_        |
+| ![](concepts-single-key.png) |
+| :--------------------------: |
+|         _Single Key_         |
 
 The current implementation uses a single Redis key of type `hash` to store the state of all toggles for one unique
 name. A unique name is usually associated with a single app, but the library also supports the case where multiple apps
@@ -54,7 +54,7 @@ or any other abstraction layer. In practice this is often insufficient.
 Scoping is our concept to allow discriminating the feature toggle values based on runtime context information.
 Let's take a very common example, where both `user` and `tenant` scopes are used.
 
-|         ![](architecture-scopes.png)          |
+|           ![](concepts-scopes.png)            |
 | :-------------------------------------------: |
 | _User and tenant scopes for a feature toggle_ |
 
