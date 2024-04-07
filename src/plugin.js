@@ -30,15 +30,6 @@ const SERVICE_ENDPOINTS = Object.freeze({
 
 const readDirAsync = promisify(fs.readdir);
 
-// NOTE: for sap/cds < 7.3.0 it was expected to export activate as function property, otherwise export the promise of
-//   running activate
-const doExportActivateAsProperty =
-  cdsPackage.version.localeCompare("7.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
-
-const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
-
-const isBuild = cds.build?.register;
-
 const _overwriteUniqueName = (envFeatureToggles) => {
   const uniqueName = envFeatureToggles?.uniqueName;
   if (!uniqueName) {
@@ -103,6 +94,7 @@ const _registerFeatureProvider = (envFeatureToggles) => {
     ? require(pathlib.resolve(envFeatureToggles.ftsScopeCallback))
     : defaultFtsScopeCallback;
 
+  const doEnableHeaderFeatures = cds.env.profiles?.includes("development");
   const _getReqFeatures = (req) => {
     if (doEnableHeaderFeatures && req.headers.features) {
       return req.headers.features;
@@ -158,6 +150,7 @@ const activate = async () => {
   _overwriteAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
 
+  const isBuild = cds.build?.register;
   if (isBuild) {
     return;
   }
@@ -171,22 +164,23 @@ const activate = async () => {
 };
 
 const pluginExport = () => {
+  // NOTE: for sap/cds < 7.3.0 it was expected to export activate as function property, otherwise export the promise of
+  //   running activate
+  const doExportActivateAsProperty =
+    cdsPackage.version.localeCompare("7.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
   return doExportActivateAsProperty ? { activate } : activate();
 };
 
 module.exports = {
   SERVICE_ENDPOINTS,
 
-  doExportActivateAsProperty,
-  doEnableHeaderFeatures,
-  isBuild,
   activate,
   pluginExport,
 
   _: {
     _overwriteUniqueName,
     _getAccessRole,
-    _overwriteServiceAccessRoles: _overwriteAccessRoles,
+    _overwriteAccessRoles,
     _registerFeatureProvider,
     _registerClientCloseOnShutdown,
     _discoverFtsAutoConfig,
