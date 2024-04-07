@@ -75,7 +75,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
 - Feature toggle values can be changed specifically for accessors with certain scopes, e.g., for specific tenants, users,...
 - Users can register change handler callbacks for specific toggles.
 - Users can register custom input validation callbacks for specific toggles.
-- Works as a [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles.
+- Works as a [CDS-Plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles.
 
 ## Peers
 

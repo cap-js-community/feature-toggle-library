@@ -48,9 +48,43 @@ endpoints, but not the admin endpoints. If more discriminating access control is
 As the name suggests, the `adminAccessRoles` should be considered sensitive. It allows direct root access to the
 underlying redis.
 
+_ftsScopeCallback_<br>
+First, read the [Feature Vector Provider](#feature-vector-provider) section for background. It may make sense to change
+the runtime scope for CAP Feature Toggles. For example, you might have a request header present that should be used as
+scope to distinguish toggle values. For this use-case:
+
+- Create a file, e.g., `srv/feature/ftsScope.js`:
+
+```javascript
+/**
+ * @param context  cds context
+ * @param key      toggle key, to use different scopes for different toggles
+ */
+module.exports = (context, key) => {
+  const companyId; // your code here
+  return {
+    user: context?.user?.id,
+    tenant: context?.tenant,
+    companyId,
+  }
+}
+```
+
+- Configure this file in `package.json`:
+
+```json
+{
+  "cds": {
+    "featureToggles": {
+      "ftsScopeCallback": "./srv/feature/ftsScope.js"
+    }
+  }
+}
+```
+
 ## Feature Vector Provider
 
-When used as a CDS-plugin, the library will automatically act as a Feature Vector Provider. This means feature
+When used as a CDS-Plugin, the library will automatically act as a Feature Vector Provider. This means feature
 toggles which match the `<optional-prefix>/fts/<feature-name>` pattern and have a truthy current value at the
 start of a request will be passed to CDS on the express request in `req.features`.
 

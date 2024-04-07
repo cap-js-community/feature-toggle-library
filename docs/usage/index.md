@@ -121,7 +121,7 @@ anchor, e.g., `module: $CONFIG_DIR/validation.js`.
 
 ### For CAP Projects
 
-CAP projects will use the library as a [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). The initialization of _CAP Feature Toggles_, meaning toggles
+CAP projects will use the library as a [CDS-Plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). The initialization of _CAP Feature Toggles_, meaning toggles
 that govern the active CDS model extensions, will happen automatically based on the `fts/` project subdirectory
 structure. These toggles do not require a configuration file.
 
