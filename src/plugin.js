@@ -23,8 +23,8 @@ const ACCESS = Object.freeze({
   ADMIN: "ADMIN",
 });
 const SERVICE_ENDPOINTS = Object.freeze({
-  [ACCESS.READ]: [`${SERVICE_NAME}.state`, `${SERVICE_NAME}.redisRead`],
-  [ACCESS.WRITE]: [`${SERVICE_NAME}.redisUpdate`],
+  [ACCESS.READ]: [`${SERVICE_NAME}.state`],
+  [ACCESS.WRITE]: [`${SERVICE_NAME}.redisRead`, `${SERVICE_NAME}.redisUpdate`],
   [ACCESS.ADMIN]: [`${SERVICE_NAME}.redisSendCommand`],
 });
 

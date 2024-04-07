@@ -21,9 +21,13 @@ Here is a list of all plugin settings that can be used in `package.json` under t
 | setting            | type   | meaning                                                                   |
 | :----------------- | :----- | :------------------------------------------------------------------------ |
 | configFile         | string | path of the [configuration]({{ site.baseurl }}/usage/#configuration) file |
-| config             | object | inline configuration (only recommended for toy projects)                  |
+| config             | object | inline configuration (only recommended for small projects)                |
 | uniqueName         | string | optional setting, see below                                               |
 | serviceAccessRoles | array  | optional setting, see below                                               |
+| readAccessRoles    | array  | optional setting, see below                                               |
+| writeAccessRoles   | array  | optional setting, see below                                               |
+| adminAccessRoles   | array  | optional setting, see below                                               |
+| ftsScopeCallback   | string | optional setting, see below                                               |
 
 _uniqueName_<br>
 The unique name is an identifier for the state data in redis. This defaults to the cloud foundry application name and
@@ -31,11 +35,18 @@ usually need not be changed. Sometimes multiple apps want to access the same sta
 all of them the same unique name. See
 [single-key-approach]({{ site.baseurl }}/concepts/#single-key-approach) for a diagram.
 
-_serviceAccessRoles_<br>
-Per default the service endpoints are accessible only to users with the CAP pseudo-role
-[system-user](https://cap.cloud.sap/docs/guides/authorization#pseudo-roles). Different projects have their own access
-role preferences, so this setting allows them to set a list of strings, which represent the roles required to access
-the service. For details see [@requires](https://cap.cloud.sap/docs/guides/authorization#requires).
+_serviceAccessRoles_, _readAccessRoles_, _writeAccessRoles_, _adminAccessRoles_<br>
+By default the `FeatureService` read and write endpoints are accessible only to users with the CAP pseudo-role
+[system-user](https://cap.cloud.sap/docs/guides/authorization#pseudo-roles). Different projects have their own access role preferences, so this setting allows them to set a
+list of strings, which represent the roles required to access the service. For details see [@requires](https://cap.cloud.sap/docs/guides/authorization#requires).
+
+It will usually be sufficient to set the `serviceAccessRoles` configuration, which covers both the read and write
+endpoints, but not the admin endpoints. If more discriminating access control is required, the `readAccessRoles` and
+`writeAccessRoles` can be set separately. For debugging purposes, you can also set the `adminAccessRoles`.
+
+{: .warn}
+As the name suggests, the `adminAccessRoles` should be considered sensitive. It allows direct root access to the
+underlying redis.
 
 ## Feature Vector Provider
 
@@ -57,11 +68,10 @@ or in your config file with:
 then you can control the feature's state, like you would for any other runtime feature, and it will be provided to CDS
 and respected for the related requests.
 
-## Service Endpoints
+## Service Endpoints for Read Privilege
 
-These service endpoints will enable operations teams to understand and modify toggle states. For practical requests,
-check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http)
-in our example CAP Server.
+This service endpoint will enable operations teams to understand toggle states. For practical requests, check the
+[http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
 
 ### Read Feature Toggles State
 
@@ -99,7 +109,10 @@ Get all information about the current in-memory state of all toggles.
   }
   ```
 
----
+## Service Endpoints for Write Privilege
+
+Similar to the read privilege endpoints, these endpoints are meant to modify toggle state. For practical requests,
+check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
 
 ### Update Feature Toggle
 
@@ -176,10 +189,6 @@ Update the toggle state on Redis, which in turn is published to all server insta
   }
   ```
 
-## Service Endpoints for Debugging
-
-The service also offers additional endpoints to analyze problems.
-
 ### Re-Sync Server with Redis
 
 Force server to re-sync with Redis, this should never be necessary. It returns the same JSON structure as
@@ -195,7 +204,9 @@ Force server to re-sync with Redis, this should never be necessary. It returns t
 - Response<br>
   Same as [Read Feature Toggles State](#read-feature-toggles-state).
 
----
+## Service Endpoints for Admin Privilege
+
+The service also offers an additional endpoint for deep problem analysis.
 
 ### Send Redis Command
 
