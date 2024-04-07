@@ -74,7 +74,7 @@ We are releasing 1.0, after 2 years of continuous usage, testing, and small impr
 
 - act as
   [Feature Vector Provider](https://cap.cloud.sap/docs/guides/extensibility/feature-toggles#feature-vector-providers)
-  when used as a CDS-plugin.
+  when used as a CDS-Plugin.
 - allow graceful shutdown by closing redis clients on cds shutdown event (fixes #34).
 
 ## v0.7.2 - 2023-10-18
@@ -87,14 +87,14 @@ We are releasing 1.0, after 2 years of continuous usage, testing, and small impr
 
 ### Changed
 
-- implement new CDS-plugin API, where plugins export a promise instead of an activate property and stay compatible for
+- implement new CDS-Plugin API, where plugins export a promise instead of an activate property and stay compatible for
   older cds versions.
 
 ## v0.7.1 - 2023-09-13
 
 ### Fixed
 
-- CDS-plugin integration now works for projects that run `cds build --production` and only use the resulting
+- CDS-Plugin integration now works for projects that run `cds build --production` and only use the resulting
   `csn.json` at runtime.
 
 ## v0.7.0 - 2023-09-08
@@ -104,7 +104,7 @@ We are releasing 1.0, after 2 years of continuous usage, testing, and small impr
 - new harmonized validation configuration for scope and regex checks, as well as external validation with user
   provided modules.
 
-- new (optional) [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) integration. for details, see the new
+- new (optional) [CDS-Plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) integration. for details, see the new
   [plugin and service](https://cap-js-community.github.io/feature-toggle-library/service/) documentation.
 
 - new logger implementation which replaces

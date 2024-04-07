@@ -121,8 +121,12 @@ anchor, e.g., `module: $CONFIG_DIR/validation.js`.
 
 ### For CAP Projects
 
-CAP projects, will use the library as a [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). Their
-initialization settings are in `package.json`. For example:
+CAP projects will use the library as a [CDS-Plugin](https://cap.cloud.sap/docs/node.js/cds-plugins). The initialization of _CAP Feature Toggles_, meaning toggles
+that govern the active CDS model extensions, will happen automatically based on the `fts/` project subdirectory
+structure. These toggles do not require a configuration file.
+
+If you need further, arbitrary runtime toggles, you can expand on the automatically recognized CAP toggles with an
+initialization setting in `package.json`. For example:
 
 ```json
 {
@@ -134,9 +138,10 @@ initialization settings are in `package.json`. For example:
 }
 ```
 
-In this example, the path `./srv/feature/feature.yaml` points to the previously discussed configuration file. With
-these settings in place, the singleton instance of the library will be initialized and is ready for usage at and after
-the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstrap) event.
+In this example, the path `./srv/feature/feature.yaml` points to the previously discussed configuration file.
+
+Either way, with either automatic CAP toggles or configured arbitrary runtime toggles, the singleton instance of the
+library will be initialized and is ready for usage at and after the [bootstrap](https://cap.cloud.sap/cap/docs/node.js/cds-server#bootstrap) event.
 
 {: .info }
 Using the feature toggles in CAP projects also enables a [REST service]({{ site.baseurl }}/plugin/), where toggles can

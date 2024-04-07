@@ -7,15 +7,22 @@
 
 SAP BTP feature toggle library enables Node.js applications using the SAP Cloud Application Programming Model to maintain live-updatable feature toggles via Redis.
 
-## Getting Started
+## Getting Started (CAP Feature Toggles)
 
-- Set up project with `@sap/cds`
-- Install library
+- Set up project with `@sap/cds`.
+- Install library:
 
   ```bash
   npm install --save @cap-js-community/feature-toggle-library
   ```
 
+- For CAP Feature Toggles everything is configured automatically.
+- The library acts as a CDS-Plugin and registers a `FeatureService`, which is used to check and update toggles.
+- For details see [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server).
+
+## Getting Started (Custom Configuration)
+
+- Same as previous section.
 - Write `toggles.yaml` configuration file:
 
   ```yaml
@@ -28,7 +35,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
       - regex: '^\d+$'
   ```
 
-- Add configuration path to package.json
+- Add configuration path to `package.json`:
 
   ```json
   {
@@ -40,7 +47,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
   }
   ```
 
-- That's it. Write usage code
+- Write usage code in handlers:
 
   ```javascript
   const toggles = require("@cap-js-community/feature-toggle-library");
@@ -59,8 +66,6 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
   };
   ```
 
-- For details see [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server).
-
 ## Features
 
 - Maintain feature toggle states consistently across multiple app instances.
@@ -69,7 +74,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
 - Feature toggle values can be changed specifically for accessors with certain scopes, e.g., for specific tenants, users,...
 - Users can register change handler callbacks for specific toggles.
 - Users can register custom input validation callbacks for specific toggles.
-- Works as a [CDS-plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles.
+- Works as a [CDS-Plugin](https://cap.cloud.sap/docs/node.js/cds-plugins) and provides a REST service to read and manipulate toggles.
 
 ## Peers
 
