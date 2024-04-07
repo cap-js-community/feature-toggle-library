@@ -16,18 +16,18 @@ nav_order: 4
 ## Plugin Settings
 
 Here is a list of all plugin settings that can be used in `package.json` under this library's node
-`cds.featureToggles`. At least one of _configFile_ or _config_ needs to be set, for the initialization to work.
+`cds.featureToggles`. All settings are optional.
 
 | setting            | type   | meaning                                                                   |
 | :----------------- | :----- | :------------------------------------------------------------------------ |
 | configFile         | string | path of the [configuration]({{ site.baseurl }}/usage/#configuration) file |
 | config             | object | inline configuration (only recommended for small projects)                |
-| uniqueName         | string | optional setting, see below                                               |
-| serviceAccessRoles | array  | optional setting, see below                                               |
-| readAccessRoles    | array  | optional setting, see below                                               |
-| writeAccessRoles   | array  | optional setting, see below                                               |
-| adminAccessRoles   | array  | optional setting, see below                                               |
-| ftsScopeCallback   | string | optional setting, see below                                               |
+| uniqueName         | string | key name on redis, see below                                              |
+| serviceAccessRoles | array  | read and write access roles, see below                                    |
+| readAccessRoles    | array  | see below                                                                 |
+| writeAccessRoles   | array  | see below                                                                 |
+| adminAccessRoles   | array  | see below                                                                 |
+| ftsScopeCallback   | string | custom scopes for cap feature toggles, see below                          |
 
 _uniqueName_<br>
 The unique name is an identifier for the state data in redis. This defaults to the cloud foundry application name and
