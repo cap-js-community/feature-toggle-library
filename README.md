@@ -9,17 +9,18 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
 
 ## Getting Started (CAP Feature Toggles)
 
-- Set up project with `@sap/cds`
-- Install library
+- Set up project with `@sap/cds`.
+- Install library:
 
   ```bash
   npm install --save @cap-js-community/feature-toggle-library
   ```
 
-- That's it. For CAP Feature Toggles everything is configured automatically. Our library acts as a CDS-Plugin and
-  registers a `FeatureService`, which can be used to access and change these toggles.
+- For CAP Feature Toggles everything is configured automatically.
+- The library acts as a CDS-Plugin and registers a `FeatureService`, which is used to check and update toggles.
+- For details see [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server).
 
-## Getting Started (All Feature Toggles)
+## Getting Started (Custom Configuration)
 
 - Same as previous section.
 - Write `toggles.yaml` configuration file:
@@ -34,7 +35,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
       - regex: '^\d+$'
   ```
 
-- Add configuration path to package.json
+- Add configuration path to `package.json`:
 
   ```json
   {
@@ -46,7 +47,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
   }
   ```
 
-- That's it. Write usage code
+- Write usage code in handlers:
 
   ```javascript
   const toggles = require("@cap-js-community/feature-toggle-library");
@@ -64,8 +65,6 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
     }
   };
   ```
-
-- For details see [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server).
 
 ## Features
 
