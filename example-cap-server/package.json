@@ -19,9 +19,9 @@
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
-    "@sap/cds": "^7.4.1",
-    "@sap/cds-mtxs": "^1.13.0",
-    "express": "^4.18.2"
+    "@sap/cds": "^7.8.0",
+    "@sap/cds-mtxs": "^1.17.0",
+    "express": "^4.19.2"
   },
   "cds": {
     "requires": {

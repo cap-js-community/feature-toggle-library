@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.1.3 - tbd
 
+### Added
+
+- cds-plugin: better access control (fixes #57).
+
 ### Fixed
 
 - redis: better integration mode, will not log a connection error if redis is not present.
