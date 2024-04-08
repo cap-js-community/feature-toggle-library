@@ -62,6 +62,9 @@ const _overwriteAccessRoles = (envFeatureToggles) => {
     return;
   }
   cds.on("loaded", (csn) => {
+    if (!csn.definitions[SERVICE_NAME]) {
+      return;
+    }
     for (const [access, endpoints] of Object.entries(SERVICE_ENDPOINTS)) {
       const accessRole = _getAccessRole(envFeatureToggles, access);
       if (accessRole) {
