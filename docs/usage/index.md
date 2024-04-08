@@ -25,7 +25,7 @@ const { FeatureToggles } = require("@cap-js-community/feature-toggle-library");
 const instance = new FeatureToggles({ uniqueName: "snowflake" });
 ```
 
-The library prepares a convenient singleton instance of FeatureToggles for out-of-the-box usage, where the Cloud
+The library prepares a convenient singleton instance of `FeatureToggles` for out-of-the-box usage, where the Cloud
 Foundry _app name_ is used as unique name. This should be sufficient for most use-cases and is the default export of
 the library.
 

@@ -18,7 +18,7 @@ SAP BTP feature toggle library enables Node.js applications using the SAP Cloud 
   ```
 
 - For CAP Feature Toggles everything is configured automatically.
-- The library acts as a CDS-Plugin and registers a `FeatureService`, which is used to check and update toggles.
+- The library acts as a CDS-Plugin and registers a `FeatureService`, which can be used to check and update toggles.
 - For details see [Example CAP Server](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server).
 
 ## Getting Started (Custom Configuration)
