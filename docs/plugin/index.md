@@ -130,16 +130,39 @@ Get all information about the current in-memory state of all toggles.
     "/check/priority": {
       "fallbackValue": 0,
       "config": {
+        "SOURCE": "FILE",
         "TYPE": "number",
-        "VALIDATION": "^\\d+$",
-        "ALLOWED_SCOPES": ["user", "tenant"]
+        "VALIDATIONS": [
+          {
+            "scopes": ["user", "tenant"]
+          },
+          {
+            "regex": "^\\d+$"
+          },
+          {
+            "module": "$CONFIG_DIR/validators",
+            "call": "validateTenantScope"
+          }
+        ]
       }
     },
     "/memory/logInterval": {
       "fallbackValue": 0,
       "config": {
+        "SOURCE": "FILE",
         "TYPE": "number",
-        "VALIDATION": "^\\d+$"
+        "VALIDATIONS": [
+          {
+            "regex": "^\\d+$"
+          }
+        ]
+      }
+    },
+    "/fts/check-service-extension": {
+      "fallbackValue": false,
+      "config": {
+        "SOURCE": "AUTO",
+        "TYPE": "boolean"
       }
     }
   }
