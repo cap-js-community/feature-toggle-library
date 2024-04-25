@@ -75,7 +75,7 @@ const redisUpdateHandler = async (context) => {
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
         for (const { featureKey: target, errorMessage, errorMessageValues } of validationErrors) {
           const errorMessageWithValues = textFormat(errorMessage, errorMessageValues);
-          context.error(VALIDATION_ERROR_HTTP_CODE, { message: errorMessageWithValues }, [], target);
+          context.error({ code: VALIDATION_ERROR_HTTP_CODE, message: errorMessageWithValues, target });
         }
       }
     };
@@ -97,14 +97,14 @@ const redisUpdateHandler = async (context) => {
         "error during redis update"
       )
     );
-    context.reject(500, { message: "caught unexpected error during redis update, check server logs" });
+    context.reject({ code: 500, message: "caught unexpected error during redis update, check server logs" });
   }
 };
 
 const redisSendCommandHandler = async (context) => {
   const { command } = context.data;
   if (!Array.isArray(command)) {
-    context.reject(400, { message: "request body needs to contain a 'command' field of type array" });
+    context.reject({ code: 400, message: "request body needs to contain a 'command' field of type array" });
     return;
   }
   const result = await redis.sendCommand(command);
