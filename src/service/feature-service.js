@@ -45,7 +45,7 @@ const redisReadHandler = async (context) => {
         "error during redis read"
       )
     );
-    context.reject(500, { message: "caught unexpected error during redis read, check server logs" });
+    context.reject({ code: 500, message: "caught unexpected error during redis read, check server logs" });
   }
 };
 
@@ -107,8 +107,9 @@ const redisSendCommandHandler = async (context) => {
     context.reject({ code: 400, message: "request body needs to contain a 'command' field of type array" });
     return;
   }
-  const result = await redis.sendCommand(command);
-  context.reply(typeof result === "string" ? result : JSON.stringify(result));
+  const redisResponse = await redis.sendCommand(command);
+  const result = typeof redisResponse === "string" ? redisResponse : JSON.stringify(redisResponse);
+  context.reply(result);
 };
 
 module.exports = async (srv) => {
