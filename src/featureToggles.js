@@ -349,8 +349,12 @@ class FeatureToggles {
     return scopeKey === undefined || typeof scopeKey === "string";
   }
 
+  static _isValidScopeMapValue(value) {
+    return typeof value === "string";
+  }
+
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  async _validateFeatureValue(featureKey, value, scopeMap, scopeKey) {
+  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isNullAllowed = false } = {}) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
@@ -395,9 +399,14 @@ class FeatureToggles {
       return [{ featureKey, scopeKey, errorMessage: "scopeKey is not valid" }];
     }
 
-    // NOTE: value === null is our way of encoding featureKey resetting changes, so it is always allowed
+    // NOTE: value === null is our way of encoding featureKey resetting changes, so it is allowed for changes but not
+    //   for actual values
     if (value === null) {
-      return [];
+      if (isNullAllowed) {
+        return [];
+      } else {
+        return [{ featureKey, ...(scopeKey && { scopeKey }), errorMessage: "value null is not allowed" }];
+      }
     }
 
     // NOTE: skip validating active properties during initialization
@@ -533,7 +542,10 @@ class FeatureToggles {
   async validateFeatureValue(featureKey, value, scopeMap = undefined) {
     return scopeMap === undefined
       ? await this._validateFeatureValue(featureKey, value)
-      : await this._validateFeatureValue(featureKey, value, scopeMap, FeatureToggles.getScopeKey(scopeMap));
+      : await this._validateFeatureValue(featureKey, value, {
+          scopeMap,
+          scopeKey: FeatureToggles.getScopeKey(scopeMap),
+        });
   }
 
   /**
@@ -560,12 +572,10 @@ class FeatureToggles {
     let validatedStateScopedValues = {};
 
     for (const [scopeKey, value] of Object.entries(scopedValues)) {
-      const entryValidationErrors = await this._validateFeatureValue(
-        featureKey,
-        value,
-        FeatureToggles.getScopeMap(scopeKey),
-        scopeKey
-      );
+      const entryValidationErrors = await this._validateFeatureValue(featureKey, value, {
+        scopeMap: FeatureToggles.getScopeMap(scopeKey),
+        scopeKey,
+      });
       let updateValue = value;
       if (Array.isArray(entryValidationErrors) && entryValidationErrors.length > 0) {
         validationErrors = validationErrors.concat(entryValidationErrors);
@@ -901,10 +911,6 @@ class FeatureToggles {
   // ========================================
   // START OF GET_FEATURE_VALUE SECTION
   // ========================================
-
-  static _isValidScopeMapValue(value) {
-    return typeof value === "string";
-  }
 
   /**
    * This is used to make sure scopeMap is either undefined or a shallow map with string entries. This happens for all
@@ -1242,7 +1248,7 @@ class FeatureToggles {
             scopeMap
           );
 
-          const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeMap, scopeKey);
+          const validationErrors = await this._validateFeatureValue(featureKey, newValue, { scopeMap, scopeKey });
           if (Array.isArray(validationErrors) && validationErrors.length > 0) {
             logger.warning(
               new VError(
@@ -1289,7 +1295,7 @@ class FeatureToggles {
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    const validationErrors = await this._validateFeatureValue(featureKey, newValue, scopeMap, scopeKey);
+    const validationErrors = await this._validateFeatureValue(featureKey, newValue, { scopeMap, scopeKey });
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
     }
