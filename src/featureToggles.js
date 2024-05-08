@@ -1295,7 +1295,11 @@ class FeatureToggles {
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    const validationErrors = await this._validateFeatureValue(featureKey, newValue, { scopeMap, scopeKey });
+    const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
+      scopeMap,
+      scopeKey,
+      isNullAllowed: true,
+    });
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
     }
