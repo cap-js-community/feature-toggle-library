@@ -1231,6 +1231,7 @@ class FeatureToggles {
   /**
    * Handler for refresh message.
    */
+  // TODO rewrite, try catch should be inside so that all entries are always processed.
   async _messageHandler(message) {
     let featureKey, newValue, scopeMap, options;
     try {
