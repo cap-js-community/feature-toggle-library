@@ -201,3 +201,26 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
   },
 }
 `;
+
+exports[`feature toggles test basic apis initializeFeatureToggles warns for invalid values 1`] = `
+{
+  "test/feature_a": {
+    "SOURCE": "RUNTIME",
+    "TYPE": "boolean",
+  },
+  "test/feature_b": {
+    "SOURCE": "RUNTIME",
+    "TYPE": "string",
+  },
+  "test/feature_c": {
+    "SOURCE": "RUNTIME",
+    "TYPE": "number",
+  },
+}
+`;
+
+exports[`feature toggles test basic apis initializeFeatureToggles warns for invalid values 3`] = `
+{
+  "validationErrors": "[{"featureKey":"test/feature_b","errorMessage":"value null is not allowed"},{"featureKey":"test/feature_c","errorMessage":"value \\"{0}\\" has invalid type {1}, must be {2}","errorMessageValues":["1","string","number"]}]",
+}
+`;

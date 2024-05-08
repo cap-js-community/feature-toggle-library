@@ -25,12 +25,15 @@ jest.mock("../src/shared/env", () => require("./__mocks__/env"));
 const redisWrapperMock = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
 
-const mockFallbackValues = Object.fromEntries(
-  Object.entries(mockConfig).map(([key, { fallbackValue }]) => [key, fallbackValue])
-);
-const mockActiveKeys = Object.entries(mockConfig)
-  .filter(([, value]) => value.active !== false)
-  .map(([key]) => key);
+const configToFallbackValues = (config) =>
+  Object.fromEntries(Object.entries(config).map(([key, { fallbackValue }]) => [key, fallbackValue]));
+const configToActiveKeys = (config) =>
+  Object.entries(config)
+    .filter(([, value]) => value.active !== false)
+    .map(([key]) => key);
+
+const mockFallbackValues = configToFallbackValues(mockConfig);
+const mockActiveKeys = configToActiveKeys(mockConfig);
 
 let featureToggles = null;
 const loggerSpy = {
@@ -240,6 +243,56 @@ describe("feature toggles test", () => {
       expect(redisWrapperMock.subscribe).toHaveBeenCalledWith(redisChannel);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
+    it("initializeFeatureToggles warns for invalid values", async () => {
+      const badMockConfig = {
+        [FEATURE.A]: {
+          fallbackValue: false, // valid
+          type: "boolean",
+        },
+        [FEATURE.B]: {
+          fallbackValue: null, // null not allowed
+          type: "string",
+        },
+        [FEATURE.C]: {
+          fallbackValue: "1", // type mismatch
+          type: "number",
+        },
+      };
+      const fallbackValues = configToFallbackValues(badMockConfig);
+      const activeKeys = configToActiveKeys(badMockConfig);
+      await featureToggles.initializeFeatures({ config: badMockConfig });
+
+      expect(featureToggles.__isInitialized).toBe(true);
+      expect(featureToggles.__fallbackValues).toStrictEqual(fallbackValues);
+      expect(featureToggles.__stateScopedValues).toStrictEqual({});
+      expect(featureToggles.__config).toMatchSnapshot();
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(activeKeys.length);
+      for (let fieldIndex = 0; fieldIndex < activeKeys.length; fieldIndex++) {
+        expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
+          fieldIndex + 1,
+          redisKey,
+          activeKeys[fieldIndex],
+          expect.any(Function)
+        );
+      }
+      expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledTimes(1);
+      expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledWith(
+        redisChannel,
+        featureToggles.__messageHandler
+      );
+      expect(redisWrapperMock.subscribe).toHaveBeenCalledTimes(1);
+      expect(redisWrapperMock.subscribe).toHaveBeenCalledWith(redisChannel);
+
+      expect(loggerSpy.warning).toHaveBeenCalledTimes(1);
+      expect(loggerSpy.warning).toHaveBeenCalledWith(expect.any(VError));
+      const [loggedErr] = loggerSpy.warning.mock.calls[0];
+      expect(loggedErr).toMatchInlineSnapshot(
+        `[FeatureTogglesError: found invalid fallback values during initialization]`
+      );
+      expect(VError.info(loggedErr)).toMatchSnapshot();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
