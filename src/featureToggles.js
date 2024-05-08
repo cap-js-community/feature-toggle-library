@@ -354,7 +354,7 @@ class FeatureToggles {
   }
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isNullAllowed = false } = {}) {
+  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isChange = false } = {}) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
@@ -402,7 +402,7 @@ class FeatureToggles {
     // NOTE: value === null is our way of encoding featureKey resetting changes, so it is allowed for changes but not
     //   for actual values
     if (value === null) {
-      if (isNullAllowed) {
+      if (isChange) {
         return [];
       } else {
         return [{ featureKey, ...(scopeKey && { scopeKey }), errorMessage: "value null is not allowed" }];
@@ -1248,7 +1248,11 @@ class FeatureToggles {
             scopeMap
           );
 
-          const validationErrors = await this._validateFeatureValue(featureKey, newValue, { scopeMap, scopeKey });
+          const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
+            scopeMap,
+            scopeKey,
+            isChange: true,
+          });
           if (Array.isArray(validationErrors) && validationErrors.length > 0) {
             logger.warning(
               new VError(
@@ -1298,7 +1302,7 @@ class FeatureToggles {
     const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
       scopeMap,
       scopeKey,
-      isNullAllowed: true,
+      isChange: true,
     });
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
