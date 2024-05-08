@@ -105,6 +105,13 @@ Content-Type: application/json
     "options": {
       "clearSubScopes": true
     }
+  },
+  {
+    "key": "/fts/check-service-extension",
+    "value": null,
+    "options": {
+      "clearSubScopes": true
+    }
   }
 ]
 
