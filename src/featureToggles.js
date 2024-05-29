@@ -1233,8 +1233,21 @@ class FeatureToggles {
   async _messageHandler(message) {
     const changeEntries = FeatureToggles._deserializeChangesFromRefreshMessage(message);
     if (!Array.isArray(changeEntries)) {
+      logger.error(
+        new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              channel: this.__redisChannel,
+              message,
+            },
+          },
+          "error during message deserialization"
+        )
+      );
       return;
     }
+
     await Promise.all(
       changeEntries.map(async (changeEntry) => {
         let featureKey, newValue, scopeMap, options;
