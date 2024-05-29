@@ -1159,13 +1159,13 @@ describe("feature toggles test", () => {
     });
 
     it("empty array should be handled fine", async () => {
-      redisWrapperMock.publishMessage(featureToggles.__redisChannel, "[]");
+      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, "[]");
       expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(loggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
     it("error in case message is not a serialized array", async () => {
-      redisWrapperMock.publishMessage(featureToggles.__redisChannel, "hello world!");
+      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, "hello world!");
       expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(loggerSpy.error).toHaveBeenCalledTimes(1);
       expect(outputFromErrorLogger(loggerSpy.error.mock.calls)).toMatchInlineSnapshot(`
@@ -1174,8 +1174,43 @@ describe("feature toggles test", () => {
       `);
     });
 
+    it("invalid change entries are ignored but logged", async () => {
+      const changeEntries = [{ featureKey: FEATURE.C, newValue: 10 }];
+
+      expect(featureToggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
+
+      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, JSON.stringify(changeEntries));
+
+      expect(loggerSpy.warning).toHaveBeenCalledTimes(1);
+      expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
+        "FeatureTogglesError: received and ignored invalid value from message
+        {
+          validationErrors: '[{"featureKey":"test/feature_c","scopeKey":"//","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":[10,"number","string"]}]'
+        }"
+      `);
+
+      expect(featureToggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
+    });
+
     it("all change entries are processed even if one fails", async () => {
-      //
+      const scopeMap = { tenant: "testing" };
+      const changeEntries = [
+        { featureKey: FEATURE.C, newValue: "modified" },
+        "bla",
+        { featureKey: FEATURE.E, newValue: 9, scopeMap },
+      ];
+
+      expect(featureToggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
+      expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toBe(mockFallbackValues[FEATURE.E]);
+
+      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, JSON.stringify(changeEntries));
+
+      expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
+      expect(loggerSpy.error).toHaveBeenCalledTimes(1);
+      expect(outputFromErrorLogger(loggerSpy.error.mock.calls)).toMatchInlineSnapshot();
+
+      expect(featureToggles.getFeatureValue(FEATURE.C)).toMatchInlineSnapshot(`"best"`);
+      expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toMatchInlineSnapshot(`5`);
     });
   });
 });
