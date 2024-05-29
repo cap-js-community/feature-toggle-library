@@ -1251,7 +1251,22 @@ class FeatureToggles {
     await Promise.all(
       changeEntries.map(async (changeEntry) => {
         try {
+          if (!isObject(changeEntry) || changeEntry.featureKey === undefined || changeEntry.newValue === undefined) {
+            logger.warning(
+              new VError(
+                {
+                  name: VERROR_CLUSTER_NAME,
+                  info: {
+                    changeEntry: JSON.stringify(changeEntry),
+                  },
+                },
+                "received and ignored change entry"
+              )
+            );
+            return;
+          }
           const { featureKey, newValue, scopeMap, options } = changeEntry;
+
           const scopeKey = FeatureToggles.getScopeKey(scopeMap);
           const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
             this.__superScopeCache,

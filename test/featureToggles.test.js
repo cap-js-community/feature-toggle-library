@@ -27,7 +27,8 @@ jest.mock("../src/shared/env", () => require("./__mocks__/env"));
 const redisWrapperMock = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
 
-const outputFromErrorLogger = (calls) => util.format("%s\n%O", calls[0][0], VError.info(calls[0][0]));
+const outputFromErrorLogger = (calls) =>
+  calls.map((args) => util.format("%s\n%O", args[0], VError.info(args[0]))).join("\n");
 
 const configToFallbackValues = (config) =>
   Object.fromEntries(Object.entries(config).map(([key, { fallbackValue }]) => [key, fallbackValue]));
@@ -1196,6 +1197,8 @@ describe("feature toggles test", () => {
       const scopeMap = { tenant: "testing" };
       const changeEntries = [
         { featureKey: FEATURE.C, newValue: "modified" },
+        {},
+        null,
         "bla",
         { featureKey: FEATURE.E, newValue: 9, scopeMap },
       ];
@@ -1205,12 +1208,19 @@ describe("feature toggles test", () => {
 
       await redisWrapperMock.publishMessage(featureToggles.__redisChannel, JSON.stringify(changeEntries));
 
-      expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
-      expect(loggerSpy.error).toHaveBeenCalledTimes(1);
-      expect(outputFromErrorLogger(loggerSpy.error.mock.calls)).toMatchInlineSnapshot();
+      expect(loggerSpy.warning).toHaveBeenCalledTimes(3);
+      expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
+        "FeatureTogglesError: received and ignored change entry
+        { changeEntry: '{}' }
+        FeatureTogglesError: received and ignored change entry
+        { changeEntry: 'null' }
+        FeatureTogglesError: received and ignored change entry
+        { changeEntry: '"bla"' }"
+      `);
+      expect(loggerSpy.error).toHaveBeenCalledTimes(0);
 
-      expect(featureToggles.getFeatureValue(FEATURE.C)).toMatchInlineSnapshot(`"best"`);
-      expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toMatchInlineSnapshot(`5`);
+      expect(featureToggles.getFeatureValue(FEATURE.C)).toMatchInlineSnapshot(`"modified"`);
+      expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toMatchInlineSnapshot(`9`);
     });
   });
 });
