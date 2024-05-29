@@ -1211,11 +1211,11 @@ describe("feature toggles test", () => {
       expect(loggerSpy.warning).toHaveBeenCalledTimes(3);
       expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
         "FeatureTogglesError: received and ignored change entry
-        { changeEntry: '{}' }
+        { channel: 'feature-channel', changeEntry: '{}' }
         FeatureTogglesError: received and ignored change entry
-        { changeEntry: 'null' }
+        { channel: 'feature-channel', changeEntry: 'null' }
         FeatureTogglesError: received and ignored change entry
-        { changeEntry: '"bla"' }"
+        { channel: 'feature-channel', changeEntry: '"bla"' }"
       `);
       expect(loggerSpy.error).toHaveBeenCalledTimes(0);
 

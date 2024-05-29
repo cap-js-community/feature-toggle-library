@@ -1257,6 +1257,7 @@ class FeatureToggles {
                 {
                   name: VERROR_CLUSTER_NAME,
                   info: {
+                    channel: this.__redisChannel,
                     changeEntry: JSON.stringify(changeEntry),
                   },
                 },
