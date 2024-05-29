@@ -1228,7 +1228,7 @@ class FeatureToggles {
   }
 
   /**
-   * Handler for refresh message.
+   * Handler for message with change entries.
    */
   async _messageHandler(message) {
     const changeEntries = FeatureToggles._deserializeChangesFromRefreshMessage(message);
@@ -1250,9 +1250,8 @@ class FeatureToggles {
 
     await Promise.all(
       changeEntries.map(async (changeEntry) => {
-        let featureKey, newValue, scopeMap, options;
         try {
-          ({ featureKey, newValue, scopeMap, options } = changeEntry);
+          const { featureKey, newValue, scopeMap, options } = changeEntry;
           const scopeKey = FeatureToggles.getScopeKey(scopeMap);
           const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
             this.__superScopeCache,
@@ -1299,7 +1298,6 @@ class FeatureToggles {
                 info: {
                   channel: this.__redisChannel,
                   changeEntry: JSON.stringify(changeEntry),
-                  ...(featureKey && { featureKey }),
                 },
               },
               "error during message handling"
