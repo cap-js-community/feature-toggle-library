@@ -1285,9 +1285,8 @@ class FeatureToggles {
                 cause: err,
                 info: {
                   channel: this.__redisChannel,
-                  message,
+                  changeEntry: JSON.stringify(changeEntry),
                   ...(featureKey && { featureKey }),
-                  ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
                 },
               },
               "error during message handling"
