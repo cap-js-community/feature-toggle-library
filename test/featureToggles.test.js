@@ -1,5 +1,7 @@
 "use strict";
 
+const util = require("util");
+
 const VError = require("verror");
 const yaml = require("yaml");
 const featureTogglesModule = require("../src/featureToggles");
@@ -24,6 +26,8 @@ jest.mock("../src/shared/env", () => require("./__mocks__/env"));
 
 const redisWrapperMock = require("../src/redisWrapper");
 jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
+
+const outputFromErrorLogger = (calls) => util.format("%s\n%O", calls[0][0], VError.info(calls[0][0]));
 
 const configToFallbackValues = (config) =>
   Object.fromEntries(Object.entries(config).map(([key, { fallbackValue }]) => [key, fallbackValue]));
@@ -131,16 +135,12 @@ describe("feature toggles test", () => {
         `[]`
       );
       expect(loggerSpy.error).toHaveBeenCalledTimes(1);
-      expect(loggerSpy.error.mock.calls[0]).toMatchInlineSnapshot(`
-        [
-          [FeatureTogglesError: scope exceeds allowed number of keys],
-        ]
-      `);
-      expect(VError.info(loggerSpy.error.mock.calls[0][0])).toMatchInlineSnapshot(`
+      expect(outputFromErrorLogger(loggerSpy.error.mock.calls)).toMatchInlineSnapshot(`
+        "FeatureTogglesError: scope exceeds allowed number of keys
         {
-          "maxKeys": 4,
-          "scopeMap": "{"tenantId":"t1","label":"l1","bla":"b1","naa":"n1","xxx":"x1"}",
-        }
+          scopeMap: '{"tenantId":"t1","label":"l1","bla":"b1","naa":"n1","xxx":"x1"}',
+          maxKeys: 4
+        }"
       `);
     });
 
@@ -288,11 +288,12 @@ describe("feature toggles test", () => {
 
       expect(loggerSpy.warning).toHaveBeenCalledTimes(1);
       expect(loggerSpy.warning).toHaveBeenCalledWith(expect.any(VError));
-      const [loggedErr] = loggerSpy.warning.mock.calls[0];
-      expect(loggedErr).toMatchInlineSnapshot(
-        `[FeatureTogglesError: found invalid fallback values during initialization]`
-      );
-      expect(VError.info(loggedErr)).toMatchSnapshot();
+      expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
+        "FeatureTogglesError: found invalid fallback values during initialization
+        {
+          validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"value null is not allowed"},{"featureKey":"test/feature_c","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":["1","string","number"]}]'
+        }"
+      `);
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
@@ -1149,6 +1150,32 @@ describe("feature toggles test", () => {
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("message handling", () => {
+    beforeEach(async () => {
+      await featureToggles.initializeFeatures({ config: mockConfig });
+    });
+
+    it("empty array should be handled fine", async () => {
+      redisWrapperMock.publishMessage(featureToggles.__redisChannel, "[]");
+      expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
+      expect(loggerSpy.error).toHaveBeenCalledTimes(0);
+    });
+
+    it("error in case message is not a serialized array", async () => {
+      redisWrapperMock.publishMessage(featureToggles.__redisChannel, "hello world!");
+      expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
+      expect(loggerSpy.error).toHaveBeenCalledTimes(1);
+      expect(outputFromErrorLogger(loggerSpy.error.mock.calls)).toMatchInlineSnapshot(`
+        "FeatureTogglesError: error during message deserialization
+        { channel: 'feature-channel', message: 'hello world!' }"
+      `);
+    });
+
+    it("all change entries are processed even if one fails", async () => {
+      //
     });
   });
 });
