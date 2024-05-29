@@ -23,10 +23,9 @@ const { REDIS_INTEGRATION_MODE } = redis;
 const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handlerCollection");
-const { promiseAllDone } = require("./shared/promiseAllDone");
 const { LimitedLazyCache } = require("./shared/cache");
 const { Semaphore } = require("./shared/semaphore");
-const { ENV, isObject, tryRequire, tryPathReadable } = require("./shared/static");
+const { ENV, isObject, tryRequire, tryPathReadable, tryJsonParse } = require("./shared/static");
 
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
@@ -1165,7 +1164,7 @@ class FeatureToggles {
    * @returns {Array<ChangeEntry>}
    */
   static _deserializeChangesFromRefreshMessage(message) {
-    return JSON.parse(message);
+    return tryJsonParse(message);
   }
 
   /**
@@ -1229,15 +1228,44 @@ class FeatureToggles {
   }
 
   /**
-   * Handler for refresh message.
+   * Handler for message with change entries.
    */
   async _messageHandler(message) {
-    let featureKey, newValue, scopeMap, options;
-    try {
-      const changeEntries = FeatureToggles._deserializeChangesFromRefreshMessage(message);
-      await promiseAllDone(
-        changeEntries.map(async (changeEntry) => {
-          ({ featureKey, newValue, scopeMap, options } = changeEntry);
+    const changeEntries = FeatureToggles._deserializeChangesFromRefreshMessage(message);
+    if (!Array.isArray(changeEntries)) {
+      logger.error(
+        new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              channel: this.__redisChannel,
+              message,
+            },
+          },
+          "error during message deserialization"
+        )
+      );
+      return;
+    }
+
+    await Promise.all(
+      changeEntries.map(async (changeEntry) => {
+        try {
+          if (!isObject(changeEntry) || changeEntry.featureKey === undefined || changeEntry.newValue === undefined) {
+            logger.warning(
+              new VError(
+                {
+                  name: VERROR_CLUSTER_NAME,
+                  info: {
+                    changeEntry: JSON.stringify(changeEntry),
+                  },
+                },
+                "received and ignored change entry"
+              )
+            );
+            return;
+          }
+          const { featureKey, newValue, scopeMap, options } = changeEntry;
 
           const scopeKey = FeatureToggles.getScopeKey(scopeMap);
           const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
@@ -1276,25 +1304,23 @@ class FeatureToggles {
             scopeKey,
             options
           );
-        })
-      );
-    } catch (err) {
-      logger.error(
-        new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            cause: err,
-            info: {
-              channel: this.__redisChannel,
-              message,
-              ...(featureKey && { featureKey }),
-              ...(scopeMap && { scopeMap: JSON.stringify(scopeMap) }),
-            },
-          },
-          "error during message handling"
-        )
-      );
-    }
+        } catch (err) {
+          logger.error(
+            new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                cause: err,
+                info: {
+                  channel: this.__redisChannel,
+                  changeEntry: JSON.stringify(changeEntry),
+                },
+              },
+              "error during message handling"
+            )
+          );
+        }
+      })
+    );
   }
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {

@@ -28,6 +28,12 @@ const tryRequire = (module) => {
   } catch (err) {} // eslint-disable-line no-empty
 };
 
+const tryJsonParse = (...args) => {
+  try {
+    return JSON.parse(...args);
+  } catch (err) {} // eslint-disable-line no-empty
+};
+
 const pathReadable = async (path) => (await accessAsync(path, fs.constants.R_OK)) ?? true;
 
 const tryPathReadable = async (path) => {
@@ -43,6 +49,7 @@ module.exports = {
   isNull,
   isObject,
   tryRequire,
+  tryJsonParse,
   pathReadable,
   tryPathReadable,
 };
