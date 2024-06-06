@@ -1303,7 +1303,19 @@ class FeatureToggles {
             scopeKey,
             options
           );
-          await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
+
+          // NOTE: the change handler expects the actual value.
+          const newActualValue =
+            newValue !== null
+              ? newValue
+              : FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+                  this.__superScopeCache,
+                  this.__stateScopedValues,
+                  this.__fallbackValues,
+                  featureKey,
+                  scopeMap
+                );
+          await this._triggerChangeHandlers(featureKey, oldValue, newActualValue, scopeMap, options);
         } catch (err) {
           logger.error(
             new VError(
@@ -1351,7 +1363,17 @@ class FeatureToggles {
         scopeKey,
         options
       );
-      await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
+      const newActualValue =
+        newValue !== null
+          ? newValue
+          : FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+              this.__superScopeCache,
+              this.__stateScopedValues,
+              this.__fallbackValues,
+              featureKey,
+              scopeMap
+            );
+      await this._triggerChangeHandlers(featureKey, oldValue, newActualValue, scopeMap, options);
       return;
     }
 
@@ -1419,10 +1441,10 @@ class FeatureToggles {
    *
    * The change handler gets the new value as well as the old value, immediately after the update is propagated.
    *
-   * @param {boolean | number | string | null}  newValue
-   * @param {boolean | number | string}         oldValue
-   * @param {Object}                            [scopeMap]  optional scope restrictions
-   * @param {ChangeOptions}                     [options]   optional switch to clear all sub scopes
+   * @param {boolean | number | string}  newValue
+   * @param {boolean | number | string}  oldValue
+   * @param {Object}                     [scopeMap]  optional scope restrictions
+   * @param {ChangeOptions}              [options]   optional switch to clear all sub scopes
    */
   /**
    * Register given handler to receive changes of given feature value key.
