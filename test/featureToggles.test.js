@@ -53,9 +53,6 @@ describe("feature toggles test", () => {
     redisWrapperMock._reset();
     envMock._reset();
     featureToggles = new FeatureToggles({ redisKey, redisChannel });
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
@@ -1221,6 +1218,46 @@ describe("feature toggles test", () => {
 
       expect(featureToggles.getFeatureValue(FEATURE.C)).toMatchInlineSnapshot(`"modified"`);
       expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toMatchInlineSnapshot(`9`);
+    });
+  });
+
+  describe("changeHandler details", () => {
+    const handler = jest.fn();
+    const tenant = "t1";
+    const user = "u1";
+    const fallbackValue = mockFallbackValues[FEATURE.C];
+    const rootValue = "root";
+    const tenantValue = "t1";
+    const tenantUserValue = "t1u1";
+
+    beforeEach(async () => {
+      await featureToggles.initializeFeatures({ config: mockConfig });
+      featureToggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
+      await featureToggles.changeFeatureValue(FEATURE.C, rootValue);
+      await featureToggles.changeFeatureValue(FEATURE.C, tenantValue, { tenant });
+      await featureToggles.changeFeatureValue(FEATURE.C, tenantUserValue, { tenant, user });
+      jest.clearAllMocks();
+    });
+
+    test("reset tenantUser should fall back to tenant", async () => {
+      await featureToggles.changeFeatureValue(FEATURE.C, null, { tenant, user });
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(tenantValue, tenantUserValue, { tenant, user }, undefined);
+    });
+    test("reset tenant should fall back to root", async () => {
+      await featureToggles.changeFeatureValue(FEATURE.C, null, { tenant });
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(rootValue, tenantValue, { tenant }, undefined);
+    });
+    test("reset root should fall back to fallback", async () => {
+      await featureToggles.changeFeatureValue(FEATURE.C, null);
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(fallbackValue, rootValue, undefined, undefined);
+    });
+    test("reset with clearSubScopes root should fall back to fallback", async () => {
+      await featureToggles.changeFeatureValue(FEATURE.C, null, undefined, { clearSubScopes: true });
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(fallbackValue, rootValue, undefined, { clearSubScopes: true });
     });
   });
 });
