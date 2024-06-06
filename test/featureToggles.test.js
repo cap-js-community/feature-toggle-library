@@ -1259,5 +1259,17 @@ describe("feature toggles test", () => {
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(fallbackValue, rootValue, undefined, { clearSubScopes: true });
     });
+
+    test("get in changeHandler should give new value", async () => {
+      let newValueCheck;
+      const newTenantUserValue = "super";
+      handler.mockImplementationOnce(() => {
+        newValueCheck = featureToggles.getFeatureValue(FEATURE.C, { tenant, user });
+      });
+      await featureToggles.changeFeatureValue(FEATURE.C, "super", { tenant, user });
+      expect(newValueCheck).toBe(newTenantUserValue);
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(tenantValue, tenantUserValue, { tenant, user }, undefined);
+    });
   });
 });
