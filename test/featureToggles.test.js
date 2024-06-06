@@ -40,7 +40,7 @@ const configToActiveKeys = (config) =>
 const mockFallbackValues = configToFallbackValues(mockConfig);
 const mockActiveKeys = configToActiveKeys(mockConfig);
 
-let featureToggles = null;
+let toggles;
 const loggerSpy = {
   info: jest.spyOn(featureTogglesModule._._getLogger(), "info"),
   warning: jest.spyOn(featureTogglesModule._._getLogger(), "warning"),
@@ -52,12 +52,12 @@ describe("feature toggles test", () => {
     envMock._reset();
     redisWrapperMock._reset();
     envMock._reset();
-    featureToggles = new FeatureToggles({ redisKey, redisChannel });
+    toggles = new FeatureToggles({ redisKey, redisChannel });
     jest.clearAllMocks();
   });
 
   describe("enums", () => {
-    it("config info consistency", () => {
+    test("config info consistency", () => {
       const internalKeys = [CONFIG_KEY.VALIDATIONS_SCOPES_MAP, CONFIG_KEY.VALIDATIONS_REGEX];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
@@ -70,7 +70,7 @@ describe("feature toggles test", () => {
   });
 
   describe("static functions", () => {
-    it("_getSuperScopeKeys", () => {
+    test("_getSuperScopeKeys", () => {
       const cache = new LimitedLazyCache({ sizeLimit: 10 });
       const allSuperScopeKeys = (scopeMap) => FeatureToggles._getNonRootSuperScopeKeys(cache, scopeMap);
 
@@ -142,7 +142,7 @@ describe("feature toggles test", () => {
       `);
     });
 
-    it("getScopeKey", () => {
+    test("getScopeKey", () => {
       const scopeMaps = [
         undefined,
         null,
@@ -168,7 +168,7 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("getScopeMap", () => {
+    test("getScopeMap", () => {
       const scopeKeys = [
         undefined,
         null,
@@ -216,13 +216,13 @@ describe("feature toggles test", () => {
   });
 
   describe("basic apis", () => {
-    it("initializeFeatureToggles", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("initializeFeatureToggles", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
 
-      expect(featureToggles.__isInitialized).toBe(true);
-      expect(featureToggles.__fallbackValues).toStrictEqual(mockFallbackValues);
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
-      expect(featureToggles.__config).toMatchSnapshot();
+      expect(toggles.__isInitialized).toBe(true);
+      expect(toggles.__fallbackValues).toStrictEqual(mockFallbackValues);
+      expect(toggles.__stateScopedValues).toStrictEqual({});
+      expect(toggles.__config).toMatchSnapshot();
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(mockActiveKeys.length);
       for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -233,10 +233,7 @@ describe("feature toggles test", () => {
         );
       }
       expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledWith(
-        redisChannel,
-        featureToggles.__messageHandler
-      );
+      expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledWith(redisChannel, toggles.__messageHandler);
       expect(redisWrapperMock.subscribe).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.subscribe).toHaveBeenCalledWith(redisChannel);
 
@@ -244,7 +241,7 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("initializeFeatureToggles warns for invalid values", async () => {
+    test("initializeFeatureToggles warns for invalid values", async () => {
       const badMockConfig = {
         [FEATURE.A]: {
           fallbackValue: false, // valid
@@ -261,12 +258,12 @@ describe("feature toggles test", () => {
       };
       const fallbackValues = configToFallbackValues(badMockConfig);
       const activeKeys = configToActiveKeys(badMockConfig);
-      await featureToggles.initializeFeatures({ config: badMockConfig });
+      await toggles.initializeFeatures({ config: badMockConfig });
 
-      expect(featureToggles.__isInitialized).toBe(true);
-      expect(featureToggles.__fallbackValues).toStrictEqual(fallbackValues);
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
-      expect(featureToggles.__config).toMatchSnapshot();
+      expect(toggles.__isInitialized).toBe(true);
+      expect(toggles.__fallbackValues).toStrictEqual(fallbackValues);
+      expect(toggles.__stateScopedValues).toStrictEqual({});
+      expect(toggles.__config).toMatchSnapshot();
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(activeKeys.length);
       for (let fieldIndex = 0; fieldIndex < activeKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -277,10 +274,7 @@ describe("feature toggles test", () => {
         );
       }
       expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledTimes(1);
-      expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledWith(
-        redisChannel,
-        featureToggles.__messageHandler
-      );
+      expect(redisWrapperMock.registerMessageHandler).toHaveBeenCalledWith(redisChannel, toggles.__messageHandler);
       expect(redisWrapperMock.subscribe).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.subscribe).toHaveBeenCalledWith(redisChannel);
 
@@ -295,14 +289,14 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("_changeRemoteFeatureValues", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("_changeRemoteFeatureValues", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      const beforeValues = stateFromInfos(await featureToggles.getFeaturesInfos());
-      await featureToggles._changeRemoteFeatureValue(FEATURE.B, null);
-      await featureToggles._changeRemoteFeatureValue(FEATURE.C, "new_a");
-      const afterValues = stateFromInfos(await featureToggles.getFeaturesInfos());
+      const beforeValues = stateFromInfos(await toggles.getFeaturesInfos());
+      await toggles._changeRemoteFeatureValue(FEATURE.B, null);
+      await toggles._changeRemoteFeatureValue(FEATURE.C, "new_a");
+      const afterValues = stateFromInfos(await toggles.getFeaturesInfos());
 
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(2);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -338,8 +332,8 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("validateFeatureValue", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("validateFeatureValue", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
         [FEATURE.A, true],
@@ -350,8 +344,8 @@ describe("feature toggles test", () => {
       ];
 
       let i = 0;
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "feature key is not valid",
@@ -359,7 +353,7 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "value "{0}" has invalid type {1}, must be in {2}",
@@ -376,7 +370,7 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "value "{0}" has invalid type {1}, must be {2}",
@@ -389,7 +383,7 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "value "{0}" does not match validation regular expression {1}",
@@ -407,8 +401,8 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("validateFeatureValue with scopes", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("validateFeatureValue with scopes", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
         [FEATURE.A, 1, { a: "1" }],
@@ -422,7 +416,7 @@ describe("feature toggles test", () => {
       ];
 
       let i = 0;
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "value "{0}" has invalid type {1}, must be {2}",
@@ -436,7 +430,7 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "scopeMap must be undefined or an object",
@@ -444,11 +438,11 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`[]`);
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "scope "{0}" is not allowed",
@@ -459,7 +453,7 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(await featureToggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(...inputArgsList[i++])).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "scope "{0}" is not allowed",
@@ -476,8 +470,8 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("validateFeatureValue should fail if not initialized", async () => {
-      expect(await featureToggles.validateFeatureValue(FEATURE.E, 1)).toMatchInlineSnapshot(`
+    test("validateFeatureValue should fail if not initialized", async () => {
+      expect(await toggles.validateFeatureValue(FEATURE.E, 1)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "not initialized",
@@ -485,36 +479,36 @@ describe("feature toggles test", () => {
         ]
       `);
 
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      expect(await featureToggles.validateFeatureValue(FEATURE.E, 1)).toStrictEqual([]);
+      await toggles.initializeFeatures({ config: mockConfig });
+      expect(await toggles.validateFeatureValue(FEATURE.E, 1)).toStrictEqual([]);
     });
 
-    it("isValidFeatureValueType", async () => {
+    test("isValidFeatureValueType", async () => {
       const invalidTypes = [undefined, () => {}, [], {}];
       const validTypes = [null, 0, "", true];
       expect(invalidTypes.map(FeatureToggles._isValidFeatureValueType)).toStrictEqual(invalidTypes.map(() => false));
       expect(validTypes.map(FeatureToggles._isValidFeatureValueType)).toStrictEqual(validTypes.map(() => true));
     });
 
-    it("isValidFeatureKey", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("isValidFeatureKey", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
 
       const invalidKeys = [undefined, () => {}, [], {}, null, 0, "", true, "nonsense"];
       const validKeys = Object.keys(mockConfig);
-      expect(
-        invalidKeys.map((key) => FeatureToggles._isValidFeatureKey(featureToggles.__fallbackValues, key))
-      ).toStrictEqual(invalidKeys.map(() => false));
-      expect(
-        validKeys.map((key) => FeatureToggles._isValidFeatureKey(featureToggles.__fallbackValues, key))
-      ).toStrictEqual(validKeys.map(() => true));
+      expect(invalidKeys.map((key) => FeatureToggles._isValidFeatureKey(toggles.__fallbackValues, key))).toStrictEqual(
+        invalidKeys.map(() => false)
+      );
+      expect(validKeys.map((key) => FeatureToggles._isValidFeatureKey(toggles.__fallbackValues, key))).toStrictEqual(
+        validKeys.map(() => true)
+      );
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("getFeatureInfo", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      expect(featureToggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
+    test("getFeatureInfo", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      expect(toggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
         {
           "config": {
             "SOURCE": "RUNTIME",
@@ -523,7 +517,7 @@ describe("feature toggles test", () => {
           "fallbackValue": false,
         }
       `);
-      expect(featureToggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
+      expect(toggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
         {
           "config": {
             "SOURCE": "RUNTIME",
@@ -532,7 +526,7 @@ describe("feature toggles test", () => {
           "fallbackValue": 1,
         }
       `);
-      expect(featureToggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
+      expect(toggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
         {
           "config": {
             "SOURCE": "RUNTIME",
@@ -543,12 +537,12 @@ describe("feature toggles test", () => {
       `);
     });
 
-    it("getFeaturesInfos", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      expect(featureToggles.getFeaturesInfos()).toMatchSnapshot();
+    test("getFeaturesInfos", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      expect(toggles.getFeaturesInfos()).toMatchSnapshot();
     });
 
-    it("getFeatureValue", async () => {
+    test("getFeatureValue", async () => {
       const mockFeatureValuesEntries = [
         [[FEATURE.A], { [SCOPE_ROOT_KEY]: true }],
         [[FEATURE.AA], { [SCOPE_ROOT_KEY]: true }],
@@ -564,20 +558,18 @@ describe("feature toggles test", () => {
       for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
-      await featureToggles.initializeFeatures({ config: mockConfig });
+      await toggles.initializeFeatures({ config: mockConfig });
 
-      expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
+      expect(mockFeatureValuesEntries.map(([key]) => toggles.getFeatureValue(key))).toStrictEqual(
         mockFeatureValuesEntries.map(([, value]) => value[SCOPE_ROOT_KEY])
       );
-      expect(otherEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
-        otherEntries.map(() => null)
-      );
+      expect(otherEntries.map(([key]) => toggles.getFeatureValue(key))).toStrictEqual(otherEntries.map(() => null));
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("getFeatureValue with scoping", async () => {
+    test("getFeatureValue with scoping", async () => {
       const testScopeMap = { tenant: "t1" };
       const testScopeKey = FeatureToggles.getScopeKey(testScopeMap);
       const mockFeatureValuesEntries = [
@@ -595,27 +587,25 @@ describe("feature toggles test", () => {
       for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisWrapperMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
-      await featureToggles.initializeFeatures({ config: mockConfig });
+      await toggles.initializeFeatures({ config: mockConfig });
 
-      expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
+      expect(mockFeatureValuesEntries.map(([key]) => toggles.getFeatureValue(key))).toStrictEqual(
         mockFeatureValuesEntries.map(([, value]) => value[SCOPE_ROOT_KEY])
       );
-      expect(mockFeatureValuesEntries.map(([key]) => featureToggles.getFeatureValue(key, testScopeMap))).toStrictEqual(
+      expect(mockFeatureValuesEntries.map(([key]) => toggles.getFeatureValue(key, testScopeMap))).toStrictEqual(
         mockFeatureValuesEntries.map(([, value]) => value[testScopeKey])
       );
-      expect(otherEntries.map(([key]) => featureToggles.getFeatureValue(key))).toStrictEqual(
-        otherEntries.map(() => null)
-      );
+      expect(otherEntries.map(([key]) => toggles.getFeatureValue(key))).toStrictEqual(otherEntries.map(() => null));
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("changeFeatureValue", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("changeFeatureValue", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      expect(await featureToggles.changeFeatureValue(FEATURE.C, "newa")).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, "newa")).toBeUndefined();
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledWith(redisKey, FEATURE.C, expect.any(Function));
       expect(redisWrapperMock.publishMessage).toHaveBeenCalledTimes(1);
@@ -633,11 +623,11 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("changeFeatureValue failing", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+    test("changeFeatureValue failing", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      const validationErrorsInvalidKey = await featureToggles.changeFeatureValue("invalid", 1);
+      const validationErrorsInvalidKey = await toggles.changeFeatureValue("invalid", 1);
       expect(validationErrorsInvalidKey).toMatchInlineSnapshot(`
         [
           {
@@ -654,14 +644,14 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("refreshFeatureValues", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
+    test("refreshFeatureValues", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      expect(toggles.__stateScopedValues).toStrictEqual({});
       const remoteState = { [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } };
       redisWrapperMock._setValue(FEATURE.B, { [SCOPE_ROOT_KEY]: 42 });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      await featureToggles.refreshFeatureValues();
+      await toggles.refreshFeatureValues();
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(mockActiveKeys.length);
       for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
         expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenNthCalledWith(
@@ -671,20 +661,20 @@ describe("feature toggles test", () => {
           expect.any(Function)
         );
       }
-      expect(featureToggles.__stateScopedValues).toStrictEqual(remoteState);
+      expect(toggles.__stateScopedValues).toStrictEqual(remoteState);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("refreshFeatureValues with invalid state", async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
+    test("refreshFeatureValues with invalid state", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      expect(toggles.__stateScopedValues).toStrictEqual({});
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
       redisWrapperMock._setValue(FEATURE.B, { [SCOPE_ROOT_KEY]: 42 }); // valid state
       redisWrapperMock._setValue(FEATURE.E, { [SCOPE_ROOT_KEY]: 10 }); // invalid state
-      await featureToggles.refreshFeatureValues();
+      await toggles.refreshFeatureValues();
 
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(mockActiveKeys.length);
       for (let fieldIndex = 0; fieldIndex < mockActiveKeys.length; fieldIndex++) {
@@ -695,7 +685,7 @@ describe("feature toggles test", () => {
           expect.any(Function)
         );
       }
-      expect(featureToggles.__stateScopedValues).toStrictEqual({ [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } });
+      expect(toggles.__stateScopedValues).toStrictEqual({ [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } });
 
       expect(loggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
         [
@@ -707,21 +697,21 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("FeatureValueChangeHandler and changeFeatureValue", async () => {
+    test("FeatureValueChangeHandler and changeFeatureValue", async () => {
       const newValue = "newValue";
       const newNewValue = "newNewValue";
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      const oldValue = featureToggles.getFeatureValue(FEATURE.C);
+      await toggles.initializeFeatures({ config: mockConfig });
+      const oldValue = toggles.getFeatureValue(FEATURE.C);
       const handler = jest.fn();
-      featureToggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
+      toggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
 
       // other toggle
-      await featureToggles.changeFeatureValue(FEATURE.B, 100);
+      await toggles.changeFeatureValue(FEATURE.B, 100);
       expect(handler).not.toHaveBeenCalled();
 
       // right toggle
-      await featureToggles.changeFeatureValue(FEATURE.B, 101);
-      await featureToggles.changeFeatureValue(FEATURE.C, newValue);
+      await toggles.changeFeatureValue(FEATURE.B, 101);
+      await toggles.changeFeatureValue(FEATURE.C, newValue);
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(newValue, oldValue, undefined, undefined);
 
@@ -732,8 +722,8 @@ describe("feature toggles test", () => {
       const error = new Error("bad handler");
       handler.mockClear();
       handler.mockRejectedValue(error);
-      await featureToggles.changeFeatureValue(FEATURE.B, 102);
-      await featureToggles.changeFeatureValue(FEATURE.C, newNewValue);
+      await toggles.changeFeatureValue(FEATURE.B, 102);
+      await toggles.changeFeatureValue(FEATURE.C, newNewValue);
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(newNewValue, newValue, undefined, undefined);
       expect(loggerSpy.error).toHaveBeenCalledTimes(1);
@@ -744,21 +734,21 @@ describe("feature toggles test", () => {
       );
     });
 
-    it("FeatureValueValidation", async () => {
+    test("FeatureValueValidation", async () => {
       const newValue = "newValue";
-      await featureToggles.initializeFeatures({ config: mockConfig });
+      await toggles.initializeFeatures({ config: mockConfig });
 
       const validator = jest.fn();
-      featureToggles.registerFeatureValueValidation(FEATURE.C, validator);
+      toggles.registerFeatureValueValidation(FEATURE.C, validator);
 
       // other toggle
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 100)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.B, 100)).toBeUndefined();
       expect(validator).toHaveBeenCalledTimes(0);
       validator.mockClear();
 
       // right toggle
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 101)).toBeUndefined();
-      expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.B, 101)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, newValue)).toBeUndefined();
 
       // NOTE: we get called twice here once for upstream to redis and once downstream from redis
       expect(validator).toHaveBeenCalledTimes(2);
@@ -769,8 +759,8 @@ describe("feature toggles test", () => {
       validator.mockClear();
       const testScopeMap = { domain: "value " };
       const testScopeKey = FeatureToggles.getScopeKey(testScopeMap);
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 102, testScopeMap)).toBeUndefined();
-      expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue, testScopeMap)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.B, 102, testScopeMap)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, newValue, testScopeMap)).toBeUndefined();
 
       expect(validator).toHaveBeenCalledTimes(2);
       expect(validator).toHaveBeenNthCalledWith(1, newValue, testScopeMap, testScopeKey);
@@ -780,8 +770,8 @@ describe("feature toggles test", () => {
       validator.mockClear();
       const mockErrorMessage = "wrong input";
       validator.mockResolvedValueOnce({ errorMessage: mockErrorMessage });
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 103)).toBeUndefined();
-      expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.B, 103)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "wrong input",
@@ -801,8 +791,8 @@ describe("feature toggles test", () => {
         errorMessage: mockErrorMessageWithValues,
         errorMessageValues: mockErrorMessageValues,
       });
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 104)).toBeUndefined();
-      expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.B, 104)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "wrong input {0} {1}",
@@ -833,8 +823,8 @@ describe("feature toggles test", () => {
           errorMessageValues: mockErrorMessageValues,
         },
       ]);
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 105)).toBeUndefined();
-      expect(await featureToggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.B, 105)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, newValue)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "wrong input",
@@ -859,14 +849,14 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("FeatureValueValidation and inactive", async () => {
+    test("FeatureValueValidation and inactive", async () => {
       const newValue = "newValue";
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      const oldValue = featureToggles.getFeatureValue(FEATURE.G);
-      const featureConfig = featureToggles.getFeatureInfo(FEATURE.G).config;
+      await toggles.initializeFeatures({ config: mockConfig });
+      const oldValue = toggles.getFeatureValue(FEATURE.G);
+      const featureConfig = toggles.getFeatureInfo(FEATURE.G).config;
 
       expect(featureConfig.ACTIVE).toBe(false);
-      expect(await featureToggles.changeFeatureValue(FEATURE.G, newValue)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.G, newValue)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "feature key is not active",
@@ -874,31 +864,31 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(featureToggles.getFeatureValue(FEATURE.G)).toBe(oldValue);
+      expect(toggles.getFeatureValue(FEATURE.G)).toBe(oldValue);
     });
 
-    it("FeatureValueValidation and appUrl working", async () => {
+    test("FeatureValueValidation and appUrl working", async () => {
       envMock.cfApp = { uris: ["https://it.cfapps.sap.hana.ondemand.com"] };
       const newValue = "newValue";
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
+      await toggles.initializeFeatures({ config: mockConfig });
+      const featureConfig = toggles.getFeatureInfo(FEATURE.H).config;
 
       expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
       expect(featureConfig.APP_URL_ACTIVE).toBeUndefined();
-      expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toBeUndefined();
-      expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(newValue);
+      expect(await toggles.changeFeatureValue(FEATURE.H, newValue)).toBeUndefined();
+      expect(toggles.getFeatureValue(FEATURE.H)).toBe(newValue);
     });
 
-    it("FeatureValueValidation and appUrl failing", async () => {
+    test("FeatureValueValidation and appUrl failing", async () => {
       envMock.cfApp = { uris: ["https://not-it.com"] };
       const newValue = "newValue";
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      const oldValue = featureToggles.getFeatureValue(FEATURE.H);
-      const featureConfig = featureToggles.getFeatureInfo(FEATURE.H).config;
+      await toggles.initializeFeatures({ config: mockConfig });
+      const oldValue = toggles.getFeatureValue(FEATURE.H);
+      const featureConfig = toggles.getFeatureInfo(FEATURE.H).config;
 
       expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
       expect(featureConfig.APP_URL_ACTIVE).toBe(false);
-      expect(await featureToggles.changeFeatureValue(FEATURE.H, newValue)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.H, newValue)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "feature key is not active because app url does not match regular expression {0}",
@@ -909,18 +899,18 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(featureToggles.getFeatureValue(FEATURE.H)).toBe(oldValue);
+      expect(toggles.getFeatureValue(FEATURE.H)).toBe(oldValue);
     });
 
-    it("validateInput throws error", async () => {
+    test("validateInput throws error", async () => {
       const error = new Error("bad validator");
       const validator = jest.fn().mockRejectedValue(error);
 
-      await featureToggles.initializeFeatures({ config: mockConfig });
+      await toggles.initializeFeatures({ config: mockConfig });
 
-      featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
+      toggles.registerFeatureValueValidation(FEATURE.B, validator);
 
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 100)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.B, 100)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
@@ -946,7 +936,7 @@ describe("feature toggles test", () => {
   });
 
   describe("readConfigFromFile", () => {
-    it("readConfigFromFile json", async () => {
+    test("readConfigFromFile json", async () => {
       const mockFilePath = "inmemory.json";
       const mockConfigData = Buffer.from(JSON.stringify(mockConfig));
       readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
@@ -957,7 +947,7 @@ describe("feature toggles test", () => {
       expect(config).toStrictEqual(mockConfig);
     });
 
-    it("readConfigFromFile yaml", async () => {
+    test("readConfigFromFile yaml", async () => {
       const mockFilePath = "in_memory.yml";
       const mockConfigData = Buffer.from(yaml.stringify(mockConfig));
       readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
@@ -978,27 +968,27 @@ describe("feature toggles test", () => {
     };
 
     beforeEach(async () => {
-      await featureToggles.initializeFeatures({
+      await toggles.initializeFeatures({
         config,
       });
       loggerSpy.warning.mockClear();
     });
 
-    it("setup sanity", async () => {
-      const oldValueA = featureToggles.getFeatureValue(FEATURE.A);
-      const oldValueB = featureToggles.getFeatureValue(FEATURE.B);
+    test("setup sanity", async () => {
+      const oldValueA = toggles.getFeatureValue(FEATURE.A);
+      const oldValueB = toggles.getFeatureValue(FEATURE.B);
       expect(oldValueA).toBe(fallbackValue);
       expect(oldValueB).toBe(fallbackValue);
-      expect(fallbackValuesFromInfos(featureToggles.getFeaturesInfos())).toStrictEqual(fallbackValues);
+      expect(fallbackValuesFromInfos(toggles.getFeaturesInfos())).toStrictEqual(fallbackValues);
     });
 
-    it("refreshFeatureValues and central state is invalid", async () => {
+    test("refreshFeatureValues and central state is invalid", async () => {
       const remoteStateA = { [FEATURE.A]: { [SCOPE_ROOT_KEY]: "central" } };
       redisWrapperMock._setValues(remoteStateA);
-      await featureToggles.refreshFeatureValues();
+      await toggles.refreshFeatureValues();
 
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
-      const afterRemoteInvalidValueA = featureToggles.getFeatureValue(FEATURE.A);
+      expect(toggles.__stateScopedValues).toStrictEqual({});
+      const afterRemoteInvalidValueA = toggles.getFeatureValue(FEATURE.A);
       expect(afterRemoteInvalidValueA).toBe(fallbackValue);
 
       expect(loggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
@@ -1011,13 +1001,13 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("refreshFeatureValues and central state is invalid and fallback value is invalid", async () => {
+    test("refreshFeatureValues and central state is invalid and fallback value is invalid", async () => {
       const remoteStateB = { [FEATURE.B]: { [SCOPE_ROOT_KEY]: "central" } };
       redisWrapperMock._setValues(remoteStateB);
-      await featureToggles.refreshFeatureValues();
+      await toggles.refreshFeatureValues();
 
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
-      const afterRemoteInvalidValueB = featureToggles.getFeatureValue(FEATURE.B);
+      expect(toggles.__stateScopedValues).toStrictEqual({});
+      const afterRemoteInvalidValueB = toggles.getFeatureValue(FEATURE.B);
       expect(afterRemoteInvalidValueB).toBe(fallbackValue);
 
       expect(loggerSpy.warning.mock.calls).toMatchInlineSnapshot(`
@@ -1030,9 +1020,9 @@ describe("feature toggles test", () => {
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("changeFeatureValues and valid state and valid fallback with delete", async () => {
-      expect(await featureToggles.changeFeatureValue(FEATURE.A, "fallout")).toBeUndefined();
-      expect(featureToggles.__stateScopedValues).toMatchInlineSnapshot(`
+    test("changeFeatureValues and valid state and valid fallback with delete", async () => {
+      expect(await toggles.changeFeatureValue(FEATURE.A, "fallout")).toBeUndefined();
+      expect(toggles.__stateScopedValues).toMatchInlineSnapshot(`
         {
           "test/feature_a": {
             "//": "fallout",
@@ -1040,19 +1030,19 @@ describe("feature toggles test", () => {
         }
       `);
 
-      expect(await featureToggles.changeFeatureValue(FEATURE.A, null)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.A, null)).toBeUndefined();
 
       // NOTE: deleting will keep the fallback value as state since they are valid
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
-      const afterA = featureToggles.getFeatureValue(FEATURE.A);
+      expect(toggles.__stateScopedValues).toStrictEqual({});
+      const afterA = toggles.getFeatureValue(FEATURE.A);
       expect(afterA).toBe(fallbackValue);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
-    it("changeFeatureValues and invalid state and invalid fallback with delete", async () => {
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, "fallout")).toMatchInlineSnapshot(`
+    test("changeFeatureValues and invalid state and invalid fallback with delete", async () => {
+      expect(await toggles.changeFeatureValue(FEATURE.B, "fallout")).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "value "{0}" does not match validation regular expression {1}",
@@ -1065,13 +1055,13 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
+      expect(toggles.__stateScopedValues).toStrictEqual({});
 
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, null)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.B, null)).toBeUndefined();
 
       // NOTE: we still get the validFallbackValues of the test setup
-      expect(featureToggles.__stateScopedValues).toStrictEqual({});
-      const afterB = featureToggles.getFeatureValue(FEATURE.B);
+      expect(toggles.__stateScopedValues).toStrictEqual({});
+      const afterB = toggles.getFeatureValue(FEATURE.B);
       expect(afterB).toBe(fallbackValue);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
@@ -1080,8 +1070,8 @@ describe("feature toggles test", () => {
   });
 
   describe("active to inactive to active again", () => {
-    it("setting a toggle inactive does not change it in redis on init or refresh", async () => {
-      await featureToggles.initializeFeatures({
+    test("setting a toggle inactive does not change it in redis on init or refresh", async () => {
+      await toggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
             fallbackValue: 1,
@@ -1090,17 +1080,17 @@ describe("feature toggles test", () => {
         },
       });
       expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(1);
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(1);
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(1);
 
       // change is propagated to mock redis
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 10)).toBeUndefined();
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(10);
+      expect(await toggles.changeFeatureValue(FEATURE.B, 10)).toBeUndefined();
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(10);
       expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(2);
 
       // !! first reset
       redisWrapperMock.watchedHashGetSetObject.mockClear();
-      featureToggles._reset({ redisKey, redisChannel });
-      await featureToggles.initializeFeatures({
+      toggles._reset({ redisKey, redisChannel });
+      await toggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
             active: false,
@@ -1110,9 +1100,9 @@ describe("feature toggles test", () => {
         },
       });
       // remote value is ignored because key is inactive
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(2);
       // change is blocked because key is inactive
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 20)).toMatchInlineSnapshot(`
+      expect(await toggles.changeFeatureValue(FEATURE.B, 20)).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "feature key is not active",
@@ -1120,17 +1110,17 @@ describe("feature toggles test", () => {
           },
         ]
       `);
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(2);
 
       // remote value is also ignored during refresh because key is inactive
-      await featureToggles.refreshFeatureValues();
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(2);
+      await toggles.refreshFeatureValues();
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(2);
       expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(0);
 
       // !! second reset
       redisWrapperMock.watchedHashGetSetObject.mockClear();
-      featureToggles._reset({ redisKey, redisChannel });
-      await featureToggles.initializeFeatures({
+      toggles._reset({ redisKey, redisChannel });
+      await toggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
             fallbackValue: 3,
@@ -1140,10 +1130,10 @@ describe("feature toggles test", () => {
       });
       expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(1);
       // after re-activation we get the remote state
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(10);
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(10);
       // after re-activation we can change again
-      expect(await featureToggles.changeFeatureValue(FEATURE.B, 30)).toBeUndefined();
-      expect(featureToggles.getFeatureValue(FEATURE.B)).toBe(30);
+      expect(await toggles.changeFeatureValue(FEATURE.B, 30)).toBeUndefined();
+      expect(toggles.getFeatureValue(FEATURE.B)).toBe(30);
       expect(redisWrapperMock.watchedHashGetSetObject.mock.calls.filter(([, key]) => key === FEATURE.B).length).toBe(2);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
@@ -1153,17 +1143,17 @@ describe("feature toggles test", () => {
 
   describe("message handling", () => {
     beforeEach(async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
+      await toggles.initializeFeatures({ config: mockConfig });
     });
 
-    it("empty array should be handled fine", async () => {
-      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, "[]");
+    test("empty array should be handled fine", async () => {
+      await redisWrapperMock.publishMessage(toggles.__redisChannel, "[]");
       expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(loggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
-    it("error in case message is not a serialized array", async () => {
-      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, "hello world!");
+    test("error in case message is not a serialized array", async () => {
+      await redisWrapperMock.publishMessage(toggles.__redisChannel, "hello world!");
       expect(loggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(loggerSpy.error).toHaveBeenCalledTimes(1);
       expect(outputFromErrorLogger(loggerSpy.error.mock.calls)).toMatchInlineSnapshot(`
@@ -1172,12 +1162,12 @@ describe("feature toggles test", () => {
       `);
     });
 
-    it("invalid change entries are ignored but logged", async () => {
+    test("invalid change entries are ignored but logged", async () => {
       const changeEntries = [{ featureKey: FEATURE.C, newValue: 10 }];
 
-      expect(featureToggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
+      expect(toggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
 
-      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, JSON.stringify(changeEntries));
+      await redisWrapperMock.publishMessage(toggles.__redisChannel, JSON.stringify(changeEntries));
 
       expect(loggerSpy.warning).toHaveBeenCalledTimes(1);
       expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
@@ -1187,10 +1177,10 @@ describe("feature toggles test", () => {
         }"
       `);
 
-      expect(featureToggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
+      expect(toggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
     });
 
-    it("all change entries are processed even if one fails", async () => {
+    test("all change entries are processed even if one fails", async () => {
       const scopeMap = { tenant: "testing" };
       const changeEntries = [
         { featureKey: FEATURE.C, newValue: "modified" },
@@ -1200,10 +1190,10 @@ describe("feature toggles test", () => {
         { featureKey: FEATURE.E, newValue: 9, scopeMap },
       ];
 
-      expect(featureToggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
-      expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toBe(mockFallbackValues[FEATURE.E]);
+      expect(toggles.getFeatureValue(FEATURE.C)).toBe(mockFallbackValues[FEATURE.C]);
+      expect(toggles.getFeatureValue(FEATURE.E, scopeMap)).toBe(mockFallbackValues[FEATURE.E]);
 
-      await redisWrapperMock.publishMessage(featureToggles.__redisChannel, JSON.stringify(changeEntries));
+      await redisWrapperMock.publishMessage(toggles.__redisChannel, JSON.stringify(changeEntries));
 
       expect(loggerSpy.warning).toHaveBeenCalledTimes(3);
       expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
@@ -1216,8 +1206,8 @@ describe("feature toggles test", () => {
       `);
       expect(loggerSpy.error).toHaveBeenCalledTimes(0);
 
-      expect(featureToggles.getFeatureValue(FEATURE.C)).toMatchInlineSnapshot(`"modified"`);
-      expect(featureToggles.getFeatureValue(FEATURE.E, scopeMap)).toMatchInlineSnapshot(`9`);
+      expect(toggles.getFeatureValue(FEATURE.C)).toMatchInlineSnapshot(`"modified"`);
+      expect(toggles.getFeatureValue(FEATURE.E, scopeMap)).toMatchInlineSnapshot(`9`);
     });
   });
 
@@ -1231,31 +1221,31 @@ describe("feature toggles test", () => {
     const tenantUserValue = "t1u1";
 
     beforeEach(async () => {
-      await featureToggles.initializeFeatures({ config: mockConfig });
-      featureToggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
-      await featureToggles.changeFeatureValue(FEATURE.C, rootValue);
-      await featureToggles.changeFeatureValue(FEATURE.C, tenantValue, { tenant });
-      await featureToggles.changeFeatureValue(FEATURE.C, tenantUserValue, { tenant, user });
+      await toggles.initializeFeatures({ config: mockConfig });
+      toggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
+      await toggles.changeFeatureValue(FEATURE.C, rootValue);
+      await toggles.changeFeatureValue(FEATURE.C, tenantValue, { tenant });
+      await toggles.changeFeatureValue(FEATURE.C, tenantUserValue, { tenant, user });
       jest.clearAllMocks();
     });
 
     test("reset tenantUser should fall back to tenant", async () => {
-      await featureToggles.changeFeatureValue(FEATURE.C, null, { tenant, user });
+      await toggles.changeFeatureValue(FEATURE.C, null, { tenant, user });
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(tenantValue, tenantUserValue, { tenant, user }, undefined);
     });
     test("reset tenant should fall back to root", async () => {
-      await featureToggles.changeFeatureValue(FEATURE.C, null, { tenant });
+      await toggles.changeFeatureValue(FEATURE.C, null, { tenant });
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(rootValue, tenantValue, { tenant }, undefined);
     });
     test("reset root should fall back to fallback", async () => {
-      await featureToggles.changeFeatureValue(FEATURE.C, null);
+      await toggles.changeFeatureValue(FEATURE.C, null);
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(fallbackValue, rootValue, undefined, undefined);
     });
     test("reset with clearSubScopes root should fall back to fallback", async () => {
-      await featureToggles.changeFeatureValue(FEATURE.C, null, undefined, { clearSubScopes: true });
+      await toggles.changeFeatureValue(FEATURE.C, null, undefined, { clearSubScopes: true });
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(fallbackValue, rootValue, undefined, { clearSubScopes: true });
     });
@@ -1264,9 +1254,9 @@ describe("feature toggles test", () => {
       let newValueCheck;
       const newTenantUserValue = "super";
       handler.mockImplementationOnce(() => {
-        newValueCheck = featureToggles.getFeatureValue(FEATURE.C, { tenant, user });
+        newValueCheck = toggles.getFeatureValue(FEATURE.C, { tenant, user });
       });
-      await featureToggles.changeFeatureValue(FEATURE.C, newTenantUserValue, { tenant, user });
+      await toggles.changeFeatureValue(FEATURE.C, newTenantUserValue, { tenant, user });
       expect(newValueCheck).toBe(newTenantUserValue);
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(newTenantUserValue, tenantUserValue, { tenant, user }, undefined);

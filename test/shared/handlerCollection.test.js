@@ -16,7 +16,7 @@ describe("HandlerCollection", () => {
     jest.clearAllMocks();
   });
 
-  it("registerHandler/removeHandler/hasHandlers/getHandlers", () => {
+  test("registerHandler/removeHandler/hasHandlers/getHandlers", () => {
     expect(handlerCollection.hasHandlers(key)).toBe(false);
 
     count = handlerCollection.registerHandler(key, testHandler);
@@ -40,7 +40,7 @@ describe("HandlerCollection", () => {
     expect(handlerCollection.getHandlers(key)).toStrictEqual([]);
   });
 
-  it("cross-key registerHandler/removeHandler/hasHandlers/getHandlers", () => {
+  test("cross-key registerHandler/removeHandler/hasHandlers/getHandlers", () => {
     expect(handlerCollection.hasHandlers(key)).toBe(false);
     expect(handlerCollection.hasHandlers(otherKey)).toBe(false);
 
@@ -75,7 +75,7 @@ describe("HandlerCollection", () => {
     expect(handlerCollection.getHandlers(otherKey)).toStrictEqual([]);
   });
 
-  it("getHandlers returns clone", () => {
+  test("getHandlers returns clone", () => {
     handlerCollection.registerHandler(key, testHandler, otherTestHandler);
     const handlers = handlerCollection.getHandlers(key);
     expect(handlers).toStrictEqual([testHandler, otherTestHandler]);
@@ -84,7 +84,7 @@ describe("HandlerCollection", () => {
     expect(handlerCollection.getHandlers(key)).toStrictEqual([testHandler, otherTestHandler]);
   });
 
-  it("removeAllHandlers", () => {
+  test("removeAllHandlers", () => {
     count = handlerCollection.registerHandler(key, testHandler, otherTestHandler, jest.fn(), jest.fn(), jest.fn());
 
     expect(count).toBe(5);
@@ -95,7 +95,7 @@ describe("HandlerCollection", () => {
     expect(handlerCollection.hasHandlers(key)).toBe(false);
   });
 
-  it("duplicate registerHandler/removeHandler", async () => {
+  test("duplicate registerHandler/removeHandler", async () => {
     const survivor = jest.fn();
     count = handlerCollection.registerHandler(key, testHandler, survivor, otherTestHandler, testHandler, survivor);
     expect(count).toBe(5);

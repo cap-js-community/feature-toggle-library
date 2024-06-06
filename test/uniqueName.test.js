@@ -7,7 +7,7 @@ describe("singleton", () => {
     jest.resetModules();
   });
 
-  it("singleton unique name can be set via cf app name", async () => {
+  test("singleton unique name can be set via cf app name", async () => {
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
 
     const { FeatureToggles } = require("../src/");
@@ -16,7 +16,7 @@ describe("singleton", () => {
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");
   });
 
-  it("singleton unique name can be set via env and beats cf app name", async () => {
+  test("singleton unique name can be set via env and beats cf app name", async () => {
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
     process.env[ENV.UNIQUE_NAME] = "test_unique_name";
 

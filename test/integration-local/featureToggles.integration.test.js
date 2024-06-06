@@ -91,7 +91,7 @@ describe("local integration test", () => {
   });
 
   describe("init", () => {
-    it("init fails resolving for bad config paths", async () => {
+    test("init fails resolving for bad config paths", async () => {
       const { readFile: readFileSpy } = require("fs");
       readFileSpy.mockImplementationOnce(fs.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
@@ -99,14 +99,14 @@ describe("local integration test", () => {
       );
     });
 
-    it("init fails processing for bad formats", async () => {
+    test("init fails processing for bad formats", async () => {
       const badConfig = { ...config, bla: undefined };
       await expect(toggles.initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
         `[FeatureTogglesError: initialization aborted, could not process configuration: feature configuration is not an object]`
       );
     });
 
-    it("init config precedence", async () => {
+    test("init config precedence", async () => {
       const { readFile: readFileSpy } = require("fs");
 
       const configForRuntime = {
@@ -206,7 +206,7 @@ describe("local integration test", () => {
   });
 
   describe("validations", () => {
-    it("two regex validations", async () => {
+    test("two regex validations", async () => {
       await toggles.initializeFeatures({
         config: {
           [FEATURE.A]: {
@@ -245,7 +245,7 @@ describe("local integration test", () => {
       expect(await toggles.changeFeatureValue(FEATURE.A, "foobar")).toBeUndefined();
     });
 
-    it("custom module validations just module from CWD", async () => {
+    test("custom module validations just module from CWD", async () => {
       jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
       const mockValidator = require("./virtual-validator-just-module");
       await toggles.initializeFeatures({
@@ -262,7 +262,7 @@ describe("local integration test", () => {
       expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
-    it("custom module validations with call from CWD", async () => {
+    test("custom module validations with call from CWD", async () => {
       jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
       const { validator: mockValidator } = require("./virtual-validator-with-call");
       await toggles.initializeFeatures({
@@ -279,7 +279,7 @@ describe("local integration test", () => {
       expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
-    it("custom module validations just module from CONFIG_DIR", async () => {
+    test("custom module validations just module from CONFIG_DIR", async () => {
       jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
       const mockValidator = require("./virtual-validator-just-module");
       const { readFile: readFileSpy } = require("fs");
@@ -301,7 +301,7 @@ describe("local integration test", () => {
       expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
     });
 
-    it("custom module validations with call from CONFIG_DIR", async () => {
+    test("custom module validations with call from CONFIG_DIR", async () => {
       jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
       const { validator: mockValidator } = require("./virtual-validator-with-call");
       const { readFile: readFileSpy } = require("fs");
@@ -329,7 +329,7 @@ describe("local integration test", () => {
       await toggles.initializeFeatures({ config });
     });
 
-    it("getFeaturesKeys, getFeatureValues, getFeaturesInfos", async () => {
+    test("getFeaturesKeys, getFeatureValues, getFeaturesInfos", async () => {
       expect(toggles.getFeaturesKeys()).toEqual(Object.keys(config));
 
       const featureStatesResult = await toggles.getFeaturesInfos();
@@ -361,7 +361,7 @@ describe("local integration test", () => {
       expect(redisWrapperLoggerSpy.warning).toHaveBeenCalledTimes(0);
     });
 
-    it("getFeatureValue, changeFeatureValue without scopes", async () => {
+    test("getFeatureValue, changeFeatureValue without scopes", async () => {
       const oldValue = toggles.getFeatureValue(FEATURE.E);
 
       const newValue = 9;
@@ -398,7 +398,7 @@ describe("local integration test", () => {
       expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
-    it("getFeatureValue with bad scopes", async () => {
+    test("getFeatureValue with bad scopes", async () => {
       const oldRootValue = 5;
       const trapValue = 9;
       const badScopeMap1 = null; // not an object
@@ -443,7 +443,7 @@ describe("local integration test", () => {
       expect(toggles.getFeatureValue(FEATURE.E, badScopeMap3)).toEqual(oldRootValue);
     });
 
-    it("getFeatureValue, changeFeatureValue with scopes", async () => {
+    test("getFeatureValue, changeFeatureValue with scopes", async () => {
       const rootOldValue = toggles.getFeatureValue(FEATURE.E);
 
       const scopeMap = { component: "c1", tenant: "t1" };
@@ -541,7 +541,7 @@ describe("local integration test", () => {
       expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
-    it("getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue", async () => {
+    test("getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue", async () => {
       const scopeMap = { component: "c1", tenant: "t1" };
       const subScopeMap = { layer: "l1", component: "c1", tenant: "t1" };
       const superScopeMap = { tenant: "t1" };
@@ -615,7 +615,7 @@ describe("local integration test", () => {
       expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
-    it("validateFeatureValue with invalid scopes", async () => {
+    test("validateFeatureValue with invalid scopes", async () => {
       // valid
       expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: "t1" })).toMatchInlineSnapshot(`[]`);
 
@@ -668,7 +668,7 @@ describe("local integration test", () => {
       `);
     });
 
-    it("registerFeatureValueValidation, validateFeatureValue", async () => {
+    test("registerFeatureValueValidation, validateFeatureValue", async () => {
       const successfulValidator = () => undefined;
       const failingValidator1 = () => {
         throw new Error("bla1");

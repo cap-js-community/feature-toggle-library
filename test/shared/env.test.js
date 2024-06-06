@@ -124,15 +124,15 @@ describe("cfenv test", () => {
     }
   });
 
-  it("cfApp", () => {
+  test("cfApp", () => {
     expect(cfEnv.cfApp).toStrictEqual(mockCfAppEnv);
   });
 
-  it("cfServices", () => {
+  test("cfServices", () => {
     expect(cfEnv.cfServices).toStrictEqual(mockCfServicesEnv);
   });
 
-  it("cfServiceCredentials", () => {
+  test("cfServiceCredentials", () => {
     expect(cfEnv.cfServiceCredentials({ label: "redis-cache" })).toStrictEqual(
       mockCfServicesEnv["redis-cache"][0].credentials
     );
@@ -140,7 +140,7 @@ describe("cfenv test", () => {
     expect(cfEnv.cfServiceCredentials({ label: "xxx" })).toStrictEqual({});
   });
 
-  it("cfServiceCredentialsForLabel", () => {
+  test("cfServiceCredentialsForLabel", () => {
     expect(cfEnv.cfServiceCredentialsForLabel("redis-cache")).toStrictEqual(
       mockCfServicesEnv["redis-cache"][0].credentials
     );

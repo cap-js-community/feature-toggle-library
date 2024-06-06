@@ -4,7 +4,7 @@ const { promisify } = require("util");
 const { promiseAllDone } = require("../../src/shared/promiseAllDone");
 
 describe("promiseAllDone", () => {
-  it("second reject is caught", async () => {
+  test("second reject is caught", async () => {
     let secondErrorStillRunning = true;
     let didThrow = false;
     try {

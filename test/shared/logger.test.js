@@ -14,7 +14,7 @@ jest.mock("../../src/shared/env", () => require("../__mocks__/env"));
 
 const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("../__common__/mockdata");
 
-let featureToggles = null;
+let toggles;
 
 const processStreamSpy = {
   stdout: jest.spyOn(process.stdout, "write"),
@@ -61,20 +61,20 @@ describe("logger test", () => {
     Logger._reset();
     redisWrapperMock._reset();
     envMock._reset();
-    featureToggles = new FeatureToggles({ redisKey, redisChannel, refreshMessage });
+    toggles = new FeatureToggles({ redisKey, redisChannel, refreshMessage });
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("check text format logging for invalid fallback values during initialization", async () => {
+  test("check text format logging for invalid fallback values during initialization", async () => {
     featureTogglesModule._._setLogger(new Logger(layer, { format: FORMAT.TEXT }));
     const error = new Error("bad validator");
     const validator = jest.fn().mockRejectedValue(error);
 
-    featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
-    await featureToggles.initializeFeatures({ config: mockConfig });
+    toggles.registerFeatureValueValidation(FEATURE.B, validator);
+    await toggles.initializeFeatures({ config: mockConfig });
 
     expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)).toMatchInlineSnapshot(`
       [
@@ -104,13 +104,13 @@ describe("logger test", () => {
     `);
   });
 
-  it("check json logging for invalid fallback values during initialization", async () => {
+  test("check json logging for invalid fallback values during initialization", async () => {
     featureTogglesModule._._setLogger(new Logger(layer, { format: FORMAT.JSON }));
     const error = new Error("bad validator");
     const validator = jest.fn().mockRejectedValue(error);
 
-    featureToggles.registerFeatureValueValidation(FEATURE.B, validator);
-    await featureToggles.initializeFeatures({ config: mockConfig });
+    toggles.registerFeatureValueValidation(FEATURE.B, validator);
+    await toggles.initializeFeatures({ config: mockConfig });
 
     const logStderrCalls = processStreamSpy.stderr.mock.calls.map(cleanupJsonLogCalls);
     const logStdoutCalls = processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls);
@@ -138,7 +138,7 @@ describe("logger test", () => {
   });
 
   describe("logger v2", () => {
-    it("info with text format and no layer", async () => {
+    test("info with text format and no layer", async () => {
       logger = new Logger("", { format: FORMAT.TEXT });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
@@ -149,7 +149,7 @@ describe("logger test", () => {
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
-    it("info with text", async () => {
+    test("info with text", async () => {
       logger = new Logger(layer, { format: FORMAT.JSON });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
@@ -160,7 +160,7 @@ describe("logger test", () => {
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
-    it("info with text format", async () => {
+    test("info with text format", async () => {
       logger = new Logger(layer, { format: FORMAT.TEXT });
       logger.info("some info");
       expect(processStreamSpy.stdout.mock.calls.map(cleanupTextLogCalls)[0]).toMatchInlineSnapshot(`
@@ -171,7 +171,7 @@ describe("logger test", () => {
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
-    it("info on cf defaults to json format", async () => {
+    test("info on cf defaults to json format", async () => {
       envMock.isOnCf = true;
       logger = new Logger(layer);
       logger.info("some info");
@@ -183,7 +183,7 @@ describe("logger test", () => {
       expect(processStreamSpy.stdout.mock.calls.length).toBe(1);
     });
 
-    it("make sure env log level WARN is respected", async () => {
+    test("make sure env log level WARN is respected", async () => {
       process.env[ENV.LOG_LEVEL] = " warn ";
       logger = new Logger(layer, { maxLevel: LEVEL.TRACE });
       logger.trace("some trace");
@@ -211,7 +211,7 @@ describe("logger test", () => {
       Reflect.deleteProperty(process.env, ENV.LOG_LEVEL);
     });
 
-    it("make sure env log level ERROR is respected", async () => {
+    test("make sure env log level ERROR is respected", async () => {
       process.env[ENV.LOG_LEVEL] = " err ";
       logger = new Logger(layer, { maxLevel: LEVEL.TRACE });
       logger.trace("some trace");
@@ -231,7 +231,7 @@ describe("logger test", () => {
       Reflect.deleteProperty(process.env, ENV.LOG_LEVEL);
     });
 
-    it("error basic usage", async () => {
+    test("error basic usage", async () => {
       logger = new Logger(layer, { format: FORMAT.JSON });
       logger.error(new VError("bla error"));
       expect(processStreamSpy.stderr.mock.calls.map(cleanupJsonLogCalls)[0]).toMatchInlineSnapshot(`
@@ -242,7 +242,7 @@ describe("logger test", () => {
       expect(processStreamSpy.stderr.mock.calls.length).toBe(1);
     });
 
-    it("error with children", async () => {
+    test("error with children", async () => {
       const logger = new Logger(layer, { format: FORMAT.JSON });
       const childLogger = logger.child({ isChild: true });
       const siblingLogger = logger.child({ isSibling: true });

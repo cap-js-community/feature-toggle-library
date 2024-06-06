@@ -4,7 +4,7 @@ const cds = require("@sap/cds");
 const { SERVICE_ENDPOINTS } = require("../src/plugin");
 
 describe("plugin", () => {
-  it("all endpoints are covered", async () => {
+  test("all endpoints are covered", async () => {
     const csn = await cds.load(["./src/service/feature-service.cds"]);
     const csnEndpoints = Object.keys(csn.definitions).filter((name) => name.indexOf(".") !== -1);
     const coveredEndpoints = Object.values(SERVICE_ENDPOINTS).flat();

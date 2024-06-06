@@ -4,7 +4,7 @@ const { readFileSync } = require("fs");
 const { join } = require("path");
 
 describe("docs", () => {
-  it("documentation README / overview consistency check", async () => {
+  test("documentation README / overview consistency check", async () => {
     const headings = ["Getting Started", "Features", "Peers"];
     const readmeData = readFileSync(join(__dirname, "..", "README.md")).toString();
     const overviewData = readFileSync(join(__dirname, "..", "docs", "index.md")).toString();
