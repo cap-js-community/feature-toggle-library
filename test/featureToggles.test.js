@@ -1266,10 +1266,10 @@ describe("feature toggles test", () => {
       handler.mockImplementationOnce(() => {
         newValueCheck = featureToggles.getFeatureValue(FEATURE.C, { tenant, user });
       });
-      await featureToggles.changeFeatureValue(FEATURE.C, "super", { tenant, user });
+      await featureToggles.changeFeatureValue(FEATURE.C, newTenantUserValue, { tenant, user });
       expect(newValueCheck).toBe(newTenantUserValue);
       expect(handler).toHaveBeenCalledTimes(1);
-      expect(handler).toHaveBeenCalledWith(tenantValue, tenantUserValue, { tenant, user }, undefined);
+      expect(handler).toHaveBeenCalledWith(newTenantUserValue, tenantUserValue, { tenant, user }, undefined);
     });
   });
 });
