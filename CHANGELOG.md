@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+<!-- order is REMOVED, CHANGED, ADDED, FIXED -->
+
+## v1.1.5 - 2024-06-06
+
+### Changed
+
+- fallback value `null` is no longer allowed (fixes #62).
+- change handlers no longer receive `null` as new values, they get the actual new value for the relevant scope instead
+  (fixes #64).
+
+### Fixed
+
+- cds-plugin: unify and fix syntax of `context.error` and `context.reject` for cds service.
+- change processing is more resilient. for redis message with multiple changes, if one change fails, then subsequent
+  changes will still be processed.
+
 ## v1.1.4 - 2024-04-08
 
 ### Added
