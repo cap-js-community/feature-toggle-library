@@ -266,6 +266,14 @@ toggles.registerFeatureValueChangeHandler("/srv/util/logger/logLevel", async (ne
 });
 ```
 
+Some important caveats for change handlers:
+
+- **scopes**: The handler will always receive the new value that is relevant for the scopeMap that is passed along.
+  Meaning it will be called with new values that can be highly restricted and `getFeatureValue` calls with the same
+  feature key can return different values for other scopeMaps or no scopeMap.
+- **deletion**: If values are deleted, by setting them to `null`, the change handler will receive the new actual
+  value for the relevant scopeMap and not the change value of `null`.
+
 {: .info }
 Registering any callback will not require that the feature toggles are initialized, so this can happen on top-level.
 
