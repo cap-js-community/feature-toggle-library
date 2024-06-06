@@ -1296,7 +1296,6 @@ class FeatureToggles {
             return;
           }
 
-          await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
           FeatureToggles._updateStateScopedValuesOneScopeInPlace(
             this.__stateScopedValues,
             featureKey,
@@ -1304,6 +1303,7 @@ class FeatureToggles {
             scopeKey,
             options
           );
+          await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
         } catch (err) {
           logger.error(
             new VError(
@@ -1344,7 +1344,6 @@ class FeatureToggles {
         featureKey,
         scopeMap
       );
-      await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
       FeatureToggles._updateStateScopedValuesOneScopeInPlace(
         this.__stateScopedValues,
         featureKey,
@@ -1352,6 +1351,7 @@ class FeatureToggles {
         scopeKey,
         options
       );
+      await this._triggerChangeHandlers(featureKey, oldValue, newValue, scopeMap, options);
       return;
     }
 
