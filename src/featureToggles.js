@@ -68,29 +68,38 @@ const COMPONENT_NAME = "/FeatureToggles";
 const VERROR_CLUSTER_NAME = "FeatureTogglesError";
 
 const SCOPE_PREFERENCE_ORDER_MASKS = [
-  [parseInt("10", 2), parseInt("01", 2)],
   [
+    // choose 1 of 2
+    parseInt("10", 2),
+    parseInt("01", 2),
+  ],
+  [
+    // choose 2 of 3
     parseInt("110", 2),
     parseInt("101", 2),
     parseInt("011", 2),
 
+    // choose 1 of 3
     parseInt("100", 2),
     parseInt("010", 2),
     parseInt("001", 2),
   ],
   [
+    // choose 3 of 4
     parseInt("1110", 2),
     parseInt("1101", 2),
     parseInt("1011", 2),
     parseInt("0111", 2),
 
+    // choose 2 of 4
     parseInt("1100", 2),
     parseInt("1010", 2),
     parseInt("1001", 2),
-    parseInt("0101", 2),
     parseInt("0110", 2),
+    parseInt("0101", 2),
     parseInt("0011", 2),
 
+    // choose 1 of 4
     parseInt("1000", 2),
     parseInt("0100", 2),
     parseInt("0010", 2),
