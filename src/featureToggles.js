@@ -1556,6 +1556,8 @@ module.exports = {
   FeatureToggles,
 
   _: {
+    DEFAULT_REDIS_CHANNEL,
+    DEFAULT_REDIS_KEY,
     SCOPE_ROOT_KEY,
     CONFIG_KEY,
     CONFIG_INFO_KEY,

@@ -12,7 +12,7 @@ const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/fromIn
 
 const {
   FeatureToggles,
-  _: { SCOPE_ROOT_KEY, CONFIG_KEY, CONFIG_INFO_KEY },
+  _: { DEFAULT_REDIS_CHANNEL, DEFAULT_REDIS_KEY, SCOPE_ROOT_KEY, CONFIG_KEY, CONFIG_INFO_KEY },
 } = featureTogglesModule;
 
 const { readFile: readFileSpy } = require("fs");
@@ -211,6 +211,20 @@ describe("feature toggles test", () => {
       `);
       expect(i).toBe(Object.keys(scopeKeys).length);
 
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("internal apis", () => {
+    // NOTE: this internal API is used for the plugin uniqueName configuration processing
+    test("_reset", async () => {
+      const uniqueName = "bla-blu-testing";
+      toggles._reset({ uniqueName });
+
+      expect(toggles.__redisChannel).toBe([DEFAULT_REDIS_CHANNEL, uniqueName].join("-"));
+      expect(toggles.__redisKey).toBe([DEFAULT_REDIS_KEY, uniqueName].join("-"));
+
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
     });
   });
