@@ -272,7 +272,7 @@ class FeatureToggles {
     );
   }
 
-  _reset({ uniqueName, redisChannel, redisKey }) {
+  _reset({ uniqueName, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY }) {
     this.__redisChannel = uniqueName ? redisChannel + "-" + uniqueName : redisChannel;
     this.__redisKey = uniqueName ? redisKey + "-" + uniqueName : redisKey;
 
