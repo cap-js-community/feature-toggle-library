@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
+## v1.1.6 - 2024-07-23
+
+### Fixed
+
+- cds-plugin: fix `uniqueName` configuration processing
+- more consistent scope preference order when 2 out of 4 scopes are set
+
 ## v1.1.5 - 2024-06-06
 
 ### Changed
