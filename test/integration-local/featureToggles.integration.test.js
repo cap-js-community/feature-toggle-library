@@ -551,6 +551,7 @@ describe("local integration test", () => {
       const superScopeNewValue = 2;
       const scopeNewValue = 3;
       const subScopeNewValue = 4;
+      const rootClearNewValue = 5;
 
       expect(await toggles.changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap)).toBeUndefined();
       expect(await toggles.changeFeatureValue(FEATURE.E, superScopeNewValue, superScopeMap)).toBeUndefined();
@@ -587,6 +588,34 @@ describe("local integration test", () => {
       expect(toggles.getFeatureValue(FEATURE.E, scopeMap)).toEqual(scopeNewValue);
       expect(toggles.getFeatureValue(FEATURE.E, superScopeMap)).toEqual(superScopeNewValue);
       expect(toggles.getFeatureValue(FEATURE.E)).toEqual(rootNewValue);
+
+      expect(
+        await toggles.changeFeatureValue(FEATURE.E, rootClearNewValue, undefined, { clearSubScopes: true })
+      ).toBeUndefined();
+      expect(stateFromInfo(toggles.getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
+        {
+          "rootValue": 5,
+        }
+      `);
+      expect(toggles.getFeatureValue(FEATURE.E, subScopeMap)).toEqual(rootClearNewValue);
+      expect(toggles.getFeatureValue(FEATURE.E, scopeMap)).toEqual(rootClearNewValue);
+      expect(toggles.getFeatureValue(FEATURE.E, superScopeMap)).toEqual(rootClearNewValue);
+      expect(toggles.getFeatureValue(FEATURE.E)).toEqual(rootClearNewValue);
+
+      // re-add scoped values for reset test
+      expect(await toggles.changeFeatureValue(FEATURE.E, scopeNewValue, scopeMap)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.E, superScopeNewValue, superScopeMap)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.E, subScopeNewValue, subScopeMap)).toBeUndefined();
+      expect(stateFromInfo(toggles.getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`
+        {
+          "rootValue": 5,
+          "scopedValues": {
+            "component::c1##layer::l1##tenant::t1": 4,
+            "component::c1##tenant::t1": 3,
+            "tenant::t1": 2,
+          },
+        }
+      `);
 
       expect(await toggles.resetFeatureValue(FEATURE.E)).toBeUndefined();
       expect(stateFromInfo(toggles.getFeatureInfo(FEATURE.E))).toMatchInlineSnapshot(`{}`);

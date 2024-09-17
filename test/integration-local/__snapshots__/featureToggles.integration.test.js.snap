@@ -16,7 +16,7 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
 
 exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 8`] = `[]`;
 
-exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 5`] = `[]`;
+exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 7`] = `[]`;
 
 exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 1`] = `
 [

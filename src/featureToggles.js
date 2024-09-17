@@ -1080,39 +1080,36 @@ class FeatureToggles {
     scopeKey = SCOPE_ROOT_KEY,
     { clearSubScopes = false } = {}
   ) {
-    // NOTE: this first check is just an optimization
-    if (clearSubScopes && scopeKey === SCOPE_ROOT_KEY) {
-      return null;
-    }
-
-    if (scopedValues) {
-      if (clearSubScopes) {
-        const scopeKeyInnerPairs = scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR);
-        const subScopeKeys = Object.keys(scopedValues).filter((someScopeKey) =>
-          scopeKeyInnerPairs.every((scopeKeyInnerPair) => someScopeKey.includes(scopeKeyInnerPair))
-        );
-        for (const subScopeKey of subScopeKeys) {
-          Reflect.deleteProperty(scopedValues, subScopeKey);
-        }
-      }
-
-      if (newValue !== null) {
-        scopedValues[scopeKey] = newValue;
-      } else {
-        if (Object.keys(scopedValues).length > 1) {
-          Reflect.deleteProperty(scopedValues, scopeKey);
-        } else {
-          return null;
-        }
-      }
-      return scopedValues;
-    } else {
+    // NOTE: if there are no existing scoped values, or we want to delete everything but the root key, than the
+    //   response is trivial.
+    if (!scopedValues || (clearSubScopes && scopeKey === SCOPE_ROOT_KEY)) {
       if (newValue !== null) {
         return { [scopeKey]: newValue };
       } else {
         return null;
       }
     }
+
+    if (clearSubScopes) {
+      // NOTE: we use here, that the scopeKey !== SCOPE_ROOT_KEY
+      const scopeKeyInnerPairs = scopeKey.split(SCOPE_KEY_OUTER_SEPARATOR);
+      const subScopeKeys = Object.keys(scopedValues).filter((someScopeKey) =>
+        scopeKeyInnerPairs.every((scopeKeyInnerPair) => someScopeKey.includes(scopeKeyInnerPair))
+      );
+      for (const subScopeKey of subScopeKeys) {
+        Reflect.deleteProperty(scopedValues, subScopeKey);
+      }
+    }
+
+    if (newValue !== null) {
+      scopedValues[scopeKey] = newValue;
+    } else {
+      Reflect.deleteProperty(scopedValues, scopeKey);
+      if (Object.keys(scopedValues).length === 0) {
+        return null;
+      }
+    }
+    return scopedValues;
   }
 
   // NOTE: stateScopedValues needs to be at least an empty object {}
