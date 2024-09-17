@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
+## v1.1.7 - 2024-09-17
+
+### Fixed
+
+- setting a root value with the option `{ clearSubScopes: true }` only deleted the root and scoped values, but did
+  not set the new root value.
+
 ## v1.1.6 - 2024-07-23
 
 ### Fixed
