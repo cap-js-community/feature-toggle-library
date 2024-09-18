@@ -284,6 +284,30 @@ const getObject = async (key) => {
 };
 
 /**
+ * Asynchronously get all entries under a given hash.
+ *
+ * @param key
+ * @returns {Promise<object|null>}
+ */
+const hashGetAll = async (key) => await _clientExec("HGETALL", { key });
+
+/**
+ * Asynchronously get all entries under a given hash and parse the values into objects.
+ *
+ * @param key
+ * @returns {Promise<object|null>}
+ */
+const hashGetAllObjects = async (key) => {
+  const result = await hashGetAll(key);
+  return result === null
+    ? null
+    : Object.entries(result).reduce((acc, [key, value]) => {
+        acc[key] = typeof value === "string" && value.startsWith("{") ? JSON.parse(value) : value;
+        return acc;
+      }, {});
+};
+
+/**
  * Asynchronously set the value for a given key.
  *
  * @param key
@@ -539,6 +563,8 @@ module.exports = {
   type,
   get,
   getObject,
+  hashGetAll,
+  hashGetAllObjects,
   set,
   del,
   setObject,

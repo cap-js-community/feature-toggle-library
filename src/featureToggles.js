@@ -900,6 +900,39 @@ class FeatureToggles {
   // END OF GET_FEATURES_INFOS SECTION
   // ========================================
   // ========================================
+  // START OF GET_UNMANAGED_INFOS SECTION
+  // ========================================
+
+  /**
+   * Get unmanaged feature infos for all keys that exist in the redis hash entry, but are not in the configuration.
+   */
+  async getUnmanagedFeaturesInfos() {
+    this._ensureInitialized();
+    const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
+    if (!remoteStateScopedValues) {
+      return [];
+    }
+    const unmanagedStateScopedValues = Object.entries(remoteStateScopedValues).reduce((acc, [key, value]) => {
+      if (!this.__config[key]) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    debugger;
+    return [];
+    // const unmanagedFeatureKeys = redis
+    //   .hashGetAll(this.__redisKey)
+    //   .filter((featureKey) => this.__featureKeys.includes(featureKey));
+    // return this.__featureKeys.reduce((acc, featureKey) => {
+    //   acc[featureKey] = this._getUnmanagedFeatureInfo(featureKey);
+    //   return acc;
+    // }, {});
+  }
+
+  // ========================================
+  // END OF GET_UNMANAGED_INFOS SECTION
+  // ========================================
+  // ========================================
   // START OF GET_FEATURES_KEYS SECTION
   // ========================================
 
