@@ -41,11 +41,11 @@ jobs:
       - name: Build with Jekyll
         # Outputs to the 'docs/_site' directory
         run: |
-          echo "url: $GITHUB_PAGES_BASE_URL" > _config.dynamic.yml
+          echo "url: $GITHUB_PAGES_ORIGIN" > _config.dynamic.yml
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" --config _config.yml,_config.dynamic.yml
         env:
           JEKYLL_ENV: production
-          GITHUB_PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+          GITHUB_PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
       - name: Upload artifact
         # Uploads artifact from the 'docs/_site' directory
         uses: actions/upload-pages-artifact@v3
