@@ -24,7 +24,6 @@ const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { LimitedLazyCache } = require("./shared/cache");
-const { Semaphore } = require("./shared/semaphore");
 const { ENV, isObject, tryRequire, tryPathReadable, tryJsonParse } = require("./shared/static");
 
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
@@ -285,6 +284,7 @@ class FeatureToggles {
     this.__featureKeys = [];
     this.__fallbackValues = {};
     this.__stateScopedValues = {};
+    this.__initializePromise = undefined;
     this.__isInitialized = false;
     this.__isConfigProcessed = false;
   }
@@ -831,7 +831,10 @@ class FeatureToggles {
    * related internal state, and starts communication with redis.
    */
   async initializeFeatures(options) {
-    return await Semaphore.makeOneTime(this._initializeFeatures.bind(this))(options);
+    if (!this.__initializePromise) {
+      this.__initializePromise = this._initializeFeatures(options);
+    }
+    return await this.__initializePromise;
   }
 
   // ========================================
