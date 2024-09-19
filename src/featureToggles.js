@@ -38,6 +38,7 @@ const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
 
 const CONFIG_SOURCE = Object.freeze({
+  NONE: "NONE", // NOTE: this is for unmanaged toggles
   RUNTIME: "RUNTIME",
   FILE: "FILE",
   AUTO: "AUTO",
@@ -844,7 +845,7 @@ class FeatureToggles {
   // START OF GET_FEATURES_INFOS SECTION
   // ========================================
 
-  static _getFeatureInfo(stateScopedValues, fallbackValues, config, featureKey) {
+  _getFeatureInfo(featureKey, { stateScopedValues = this.__stateScopedValues } = {}) {
     let rootValue;
     let foundScopedValues = false;
     let scopedValuesInfo;
@@ -860,21 +861,21 @@ class FeatureToggles {
       }, {});
     }
 
-    let configInfo;
-    if (config[featureKey]) {
-      configInfo = Object.entries(config[featureKey]).reduce((acc, [configKey, value]) => {
-        if (CONFIG_INFO_KEY[configKey]) {
-          acc[configKey] = value;
-        }
-        return acc;
-      }, {});
-    }
+    const isConfigured = this.__config[featureKey];
+    const configInfo = isConfigured
+      ? Object.entries(this.__config[featureKey]).reduce((acc, [configKey, value]) => {
+          if (CONFIG_INFO_KEY[configKey]) {
+            acc[configKey] = value;
+          }
+          return acc;
+        }, {})
+      : { [CONFIG_KEY.SOURCE]: CONFIG_SOURCE.NONE };
 
     return {
-      ...(fallbackValues && { fallbackValue: fallbackValues[featureKey] }),
+      ...(isConfigured && { fallbackValue: this.__fallbackValues[featureKey] }),
       ...(rootValue !== undefined && { rootValue }),
       ...(foundScopedValues && { scopedValues: scopedValuesInfo }),
-      ...(configInfo && { config: configInfo }),
+      config: configInfo,
     };
   }
 
@@ -886,7 +887,7 @@ class FeatureToggles {
     if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
       return null;
     }
-    return FeatureToggles._getFeatureInfo(this.__stateScopedValues, this.__fallbackValues, this.__config, featureKey);
+    return this._getFeatureInfo(featureKey);
   }
 
   /**
@@ -895,12 +896,7 @@ class FeatureToggles {
   getFeaturesInfos() {
     this._ensureInitialized();
     return this.__featureKeys.reduce((acc, featureKey) => {
-      acc[featureKey] = FeatureToggles._getFeatureInfo(
-        this.__stateScopedValues,
-        this.__fallbackValues,
-        this.__config,
-        featureKey
-      );
+      acc[featureKey] = this._getFeatureInfo(featureKey);
       return acc;
     }, {});
   }
@@ -921,7 +917,7 @@ class FeatureToggles {
 
     return Object.keys(remoteStateScopedValues).reduce((acc, key) => {
       if (!this.__config[key]) {
-        acc[key] = FeatureToggles._getFeatureInfo(remoteStateScopedValues, {}, {}, key);
+        acc[key] = this._getFeatureInfo(key, { stateScopedValues: remoteStateScopedValues });
       }
       return acc;
     }, {});
