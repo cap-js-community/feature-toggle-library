@@ -910,10 +910,15 @@ class FeatureToggles {
    */
   async getUnmanagedFeaturesInfos() {
     this._ensureInitialized();
+    if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
+      return {};
+    }
+
     const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
     if (!remoteStateScopedValues) {
       return {};
     }
+
     return Object.keys(remoteStateScopedValues).reduce((acc, key) => {
       if (!this.__config[key]) {
         acc[key] = FeatureToggles._getFeatureInfo(remoteStateScopedValues, {}, {}, key);
@@ -1207,6 +1212,10 @@ class FeatureToggles {
   // also have to trigger changes for any small scope-level change leading to lots of callbacks.
   async refreshFeatureValues() {
     this._ensureInitialized();
+    if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
+      return;
+    }
+
     try {
       const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
