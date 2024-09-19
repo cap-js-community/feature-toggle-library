@@ -35,7 +35,7 @@ const redisReadHandler = async (context) => {
     await toggles.refreshFeatureValues();
     const managedFeatures = toggles.getFeaturesInfos();
     const unmanagedFeatures = await toggles.getUnmanagedFeaturesInfos();
-    const result = [].concat(managedFeatures, unmanagedFeatures);
+    const result = { ...managedFeatures, ...unmanagedFeatures };
     context.reply(result);
   } catch (err) {
     logger.error(

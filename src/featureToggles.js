@@ -910,7 +910,7 @@ class FeatureToggles {
     this._ensureInitialized();
     const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
     if (!remoteStateScopedValues) {
-      return [];
+      return {};
     }
     const unmanagedStateScopedValues = Object.entries(remoteStateScopedValues).reduce((acc, [key, value]) => {
       if (!this.__config[key]) {
@@ -919,7 +919,7 @@ class FeatureToggles {
       return acc;
     }, {});
     debugger;
-    return [];
+    return {};
     // const unmanagedFeatureKeys = redis
     //   .hashGetAll(this.__redisKey)
     //   .filter((featureKey) => this.__featureKeys.includes(featureKey));
