@@ -75,18 +75,30 @@ class Semaphore {
    * get a promise for the result of the exclusive caller.
    */
   static makeExclusiveReturning(cb) {
-    let isRunning;
     let runningPromise;
     return async (...args) => {
       try {
-        if (!isRunning) {
-          isRunning = true;
+        if (!runningPromise) {
           runningPromise = cb(...args);
         }
         return await runningPromise;
       } finally {
-        isRunning = false;
+        runningPromise = undefined;
       }
+    };
+  }
+
+  /**
+   * Take an async function and turn it into a one-time executing async function. All subsequent calls will get the
+   * result of the first execution.
+   */
+  static makeOneTime(cb) {
+    let runningPromise;
+    return async (...args) => {
+      if (!runningPromise) {
+        runningPromise = cb(...args);
+      }
+      return await runningPromise;
     };
   }
 }

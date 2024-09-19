@@ -114,4 +114,30 @@ describe("semaphore", () => {
       ]
     `);
   });
+
+  test("one-time", async () => {
+    const exclusiveRunner = Semaphore.makeOneTime(runner);
+    const resultsPrimary = await Promise.all(Array.from({ length: n }, (_, i) => exclusiveRunner(i + 1)));
+
+    const resultsSecondary = await Promise.all(Array.from({ length: m }, (_, i) => exclusiveRunner(n + i + 1)));
+    expect(resultsPrimary).toMatchInlineSnapshot(`
+      [
+        "result 1",
+        "result 1",
+        "result 1",
+      ]
+    `);
+    expect(resultsSecondary).toMatchInlineSnapshot(`
+      [
+        "result 1",
+        "result 1",
+      ]
+    `);
+    expect(executionLog).toMatchInlineSnapshot(`
+      [
+        "started 1",
+        "finished 1",
+      ]
+    `);
+  });
 });
