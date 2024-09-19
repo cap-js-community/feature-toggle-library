@@ -841,21 +841,12 @@ class FeatureToggles {
   // START OF GET_FEATURES_INFOS SECTION
   // ========================================
 
-  static _getFeatureInfoConfig(config, featureKey) {
-    return Object.entries(config[featureKey]).reduce((acc, [configKey, value]) => {
-      if (CONFIG_INFO_KEY[configKey]) {
-        acc[configKey] = value;
-      }
-      return acc;
-    }, {});
-  }
-
-  _getFeatureInfo(featureKey) {
+  static _getFeatureInfo(stateScopedValues, fallbackValues, config, featureKey) {
     let rootValue;
     let foundScopedValues = false;
-    let scopedValues;
-    if (this.__stateScopedValues[featureKey]) {
-      scopedValues = Object.entries(this.__stateScopedValues[featureKey]).reduce((acc, [scopeKey, value]) => {
+    let scopedValuesInfo;
+    if (stateScopedValues[featureKey]) {
+      scopedValuesInfo = Object.entries(stateScopedValues[featureKey]).reduce((acc, [scopeKey, value]) => {
         if (scopeKey === SCOPE_ROOT_KEY) {
           rootValue = value;
         } else {
@@ -866,11 +857,21 @@ class FeatureToggles {
       }, {});
     }
 
+    let configInfo;
+    if (config[featureKey]) {
+      configInfo = Object.entries(config[featureKey]).reduce((acc, [configKey, value]) => {
+        if (CONFIG_INFO_KEY[configKey]) {
+          acc[configKey] = value;
+        }
+        return acc;
+      }, {});
+    }
+
     return {
-      fallbackValue: this.__fallbackValues[featureKey],
+      ...(fallbackValues && { fallbackValue: fallbackValues[featureKey] }),
       ...(rootValue !== undefined && { rootValue }),
-      ...(foundScopedValues && { scopedValues }),
-      config: FeatureToggles._getFeatureInfoConfig(this.__config, featureKey),
+      ...(foundScopedValues && { scopedValues: scopedValuesInfo }),
+      ...(configInfo && { config: configInfo }),
     };
   }
 
@@ -882,7 +883,7 @@ class FeatureToggles {
     if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
       return null;
     }
-    return this._getFeatureInfo(featureKey);
+    return FeatureToggles._getFeatureInfo(this.__stateScopedValues, this.__fallbackValues, this.__config, featureKey);
   }
 
   /**
@@ -891,17 +892,15 @@ class FeatureToggles {
   getFeaturesInfos() {
     this._ensureInitialized();
     return this.__featureKeys.reduce((acc, featureKey) => {
-      acc[featureKey] = this._getFeatureInfo(featureKey);
+      acc[featureKey] = FeatureToggles._getFeatureInfo(
+        this.__stateScopedValues,
+        this.__fallbackValues,
+        this.__config,
+        featureKey
+      );
       return acc;
     }, {});
   }
-
-  // ========================================
-  // END OF GET_FEATURES_INFOS SECTION
-  // ========================================
-  // ========================================
-  // START OF GET_UNMANAGED_INFOS SECTION
-  // ========================================
 
   /**
    * Get unmanaged feature infos for all keys that exist in the redis hash entry, but are not in the configuration.
@@ -912,25 +911,16 @@ class FeatureToggles {
     if (!remoteStateScopedValues) {
       return {};
     }
-    const unmanagedStateScopedValues = Object.entries(remoteStateScopedValues).reduce((acc, [key, value]) => {
+    return Object.keys(remoteStateScopedValues).reduce((acc, key) => {
       if (!this.__config[key]) {
-        acc[key] = value;
+        acc[key] = FeatureToggles._getFeatureInfo(remoteStateScopedValues, {}, {}, key);
       }
       return acc;
     }, {});
-    debugger;
-    return {};
-    // const unmanagedFeatureKeys = redis
-    //   .hashGetAll(this.__redisKey)
-    //   .filter((featureKey) => this.__featureKeys.includes(featureKey));
-    // return this.__featureKeys.reduce((acc, featureKey) => {
-    //   acc[featureKey] = this._getUnmanagedFeatureInfo(featureKey);
-    //   return acc;
-    // }, {});
   }
 
   // ========================================
-  // END OF GET_UNMANAGED_INFOS SECTION
+  // END OF GET_FEATURES_INFOS SECTION
   // ========================================
   // ========================================
   // START OF GET_FEATURES_KEYS SECTION
