@@ -902,23 +902,22 @@ class FeatureToggles {
   }
 
   /**
-   * Get unmanaged feature infos for all keys that exist in the redis hash entry, but are not in the configuration.
+   * Get fresh feature infos for all keys that exist in the redis hash entry, including those that may not be in the
+   * configuration.
    */
-  async getUnmanagedFeaturesInfos() {
+  async getFreshFeaturesInfos() {
     this._ensureInitialized();
     if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
-      return {};
+      return null;
     }
 
     const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
     if (!remoteStateScopedValues) {
-      return {};
+      return null;
     }
 
     return Object.keys(remoteStateScopedValues).reduce((acc, key) => {
-      if (!this.__config[key]) {
-        acc[key] = this._getFeatureInfo(key, { stateScopedValues: remoteStateScopedValues });
-      }
+      acc[key] = this._getFeatureInfo(key, { stateScopedValues: remoteStateScopedValues });
       return acc;
     }, {});
   }

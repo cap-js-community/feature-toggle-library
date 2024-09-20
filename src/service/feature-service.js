@@ -32,10 +32,8 @@ const stateHandler = async (context) => {
  */
 const redisReadHandler = async (context) => {
   try {
-    await toggles.refreshFeatureValues();
-    const managedFeatures = toggles.getFeaturesInfos();
-    const unmanagedFeatures = await toggles.getUnmanagedFeaturesInfos();
-    const result = { ...managedFeatures, ...unmanagedFeatures };
+    // TODO does not refresh local state...
+    const result = (await toggles.getFreshFeaturesInfos()) ?? {};
     context.reply(result);
   } catch (err) {
     logger.error(
