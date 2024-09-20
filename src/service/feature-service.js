@@ -20,7 +20,7 @@ const textFormat = (pattern, values) =>
   });
 
 /**
- * Read all feature values.
+ * Read all configured features and their values.
  */
 const stateHandler = async (context) => {
   const result = toggles.getFeaturesInfos();
@@ -28,12 +28,16 @@ const stateHandler = async (context) => {
 };
 
 /**
- * Refresh feature values from redis and then read all.
+ * Read all Redis features and their values.
  */
 const redisReadHandler = async (context) => {
   try {
     // TODO does not refresh local state...
-    const result = (await toggles.getFreshFeaturesInfos()) ?? {};
+    const result = await toggles.getFreshFeaturesInfos();
+    if (result === null) {
+      context.error({ code: 503, message: "cloud not reach redis during redis read" });
+      return;
+    }
     context.reply(result);
   } catch (err) {
     logger.error(
@@ -45,7 +49,7 @@ const redisReadHandler = async (context) => {
         "error during redis read"
       )
     );
-    context.reject({ code: 500, message: "caught unexpected error during redis read, check server logs" });
+    context.error({ code: 500, message: "caught unexpected error during redis read, check server logs" });
   }
 };
 
@@ -97,14 +101,14 @@ const redisUpdateHandler = async (context) => {
         "error during redis update"
       )
     );
-    context.reject({ code: 500, message: "caught unexpected error during redis update, check server logs" });
+    context.error({ code: 500, message: "caught unexpected error during redis update, check server logs" });
   }
 };
 
 const redisSendCommandHandler = async (context) => {
   const { command } = context.data;
   if (!Array.isArray(command)) {
-    context.reject({ code: 400, message: "request body needs to contain a 'command' field of type array" });
+    context.error({ code: 400, message: "request body needs to contain a 'command' field of type array" });
     return;
   }
   const redisResponse = await redis.sendCommand(command);
