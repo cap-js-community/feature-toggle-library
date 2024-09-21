@@ -28,7 +28,7 @@ const stateHandler = async (context) => {
 };
 
 /**
- * Read all Redis features and their values.
+ * Read all redis features and their values.
  */
 const redisReadHandler = async (context) => {
   try {
