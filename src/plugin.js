@@ -38,7 +38,7 @@ const doExportActivateAsProperty =
   cdsPackage.version.localeCompare("7.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 // NOTE: for sap/cds < 8.2.3 there was no consistent way to detect cds is running as a server, not for build, compile,
 //   etc...
-const doServeDetection =
+const doLegacyBuildDetection =
   cdsPackage.version.localeCompare("8.2.3", undefined, { numeric: true, sensitivity: "base" }) < 0;
 
 const _overwriteUniqueName = (envFeatureToggles) => {
@@ -166,7 +166,7 @@ const activate = async () => {
 
   const isServe = cds.cli?.command === SERVE_COMMAND;
   const isBuild = cds.build?.register;
-  if ((doServeDetection && !isServe) || (!doServeDetection && isBuild)) {
+  if ((doLegacyBuildDetection && isBuild) || (!doLegacyBuildDetection && !isServe)) {
     return;
   }
   await toggles.initializeFeatures({
