@@ -537,7 +537,8 @@ class FeatureToggles {
    * @type object
    * @property {string}         featureKey            feature toggle
    * @property {string}         errorMessage          user-readable error message
-   * @property {Array<string>}  [errorMessageValues]  optional parameters for error message, which are ignored for localization
+   * @property {Array<string>}  [errorMessageValues]  optional parameters for error message, which are ignored for
+   *                                                    localization
    */
   /**
    * Validate the value of a given featureKey, value pair. Allows passing an optional scopeMap that is added to
@@ -1167,6 +1168,8 @@ class FeatureToggles {
    *
    * @type object
    * @property {boolean}  [clearSubScopes]  switch to clear all sub scopes, defaults to false
+   * @property {boolean}  [remoteOnly]      switch to skip updating local state, validation, and change handlers,
+   *                                          defaults to false
    */
   /**
    * @typedef ChangeEntry
@@ -1372,44 +1375,49 @@ class FeatureToggles {
   }
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
+    const { remoteOnly } = options;
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
-      scopeMap,
-      scopeKey,
-      isChange: true,
-    });
-    if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-      return validationErrors;
+    if (!remoteOnly) {
+      const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
+        scopeMap,
+        scopeKey,
+        isChange: true,
+      });
+      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+        return validationErrors;
+      }
     }
 
     const integrationMode = await redis.getIntegrationMode();
     // NOTE: for NO_REDIS mode, we just do a local update without further validation
     if (integrationMode === REDIS_INTEGRATION_MODE.NO_REDIS) {
-      const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
-        this.__superScopeCache,
-        this.__stateScopedValues,
-        this.__fallbackValues,
-        featureKey,
-        scopeMap
-      );
-      FeatureToggles._updateStateScopedValuesOneScopeInPlace(
-        this.__stateScopedValues,
-        featureKey,
-        newValue,
-        scopeKey,
-        options
-      );
-      const newActualValue =
-        newValue !== null
-          ? newValue
-          : FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
-              this.__superScopeCache,
-              this.__stateScopedValues,
-              this.__fallbackValues,
-              featureKey,
-              scopeMap
-            );
-      await this._triggerChangeHandlers(featureKey, oldValue, newActualValue, scopeMap, options);
+      if (!remoteOnly) {
+        const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+          this.__superScopeCache,
+          this.__stateScopedValues,
+          this.__fallbackValues,
+          featureKey,
+          scopeMap
+        );
+        FeatureToggles._updateStateScopedValuesOneScopeInPlace(
+          this.__stateScopedValues,
+          featureKey,
+          newValue,
+          scopeKey,
+          options
+        );
+        const newActualValue =
+          newValue !== null
+            ? newValue
+            : FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+                this.__superScopeCache,
+                this.__stateScopedValues,
+                this.__fallbackValues,
+                featureKey,
+                scopeMap
+              );
+        await this._triggerChangeHandlers(featureKey, oldValue, newActualValue, scopeMap, options);
+      }
       return;
     }
 
@@ -1417,10 +1425,15 @@ class FeatureToggles {
       FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
       await redis.watchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
-      // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
-      // from the scopeMap by the receiver, so we leave it out here.
-      const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
-      await redis.publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
+      if (!remoteOnly) {
+        // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
+        // from the scopeMap by the receiver, so we leave it out here.
+        const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
+        await redis.publishMessage(
+          this.__redisChannel,
+          FeatureToggles._serializeChangesToRefreshMessage([changeEntry])
+        );
+      }
     } catch (err) {
       throw new VError(
         {
