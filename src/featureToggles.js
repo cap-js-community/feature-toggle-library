@@ -110,6 +110,9 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 const readFileAsync = promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
+/**
+ * FeatureToggles main library API class.
+ */
 class FeatureToggles {
   static __instance;
 
@@ -534,7 +537,6 @@ class FeatureToggles {
   }
 
   /**
-   * @typedef ValidationError
    * ValidationError must have a user-readable errorMessage. The message can use errorMessageValues, i.e., parameters
    * which are ignored for localization, but mixed in when the errorMessage is presented to the user.
    *
@@ -542,6 +544,7 @@ class FeatureToggles {
    *   { errorMessage: "got bad value" },
    *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
    *
+   * @typedef ValidationError
    * @type object
    * @property {string}         featureKey            feature toggle
    * @property {string}         errorMessage          user-readable error message
@@ -1167,19 +1170,18 @@ class FeatureToggles {
   }
 
   /**
-   * @typedef ChangeOptions
    * ChangeOptions are extra options for the change of a feature toggle.
    *
    * Example:
    *   { clearSubScopes: true }
    *
+   * @typedef ChangeOptions
    * @type object
    * @property {boolean}  [clearSubScopes]  switch to clear all sub scopes, defaults to false
    * @property {boolean}  [remoteOnly]      switch to skip all server-local processing to change toggles that are not
    *                                          configured, defaults to false
    */
   /**
-   * @typedef ChangeEntry
    * ChangeEntry represents a single value change related to a feature key and an optional scopeMap. Setting newValue
    * to null means delete the value. Omitting the scopeMap changes the root scope.
    *
@@ -1189,6 +1191,7 @@ class FeatureToggles {
    *   { featureKey: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } }
    *   { featureKey: FEATURE_VALUE_KEY, newValue: null, options: { clearSubScopes: true } }
    *
+   * @typedef ChangeEntry
    * @type object
    * @property {string}                      featureKey        feature key
    * @property {string|number|boolean|null}  newValue          feature value after change

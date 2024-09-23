@@ -2,6 +2,9 @@
 
 const { ENV } = require("./static");
 
+/**
+ * CfEnv is a singleton class to interact with the Cloud Foundry environment variables.
+ */
 class CfEnv {
   static __instance;
 

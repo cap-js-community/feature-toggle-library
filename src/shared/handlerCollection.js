@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * HandlerCollection keeps track of lists of (async) handlers.
+ * HandlerCollection is a convenience API to keep track of lists of (async) handlers.
  */
 class HandlerCollection {
   constructor() {

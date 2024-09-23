@@ -3,6 +3,9 @@
 const DEFAULT_SEPARATOR = "##";
 const DEFAULT_SIZE_LIMIT = 15;
 
+/**
+ * LazyCache is a cache where entries are built up lazily during the first access.
+ */
 class LazyCache {
   constructor({ separator = DEFAULT_SEPARATOR } = {}) {
     this.__data = Object.create(null);
@@ -64,6 +67,10 @@ class LazyCache {
   }
 }
 
+/**
+ * LimitedLazyCache is a variant of {@link LazyCache}, where the total number of entries is limited. New entries beyond
+ * the limit will automatically evict the oldest entries in the cache.
+ */
 class LimitedLazyCache extends LazyCache {
   constructor({ separator = DEFAULT_SEPARATOR, sizeLimit = DEFAULT_SIZE_LIMIT } = {}) {
     super({ separator });

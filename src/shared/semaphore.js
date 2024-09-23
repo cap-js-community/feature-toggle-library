@@ -1,24 +1,23 @@
 "use strict";
 
 /**
- * The goal of this class is to ensure mutually exclusive code execution within one node runtime.
+ * Semaphore is a class to ensure mutually exclusive code execution within one node runtime.
  *
  * usage:
- * const semaphore = new Semaphore();
+ *   const semaphore = new Semaphore();
  *
- * const criticalCodeExclusive = async () => {
- *   await semaphore.acquire();
- *   try {
- *     await criticalCode();
- *   } finally {
- *     semaphore.release();
+ *   const criticalCodeExclusive = async () => {
+ *     await semaphore.acquire();
+ *     try {
+ *       await criticalCode();
+ *     } finally {
+ *       semaphore.release();
+ *     }
  *   }
- * }
  *
  *
  * https://en.wikipedia.org/wiki/Semaphore_(programming)
  */
-
 class Semaphore {
   constructor() {
     this.promiseCurrentSemaphore = Promise.resolve();

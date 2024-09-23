@@ -10,7 +10,8 @@ describe("singleton", () => {
   test("singleton unique name can be set via cf app name", async () => {
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
 
-    const { FeatureToggles } = require("../src/");
+    const toggles = require("../src/");
+    const FeatureToggles = toggles.constructor;
     expect(FeatureToggles._getInstanceUniqueName()).toMatchInlineSnapshot(`"test_app_name"`);
 
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");
@@ -20,7 +21,8 @@ describe("singleton", () => {
     process.env.VCAP_APPLICATION = JSON.stringify({ application_name: "test_app_name" });
     process.env[ENV.UNIQUE_NAME] = "test_unique_name";
 
-    const { FeatureToggles } = require("../src/");
+    const toggles = require("../src/");
+    const FeatureToggles = toggles.constructor;
     expect(FeatureToggles._getInstanceUniqueName()).toMatchInlineSnapshot(`"test_unique_name"`);
 
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");

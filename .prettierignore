@@ -1,6 +1,8 @@
 node_modules/
-package-lock.json
 temp/
+package-lock.json
 
 docs/vendor/
 docs/_site/
+
+out/

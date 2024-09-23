@@ -86,6 +86,10 @@ const cfAppData = cfEnv.isOnCf
     }
   : undefined;
 
+/**
+ * Logger is an implementation of a logger that simultaneously produces natural human-readable logs locally and, in
+ * Cloud Foundry environments, will produce logs in the form of JSON objects with special properties.
+ */
 class Logger {
   static getEnvMaxLevelNumber() {
     if (Logger.__envMaxLevelNumber === undefined) {
