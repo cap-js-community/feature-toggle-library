@@ -1175,8 +1175,8 @@ class FeatureToggles {
    *
    * @type object
    * @property {boolean}  [clearSubScopes]  switch to clear all sub scopes, defaults to false
-   * @property {boolean}  [remoteOnly]      switch to skip updating local state, validation, and change handlers,
-   *                                          defaults to false
+   * @property {boolean}  [remoteOnly]      switch to skip all server-local processing to change toggles that are not
+   *                                          configured, defaults to false
    */
   /**
    * @typedef ChangeEntry
