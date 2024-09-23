@@ -363,9 +363,17 @@ class FeatureToggles {
   }
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isChange = false } = {}) {
+  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isChange = false, remoteOnly = false } = {}) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
+    }
+
+    // NOTE: for remoteOnly we only allow values that are not configured
+    if (remoteOnly) {
+      if (this.__config[featureKey]) {
+        return [{ featureKey, errorMessage: "remoteOnly is not allowed for configured toggles" }];
+      }
+      return [];
     }
 
     if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
@@ -1161,7 +1169,7 @@ class FeatureToggles {
 
   /**
    * @typedef ChangeOptions
-   * ChangeOptions are extra options to control a change to a feature toggle value. For now, there is only one option
+   * ChangeOptions are extra options for the change of a feature toggle.
    *
    * Example:
    *   { clearSubScopes: true }
@@ -1377,15 +1385,14 @@ class FeatureToggles {
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
     const { remoteOnly } = options;
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
-    if (!remoteOnly) {
-      const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
-        scopeMap,
-        scopeKey,
-        isChange: true,
-      });
-      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-        return validationErrors;
-      }
+    const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
+      scopeMap,
+      scopeKey,
+      isChange: true,
+      remoteOnly,
+    });
+    if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+      return validationErrors;
     }
 
     const integrationMode = await redis.getIntegrationMode();
