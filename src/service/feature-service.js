@@ -20,7 +20,7 @@ const textFormat = (pattern, values) =>
   });
 
 /**
- * Read all configured features and their values.
+ * Get server-local feature infos for all configured keys.
  */
 const stateHandler = async (context) => {
   const result = toggles.getFeaturesInfos();
@@ -28,7 +28,7 @@ const stateHandler = async (context) => {
 };
 
 /**
- * Read all redis features and their values.
+ * Get remote feature infos for all keys that exist in the redis hash entry, including keys that are not configured.
  */
 const redisReadHandler = async (context) => {
   try {
