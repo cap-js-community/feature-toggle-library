@@ -539,9 +539,11 @@ class FeatureToggles {
    * ValidationError must have a user-readable errorMessage. The message can use errorMessageValues, i.e., parameters
    * which are ignored for localization, but mixed in when the errorMessage is presented to the user.
    *
-   * Example:
+   * @example
+   * const validationErrors = [
    *   { errorMessage: "got bad value" },
    *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
+   * ];
    *
    * @typedef ValidationError
    * @type object
@@ -1184,11 +1186,13 @@ class FeatureToggles {
    * ChangeEntry represents a single value change related to a feature key and an optional scopeMap. Setting newValue
    * to null means delete the value. Omitting the scopeMap changes the root scope.
    *
-   * Example:
-   *   const FEATURE_VALUE_KEY = "/server/part_x/feature_y"
+   * @example
+   * const FEATURE_VALUE_KEY = "/server/part_x/feature_y";
+   * const entries = [
    *   { featureKey: FEATURE_VALUE_KEY, newValue: true },
-   *   { featureKey: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } }
+   *   { featureKey: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } },
    *   { featureKey: FEATURE_VALUE_KEY, newValue: null, options: { clearSubScopes: true } }
+   * ];
    *
    * @typedef ChangeEntry
    * @type object
@@ -1559,7 +1563,7 @@ class FeatureToggles {
    * be executed during initialization, otherwise it will only run for new values coming in after initialization.
    * Errors happening during validation execution will be logged and communicated to user as generic problem.
    *
-   * usage:
+   * @example
    * registerFeatureValueValidation(featureKey, (newValue) => {
    *   if (isBad(newValue)) {
    *     return { errorMessage: "got bad value" };
@@ -1571,6 +1575,7 @@ class FeatureToggles {
    *
    * @param {string}     featureKey
    * @param {Validator}  validator
+   *
    */
   registerFeatureValueValidation(featureKey, validator) {
     this.__featureValueValidators.registerHandler(featureKey, validator);

@@ -3,20 +3,18 @@
 /**
  * Semaphore is a class to ensure mutually exclusive code execution within one node runtime.
  *
- * usage:
- *   const semaphore = new Semaphore();
- *
- *   const criticalCodeExclusive = async () => {
- *     await semaphore.acquire();
- *     try {
- *       await criticalCode();
- *     } finally {
- *       semaphore.release();
- *     }
+ * @example
+ * const semaphore = new Semaphore();
+ * const criticalCodeExclusive = async () => {
+ *   await semaphore.acquire();
+ *   try {
+ *     await criticalCode();
+ *   } finally {
+ *     semaphore.release();
  *   }
+ * };
  *
- *
- * https://en.wikipedia.org/wiki/Semaphore_(programming)
+ * @see https://en.wikipedia.org/wiki/Semaphore_(programming)
  */
 class Semaphore {
   constructor() {

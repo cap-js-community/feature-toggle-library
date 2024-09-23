@@ -66,16 +66,16 @@ const redisReadHandler = async (context) => {
  * fallback value. Validation ensures that only values of type string, number, and boolean are allowed. You can also
  * scope changes to only take effect in specific contexts.
  *
- * Examples:
- *   single-feature input = { "key": "a", "value": true }
- *   multi-feature input  = [
- *     { "key": "a", "value": true },
- *     { "key": "b", "value": 10 }
- *   ]
- *   scoped change input  = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
+ * The endpoint will answer with 204 if the input was accepted and sent to redis, otherwise 422 with a list of
+ * validation errors.
  *
- * NOTE this will answer 204 if the input was accepted and sent to redis, otherwise 422 with a list of validation
- * errors.
+ * @example
+ * single-feature input = { "key": "a", "value": true };
+ * multi-feature input  = [
+ *   { "key": "a", "value": true },
+ *   { "key": "b", "value": 10 }
+ * ];
+ * scoped change input  = { "key": "a", "value": true, "scope": { "tenant": "t1" }};
  *
  * @see FeatureToggles#changeFeatureValue
  */
