@@ -1383,7 +1383,7 @@ class FeatureToggles {
   }
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
-    const { remoteOnly } = options;
+    const { remoteOnly } = options ?? {};
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
     const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
       scopeMap,
