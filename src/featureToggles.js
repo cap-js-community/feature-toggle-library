@@ -37,7 +37,7 @@ const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
 
 const CONFIG_SOURCE = Object.freeze({
-  NONE: "NONE", // NOTE: this is for unmanaged toggles
+  NONE: "NONE", // for toggles that are not configured
   RUNTIME: "RUNTIME",
   FILE: "FILE",
   AUTO: "AUTO",
