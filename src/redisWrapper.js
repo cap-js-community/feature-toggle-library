@@ -9,6 +9,7 @@ const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { Semaphore } = require("./shared/semaphore");
+const { tryJsonParse } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
@@ -280,7 +281,7 @@ const get = async (key) => await _clientExec("GET", { key });
  */
 const getObject = async (key) => {
   const result = await get(key);
-  return result === null ? null : JSON.parse(result);
+  return result === null ? null : (tryJsonParse(result) ?? null);
 };
 
 /**
@@ -302,7 +303,7 @@ const hashGetAllObjects = async (key) => {
   return result === null
     ? null
     : Object.entries(result).reduce((acc, [key, value]) => {
-        acc[key] = typeof value === "string" && value.startsWith("{") ? JSON.parse(value) : value;
+        acc[key] = tryJsonParse(value) ?? null;
         return acc;
       }, {});
 };
@@ -351,7 +352,8 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
       await mainClient.WATCH(key);
 
       const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
-      const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
+      const oldValue =
+        mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
       const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
 
