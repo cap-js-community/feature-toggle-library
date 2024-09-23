@@ -21,6 +21,8 @@ const textFormat = (pattern, values) =>
 
 /**
  * Get server-local feature infos for all configured keys.
+ *
+ * @see FeatureToggles#getFeaturesInfos
  */
 const stateHandler = async (context) => {
   const result = toggles.getFeaturesInfos();
@@ -29,6 +31,8 @@ const stateHandler = async (context) => {
 
 /**
  * Get remote feature infos for all keys that exist in the redis hash entry, including keys that are not configured.
+ *
+ * @see FeatureToggles#getRemoteFeaturesInfos
  */
 const redisReadHandler = async (context) => {
   try {
@@ -67,7 +71,8 @@ const redisReadHandler = async (context) => {
  *
  * NOTE this will answer 204 if the input was accepted and sent to redis, otherwise 422 with a list of validation
  * errors.
- * @private
+ *
+ * @see FeatureToggles#changeFeatureValue
  */
 const redisUpdateHandler = async (context) => {
   try {
