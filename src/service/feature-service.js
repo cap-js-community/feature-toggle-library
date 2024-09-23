@@ -1,3 +1,8 @@
+/**
+ * Feature Service is the cds service implementation of the rest API to interact with toggles.
+ *
+ * @module FeatureService
+ */
 "use strict";
 
 const VError = require("verror");

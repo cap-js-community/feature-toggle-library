@@ -1,5 +1,7 @@
 /**
- * TODO overview jsdoc
+ * RedisWrapper is a thin wrapper around the node redis module.
+ *
+ * @module RedisWrapper
  */
 "use strict";
 

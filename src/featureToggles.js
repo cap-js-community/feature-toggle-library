@@ -4,11 +4,10 @@
  * {@link https://cap-js-community.github.io/feature-toggle-library/ Documentation}
  *
  * important usage functions:
- * @see getFeatureValue
- * @see changeFeatureValue
- * @see registerFeatureValueChangeHandler
+ * @see FeatureToggles#getFeatureValue
+ * @see FeatureToggles#changeFeatureValue
+ * @see FeatureToggles#registerFeatureValueChangeHandler
  */
-
 "use strict";
 
 // TODO locale for validation messages

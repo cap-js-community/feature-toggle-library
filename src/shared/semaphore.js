@@ -28,7 +28,7 @@ class Semaphore {
    * Returns a promise used to wait for semaphore to become available. This method should be awaited.
    * @returns A promise that gets resolved when execution is allowed to proceed.
    *
-   * @alias wait
+   * @alias Semaphore#wait
    */
   async acquire() {
     const promiseSemaphoreReleased = this.promiseCurrentSemaphore;
@@ -45,7 +45,7 @@ class Semaphore {
    * Release semaphore. If there are other functions waiting, one of them will continue to execute in a future
    * iteration of the event loop.
    *
-   * @alias signal
+   * @alias Semaphore#signal
    */
   release() {
     if (this.resolveCurrentSemaphore) {
