@@ -900,7 +900,7 @@ class FeatureToggles {
   }
 
   /**
-   * Get feature infos for all featureKeys.
+   * Get server-local feature infos for all configured keys.
    */
   getFeaturesInfos() {
     this._ensureInitialized();
@@ -911,10 +911,9 @@ class FeatureToggles {
   }
 
   /**
-   * Get fresh feature infos for all keys that exist in the redis hash entry, including those that may not be in the
-   * configuration.
+   * Get remote feature infos for all keys that exist in the redis hash entry, including keys that are not configured.
    */
-  async getFreshFeaturesInfos() {
+  async getRemoteFeaturesInfos() {
     this._ensureInitialized();
     if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
       return null;

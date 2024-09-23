@@ -32,8 +32,7 @@ const stateHandler = async (context) => {
  */
 const redisReadHandler = async (context) => {
   try {
-    // TODO does not refresh local state...
-    const result = await toggles.getFreshFeaturesInfos();
+    const result = await toggles.getRemoteFeaturesInfos();
     if (result === null) {
       context.error({ code: 503, message: "cloud not reach redis during redis read" });
       return;
