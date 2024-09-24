@@ -111,7 +111,7 @@ This service endpoint will enable operations teams to understand toggle states. 
 
 ### Read Feature Toggles State
 
-Get all information about the current in-memory state of all toggles.
+Get information about the current in-memory state of all configured toggles.
 
 <b>Example Request/Response</b>
 
@@ -172,6 +172,23 @@ Get all information about the current in-memory state of all toggles.
 
 Similar to the read privilege endpoints, these endpoints are meant to modify toggle state. For practical requests,
 check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
+
+### Redis State
+
+Get information about the remote redis state of all maintained toggles, even ones that are not configured. This
+endpoint will show the state within redis. Only toggles that differ from their fallback values are visible there.
+
+<b>Example Request/Response</b>
+
+- Request
+  ```
+  POST /rest/feature/redisRead
+  Authorization: ...
+  ```
+- Response TODO
+  ```
+
+  ```
 
 ### Update Feature Toggle
 
@@ -247,21 +264,6 @@ Update the toggle state on Redis, which in turn is published to all server insta
     }
   }
   ```
-
-### Re-Sync Server with Redis
-
-Force server to re-sync with Redis, this should never be necessary. It returns the same JSON structure as
-`/state`, after re-syncing.
-
-<b>Example Request/Response</b>
-
-- Request
-  ```
-  POST /rest/feature/redisRead
-  Authorization: ...
-  ```
-- Response<br>
-  Same as [Read Feature Toggles State](#read-feature-toggles-state).
 
 ## Service Endpoints for Admin Privilege
 
