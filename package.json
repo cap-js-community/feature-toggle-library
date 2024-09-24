@@ -18,7 +18,7 @@
     "eslint:fix": "npm run eslint -- --fix",
     "prettier": "prettier \"**/*.{js,json,md,yml,yaml}\" . --check",
     "prettier:fix": "npm run prettier -- --log-level error --write",
-    "jsdoc": "npx jsdoc --pedantic src/**",
+    "jsdoc": "jsdoc --pedantic src/**",
     "docs": "cd docs && bundle exec jekyll serve",
     "docs:install": "cd docs && npx shx rm -rf vendor Gemfile.lock && bundle install",
     "cloc": "npx cloc --vcs=git --read-lang-def=cloc.def src",
@@ -38,6 +38,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jest": "^28.8.3",
     "jest": "^29.7.0",
+    "jsdoc": "^4.0.3",
     "prettier": "^3.3.3"
   },
   "homepage": "https://cap-js-community.github.io/feature-toggle-library/",
