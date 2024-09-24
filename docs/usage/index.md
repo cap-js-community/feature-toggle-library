@@ -302,6 +302,8 @@ processing delay until the change is picked up by all subscribers.
 Setting a feature value to `null` will delete the associated remote state and effectively reset it to its fallback
 value.
 
+_Option: clearSubScopes_
+
 Since setting values for scope-combinations happens additively, it can become hard to keep track of which combinations
 have dedicated values attached to them. If you want to set a value _and_ make sure that there isn't a more specific
 scope-combination, which overrides that value, then you can use the option `{ clearSubScopes: true }` as a third
@@ -313,6 +315,19 @@ await toggles.changeFeatureValue("/srv/util/logger/logLevel", "error", {}, { cle
 
 will set the root-scope value to `"error"` and remove all sub-scopes. See
 [scoping]({{ site.baseurl }}/concepts/#scoping) for context.
+
+_Option: remoteOnly_
+
+When you find toggle values in Redis that are not configured, marked with `{ "SOURCE": "NONE" }`, it usually makes
+sense to remove them. In this situation we want to change _just Redis_, but bypass the local server state update and
+the usual validation, change handlers, and server instance change propagation. To achieve this, you can use the
+`remoteOnly` option. For example
+
+```javascript
+await toggles.changeFeatureValue("/legacy-key", null, {}, { clearSubScopes: true, remoteOnly: true });
+```
+
+will remove all Redis toggle values associated with the `/legacy-key` key.
 
 ### Resetting Feature Value
 
