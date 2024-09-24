@@ -321,13 +321,18 @@ _Option: remoteOnly_
 When you find toggle values in Redis that are not configured, marked with `{ "SOURCE": "NONE" }`, it usually makes
 sense to remove them. In this situation we want to change _just Redis_, but bypass the local server state update and
 the usual validation, change handlers, and server instance change propagation. To achieve this, you can use the
-`remoteOnly` option. For example
+`{ remoteOnly: true }` option. For example
 
 ```javascript
 await toggles.changeFeatureValue("/legacy-key", null, {}, { clearSubScopes: true, remoteOnly: true });
 ```
 
 will remove all Redis toggle values associated with the `/legacy-key` key.
+
+{: .info }
+Changes with the `{ remoteOnly: true }` option will be blocked for _configured_ toggles. In order to avoid situations
+where the remote state of these toggles is accidentally changed in a way that bypasses validations and server state
+updates.
 
 ### Resetting Feature Value
 
