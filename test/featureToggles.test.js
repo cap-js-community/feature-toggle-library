@@ -698,11 +698,14 @@ describe("feature toggles test", () => {
 
     test("changeFeatureValue with option clearSubScopes", async () => {
       await toggles.initializeFeatures({ config: mockConfig });
-      expect(await toggles.changeFeatureValue(FEATURE.B, 10)).toBeUndefined();
-      expect(await toggles.changeFeatureValue(FEATURE.B, 100, { tenant: "a" })).toBeUndefined();
-      expect(await toggles.changeFeatureValue(FEATURE.B, 1000, { tenant: "b" })).toBeUndefined();
-      redisWrapperMock.publishMessage.mockClear();
       redisWrapperMock.watchedHashGetSetObject.mockClear();
+      await redisWrapperMock._setValues({
+        [FEATURE.B]: {
+          [SCOPE_ROOT_KEY]: 10,
+          [FeatureToggles.getScopeKey({ tenant: "a" })]: 100,
+          [FeatureToggles.getScopeKey({ tenant: "b" })]: 1000,
+        },
+      });
 
       expect(await toggles.changeFeatureValue(FEATURE.B, 11, {}, { clearSubScopes: true })).toBeUndefined();
       expect(toggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
