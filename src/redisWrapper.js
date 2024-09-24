@@ -1,5 +1,8 @@
 /**
- * TODO overview jsdoc
+ * RedisWrapper is a thin wrapper around the node redis module.
+ *
+ * @see {@link https://www.npmjs.com/package/redis|redis on npm}
+ * @module redis-wrapper
  */
 "use strict";
 
@@ -9,6 +12,7 @@ const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { Semaphore } = require("./shared/semaphore");
+const { tryJsonParse } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisWrapper";
 const VERROR_CLUSTER_NAME = "RedisWrapperError";
@@ -280,7 +284,31 @@ const get = async (key) => await _clientExec("GET", { key });
  */
 const getObject = async (key) => {
   const result = await get(key);
-  return result === null ? null : JSON.parse(result);
+  return result === null ? null : (tryJsonParse(result) ?? null);
+};
+
+/**
+ * Asynchronously get all entries under a given hash.
+ *
+ * @param key
+ * @returns {Promise<object|null>}
+ */
+const hashGetAll = async (key) => await _clientExec("HGETALL", { key });
+
+/**
+ * Asynchronously get all entries under a given hash and parse the values into objects.
+ *
+ * @param key
+ * @returns {Promise<object|null>}
+ */
+const hashGetAllObjects = async (key) => {
+  const result = await hashGetAll(key);
+  return result === null
+    ? null
+    : Object.entries(result).reduce((acc, [key, value]) => {
+        acc[key] = tryJsonParse(value) ?? null;
+        return acc;
+      }, {});
 };
 
 /**
@@ -327,7 +355,8 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
       await mainClient.WATCH(key);
 
       const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
-      const oldValue = mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : JSON.parse(oldValueRaw);
+      const oldValue =
+        mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
       const newValueRaw = mode === MODE.RAW ? newValue : newValue === null ? null : JSON.stringify(newValue);
 
@@ -539,6 +568,8 @@ module.exports = {
   type,
   get,
   getObject,
+  hashGetAll,
+  hashGetAllObjects,
   set,
   del,
   setObject,

@@ -4,11 +4,10 @@
  * {@link https://cap-js-community.github.io/feature-toggle-library/ Documentation}
  *
  * important usage functions:
- * @see getFeatureValue
- * @see changeFeatureValue
- * @see registerFeatureValueChangeHandler
+ * @see FeatureToggles#getFeatureValue
+ * @see FeatureToggles#changeFeatureValue
+ * @see FeatureToggles#registerFeatureValueChangeHandler
  */
-
 "use strict";
 
 // TODO locale for validation messages
@@ -24,7 +23,6 @@ const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handlerCollection");
 const { LimitedLazyCache } = require("./shared/cache");
-const { Semaphore } = require("./shared/semaphore");
 const { ENV, isObject, tryRequire, tryPathReadable, tryJsonParse } = require("./shared/static");
 
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
@@ -39,6 +37,7 @@ const SCOPE_KEY_OUTER_SEPARATOR = "##";
 const SCOPE_ROOT_KEY = "//";
 
 const CONFIG_SOURCE = Object.freeze({
+  NONE: "NONE", // for toggles that are not configured
   RUNTIME: "RUNTIME",
   FILE: "FILE",
   AUTO: "AUTO",
@@ -110,6 +109,9 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 const readFileAsync = promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
+/**
+ * FeatureToggles main library API class.
+ */
 class FeatureToggles {
   static __instance;
 
@@ -285,6 +287,7 @@ class FeatureToggles {
     this.__featureKeys = [];
     this.__fallbackValues = {};
     this.__stateScopedValues = {};
+    this.__initializePromise = undefined;
     this.__isInitialized = false;
     this.__isConfigProcessed = false;
   }
@@ -345,8 +348,8 @@ class FeatureToggles {
   // START OF VALIDATION SECTION
   // ========================================
 
-  static _isValidFeatureKey(fallbackValues, featureKey) {
-    return typeof featureKey === "string" && Object.prototype.hasOwnProperty.call(fallbackValues, featureKey);
+  static _isValidFeatureKey(config, featureKey) {
+    return typeof featureKey === "string" && Object.prototype.hasOwnProperty.call(config, featureKey);
   }
 
   static _isValidFeatureValueType(value) {
@@ -362,12 +365,20 @@ class FeatureToggles {
   }
 
   // NOTE: this function is used during initialization, so we cannot check this.__isInitialized
-  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isChange = false } = {}) {
+  async _validateFeatureValue(featureKey, value, { scopeMap, scopeKey, isChange = false, remoteOnly = false } = {}) {
     if (!this.__isConfigProcessed) {
       return [{ errorMessage: "not initialized" }];
     }
 
-    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
+    // NOTE: for remoteOnly we only allow values that are not configured
+    if (remoteOnly) {
+      if (this.__config[featureKey]) {
+        return [{ featureKey, errorMessage: "remoteOnly is not allowed for configured toggles" }];
+      }
+      return [];
+    }
+
+    if (!FeatureToggles._isValidFeatureKey(this.__config, featureKey)) {
       return [{ featureKey, errorMessage: "feature key is not valid" }];
     }
 
@@ -525,18 +536,21 @@ class FeatureToggles {
   }
 
   /**
-   * @typedef ValidationError
    * ValidationError must have a user-readable errorMessage. The message can use errorMessageValues, i.e., parameters
    * which are ignored for localization, but mixed in when the errorMessage is presented to the user.
    *
-   * Example:
+   * @example
+   * const validationErrors = [
    *   { errorMessage: "got bad value" },
    *   { errorMessage: 'got bad value with parameter "{0}"', errorMessageValues: [paramFromValue(value)] }
+   * ];
    *
+   * @typedef ValidationError
    * @type object
    * @property {string}         featureKey            feature toggle
    * @property {string}         errorMessage          user-readable error message
-   * @property {Array<string>}  [errorMessageValues]  optional parameters for error message, which are ignored for localization
+   * @property {Array<string>}  [errorMessageValues]  optional parameters for error message, which are ignored for
+   *                                                    localization
    */
   /**
    * Validate the value of a given featureKey, value pair. Allows passing an optional scopeMap that is added to
@@ -653,7 +667,7 @@ class FeatureToggles {
     let migrationCount = 0;
     for (const [featureKey, value] of stringTypeStateEntries) {
       if (
-        !FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey) ||
+        !FeatureToggles._isValidFeatureKey(this.__config, featureKey) ||
         this.__fallbackValues[featureKey] === value
       ) {
         continue;
@@ -831,7 +845,10 @@ class FeatureToggles {
    * related internal state, and starts communication with redis.
    */
   async initializeFeatures(options) {
-    return await Semaphore.makeExclusiveReturning(this._initializeFeatures.bind(this))(options);
+    if (!this.__initializePromise) {
+      this.__initializePromise = this._initializeFeatures(options);
+    }
+    return await this.__initializePromise;
   }
 
   // ========================================
@@ -841,21 +858,12 @@ class FeatureToggles {
   // START OF GET_FEATURES_INFOS SECTION
   // ========================================
 
-  static _getFeatureInfoConfig(config, featureKey) {
-    return Object.entries(config[featureKey]).reduce((acc, [configKey, value]) => {
-      if (CONFIG_INFO_KEY[configKey]) {
-        acc[configKey] = value;
-      }
-      return acc;
-    }, {});
-  }
-
-  _getFeatureInfo(featureKey) {
+  _getFeatureInfo(featureKey, { stateScopedValues = this.__stateScopedValues } = {}) {
     let rootValue;
     let foundScopedValues = false;
-    let scopedValues;
-    if (this.__stateScopedValues[featureKey]) {
-      scopedValues = Object.entries(this.__stateScopedValues[featureKey]).reduce((acc, [scopeKey, value]) => {
+    let scopedValuesInfo;
+    if (stateScopedValues[featureKey]) {
+      scopedValuesInfo = Object.entries(stateScopedValues[featureKey]).reduce((acc, [scopeKey, value]) => {
         if (scopeKey === SCOPE_ROOT_KEY) {
           rootValue = value;
         } else {
@@ -866,11 +874,21 @@ class FeatureToggles {
       }, {});
     }
 
+    const isConfigured = this.__config[featureKey];
+    const configInfo = isConfigured
+      ? Object.entries(this.__config[featureKey]).reduce((acc, [configKey, value]) => {
+          if (CONFIG_INFO_KEY[configKey]) {
+            acc[configKey] = value;
+          }
+          return acc;
+        }, {})
+      : { [CONFIG_KEY.SOURCE]: CONFIG_SOURCE.NONE };
+
     return {
-      fallbackValue: this.__fallbackValues[featureKey],
+      ...(isConfigured && { fallbackValue: this.__fallbackValues[featureKey] }),
       ...(rootValue !== undefined && { rootValue }),
-      ...(foundScopedValues && { scopedValues }),
-      config: FeatureToggles._getFeatureInfoConfig(this.__config, featureKey),
+      ...(foundScopedValues && { scopedValues: scopedValuesInfo }),
+      config: configInfo,
     };
   }
 
@@ -879,19 +897,39 @@ class FeatureToggles {
    */
   getFeatureInfo(featureKey) {
     this._ensureInitialized();
-    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
+    if (!FeatureToggles._isValidFeatureKey(this.__config, featureKey)) {
       return null;
     }
     return this._getFeatureInfo(featureKey);
   }
 
   /**
-   * Get feature infos for all featureKeys.
+   * Get server-local feature infos for all configured keys.
    */
   getFeaturesInfos() {
     this._ensureInitialized();
     return this.__featureKeys.reduce((acc, featureKey) => {
       acc[featureKey] = this._getFeatureInfo(featureKey);
+      return acc;
+    }, {});
+  }
+
+  /**
+   * Get remote feature infos for all keys that exist in the redis hash entry, including keys that are not configured.
+   */
+  async getRemoteFeaturesInfos() {
+    this._ensureInitialized();
+    if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
+      return null;
+    }
+
+    const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
+    if (!remoteStateScopedValues) {
+      return null;
+    }
+
+    return Object.keys(remoteStateScopedValues).reduce((acc, key) => {
+      acc[key] = this._getFeatureInfo(key, { stateScopedValues: remoteStateScopedValues });
       return acc;
     }, {});
   }
@@ -1133,26 +1171,30 @@ class FeatureToggles {
   }
 
   /**
-   * @typedef ChangeOptions
-   * ChangeOptions are extra options to control a change to a feature toggle value. For now, there is only one option
+   * ChangeOptions are extra options for the change of a feature toggle.
    *
    * Example:
    *   { clearSubScopes: true }
    *
+   * @typedef ChangeOptions
    * @type object
    * @property {boolean}  [clearSubScopes]  switch to clear all sub scopes, defaults to false
+   * @property {boolean}  [remoteOnly]      switch to skip all server-local processing to change toggles that are not
+   *                                          configured, defaults to false
    */
   /**
-   * @typedef ChangeEntry
    * ChangeEntry represents a single value change related to a feature key and an optional scopeMap. Setting newValue
    * to null means delete the value. Omitting the scopeMap changes the root scope.
    *
-   * Example:
-   *   const FEATURE_VALUE_KEY = "/server/part_x/feature_y"
+   * @example
+   * const FEATURE_VALUE_KEY = "/server/part_x/feature_y";
+   * const entries = [
    *   { featureKey: FEATURE_VALUE_KEY, newValue: true },
-   *   { featureKey: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } }
+   *   { featureKey: FEATURE_VALUE_KEY, newValue: true, scopeMap: { tenant: "t1" } },
    *   { featureKey: FEATURE_VALUE_KEY, newValue: null, options: { clearSubScopes: true } }
+   * ];
    *
+   * @typedef ChangeEntry
    * @type object
    * @property {string}                      featureKey        feature key
    * @property {string|number|boolean|null}  newValue          feature value after change
@@ -1181,6 +1223,10 @@ class FeatureToggles {
   // also have to trigger changes for any small scope-level change leading to lots of callbacks.
   async refreshFeatureValues() {
     this._ensureInitialized();
+    if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
+      return;
+    }
+
     try {
       const [validatedStateScopedValues, validationErrors] = await this._freshStateScopedValues();
       if (Array.isArray(validationErrors) && validationErrors.length > 0) {
@@ -1342,11 +1388,13 @@ class FeatureToggles {
   }
 
   async _changeRemoteFeatureValue(featureKey, newValue, scopeMap, options) {
+    const { remoteOnly } = options ?? {};
     const scopeKey = FeatureToggles.getScopeKey(scopeMap);
     const validationErrors = await this._validateFeatureValue(featureKey, newValue, {
       scopeMap,
       scopeKey,
       isChange: true,
+      remoteOnly,
     });
     if (Array.isArray(validationErrors) && validationErrors.length > 0) {
       return validationErrors;
@@ -1355,31 +1403,33 @@ class FeatureToggles {
     const integrationMode = await redis.getIntegrationMode();
     // NOTE: for NO_REDIS mode, we just do a local update without further validation
     if (integrationMode === REDIS_INTEGRATION_MODE.NO_REDIS) {
-      const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
-        this.__superScopeCache,
-        this.__stateScopedValues,
-        this.__fallbackValues,
-        featureKey,
-        scopeMap
-      );
-      FeatureToggles._updateStateScopedValuesOneScopeInPlace(
-        this.__stateScopedValues,
-        featureKey,
-        newValue,
-        scopeKey,
-        options
-      );
-      const newActualValue =
-        newValue !== null
-          ? newValue
-          : FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
-              this.__superScopeCache,
-              this.__stateScopedValues,
-              this.__fallbackValues,
-              featureKey,
-              scopeMap
-            );
-      await this._triggerChangeHandlers(featureKey, oldValue, newActualValue, scopeMap, options);
+      if (!remoteOnly) {
+        const oldValue = FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+          this.__superScopeCache,
+          this.__stateScopedValues,
+          this.__fallbackValues,
+          featureKey,
+          scopeMap
+        );
+        FeatureToggles._updateStateScopedValuesOneScopeInPlace(
+          this.__stateScopedValues,
+          featureKey,
+          newValue,
+          scopeKey,
+          options
+        );
+        const newActualValue =
+          newValue !== null
+            ? newValue
+            : FeatureToggles._getFeatureValueForScopeAndStateAndFallback(
+                this.__superScopeCache,
+                this.__stateScopedValues,
+                this.__fallbackValues,
+                featureKey,
+                scopeMap
+              );
+        await this._triggerChangeHandlers(featureKey, oldValue, newActualValue, scopeMap, options);
+      }
       return;
     }
 
@@ -1387,10 +1437,15 @@ class FeatureToggles {
       FeatureToggles._updateScopedValuesInPlace(scopedValues, newValue, scopeKey, options);
     try {
       await redis.watchedHashGetSetObject(this.__redisKey, featureKey, newRedisStateCallback);
-      // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
-      // from the scopeMap by the receiver, so we leave it out here.
-      const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
-      await redis.publishMessage(this.__redisChannel, FeatureToggles._serializeChangesToRefreshMessage([changeEntry]));
+      if (!remoteOnly) {
+        // NOTE: it would be possible to pass along the scopeKey here as well, but really it can be efficiently computed
+        // from the scopeMap by the receiver, so we leave it out here.
+        const changeEntry = { featureKey, newValue, ...(scopeMap && { scopeMap }), ...(options && { options }) };
+        await redis.publishMessage(
+          this.__redisChannel,
+          FeatureToggles._serializeChangesToRefreshMessage([changeEntry])
+        );
+      }
     } catch (err) {
       throw new VError(
         {
@@ -1508,7 +1563,7 @@ class FeatureToggles {
    * be executed during initialization, otherwise it will only run for new values coming in after initialization.
    * Errors happening during validation execution will be logged and communicated to user as generic problem.
    *
-   * usage:
+   * @example
    * registerFeatureValueValidation(featureKey, (newValue) => {
    *   if (isBad(newValue)) {
    *     return { errorMessage: "got bad value" };

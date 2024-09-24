@@ -1,3 +1,10 @@
+/**
+ * PromiseAllDone is similar to {@code Promise.all}, but it waits for all promises to complete before resolving or
+ * rejecting.
+ *
+ * @ignore
+ * @module shared/promise-all-done
+ */
 "use strict";
 
 const VError = require("verror");

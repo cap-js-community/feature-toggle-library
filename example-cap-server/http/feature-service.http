@@ -2,6 +2,25 @@
 GET {{base_url}}/rest/feature/state
 Authorization: Basic system system
 
+### redis_read
+POST {{base_url}}/rest/feature/redisRead
+Authorization: Basic system system
+Content-Type: application/json
+
+### redis_update | reset toggles that are not configured
+POST {{base_url}}/rest/feature/redisUpdate
+Authorization: Basic system system
+Content-Type: application/json
+
+{
+  "key": "/srv/memoryStatistics/logInterval",
+  "value": null,
+  "options": {
+    "clearSubScopes": true,
+    "remoteOnly": true
+  }
+}
+
 ### redis_update | fts 1
 POST {{base_url}}/rest/feature/redisUpdate
 Authorization: Basic system system

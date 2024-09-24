@@ -1,3 +1,8 @@
+/**
+ * Feature Service is the cds service implementation of the rest API to interact with toggles.
+ *
+ * @module service/feature-service
+ */
 "use strict";
 
 const VError = require("verror");
@@ -20,7 +25,9 @@ const textFormat = (pattern, values) =>
   });
 
 /**
- * Read all feature values.
+ * Get server-local feature infos for all configured keys.
+ *
+ * @see FeatureToggles#getFeaturesInfos
  */
 const stateHandler = async (context) => {
   const result = toggles.getFeaturesInfos();
@@ -28,12 +35,17 @@ const stateHandler = async (context) => {
 };
 
 /**
- * Refresh feature values from redis and then read all.
+ * Get remote feature infos for all keys that exist in the redis hash entry, including keys that are not configured.
+ *
+ * @see FeatureToggles#getRemoteFeaturesInfos
  */
 const redisReadHandler = async (context) => {
   try {
-    await toggles.refreshFeatureValues();
-    const result = toggles.getFeaturesInfos();
+    const result = await toggles.getRemoteFeaturesInfos();
+    if (result === null) {
+      context.error({ code: 503, message: "cloud not reach redis during redis read" });
+      return;
+    }
     context.reply(result);
   } catch (err) {
     logger.error(
@@ -45,7 +57,7 @@ const redisReadHandler = async (context) => {
         "error during redis read"
       )
     );
-    context.reject({ code: 500, message: "caught unexpected error during redis read, check server logs" });
+    context.error({ code: 500, message: "caught unexpected error during redis read, check server logs" });
   }
 };
 
@@ -54,17 +66,18 @@ const redisReadHandler = async (context) => {
  * fallback value. Validation ensures that only values of type string, number, and boolean are allowed. You can also
  * scope changes to only take effect in specific contexts.
  *
- * Examples:
- *   single-feature input = { "key": "a", "value": true }
- *   multi-feature input  = [
- *     { "key": "a", "value": true },
- *     { "key": "b", "value": 10 }
- *   ]
- *   scoped change input  = { "key": "a", "value": true, "scope": { "tenant": "t1" }}
+ * The endpoint will answer with 204 if the input was accepted and sent to redis, otherwise 422 with a list of
+ * validation errors.
  *
- * NOTE this will answer 204 if the input was accepted and sent to redis, otherwise 422 with a list of validation
- * errors.
- * @private
+ * @example
+ * single-feature input = { "key": "a", "value": true };
+ * multi-feature input  = [
+ *   { "key": "a", "value": true },
+ *   { "key": "b", "value": 10 }
+ * ];
+ * scoped change input  = { "key": "a", "value": true, "scope": { "tenant": "t1" }};
+ *
+ * @see FeatureToggles#changeFeatureValue
  */
 const redisUpdateHandler = async (context) => {
   try {
@@ -97,14 +110,14 @@ const redisUpdateHandler = async (context) => {
         "error during redis update"
       )
     );
-    context.reject({ code: 500, message: "caught unexpected error during redis update, check server logs" });
+    context.error({ code: 500, message: "caught unexpected error during redis update, check server logs" });
   }
 };
 
 const redisSendCommandHandler = async (context) => {
   const { command } = context.data;
   if (!Array.isArray(command)) {
-    context.reject({ code: 400, message: "request body needs to contain a 'command' field of type array" });
+    context.error({ code: 400, message: "request body needs to contain a 'command' field of type array" });
     return;
   }
   const redisResponse = await redis.sendCommand(command);
