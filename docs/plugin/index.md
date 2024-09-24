@@ -44,7 +44,7 @@ It will usually be sufficient to set the `serviceAccessRoles` configuration, whi
 endpoints, but not the admin endpoints. If more discriminating access control is required, the `readAccessRoles` and
 `writeAccessRoles` can be set separately. For debugging purposes, you can also set the `adminAccessRoles`.
 
-{: .warn}
+{: .warn }
 As the name suggests, the `adminAccessRoles` should be considered sensitive. It allows direct root access to the
 underlying redis.
 
@@ -97,7 +97,7 @@ automatically detect it and configure it as follows:
   fallbackValue: false
 ```
 
-{: .info}
+{: .info }
 This automatic configuration can be _overwritten_, by using a configuration file and adding a dedicated configuration
 with the same key `/fts/my-feature`.
 
@@ -109,7 +109,7 @@ for the related requests. For an example check out the [Example CAP Server](http
 This service endpoint will enable operations teams to understand toggle states. For practical requests, check the
 [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
 
-### Read Feature Toggles State
+### Read Server State
 
 Get information about the current in-memory state of all configured toggles.
 
@@ -168,12 +168,7 @@ Get information about the current in-memory state of all configured toggles.
   }
   ```
 
-## Service Endpoints for Write Privilege
-
-Similar to the read privilege endpoints, these endpoints are meant to modify toggle state. For practical requests,
-check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
-
-### Redis State
+### Read Redis State
 
 Get information about the remote redis state of all maintained toggles, even ones that are not configured. This
 endpoint will show the state within redis. Only toggles that differ from their fallback values are visible there.
@@ -185,10 +180,58 @@ endpoint will show the state within redis. Only toggles that differ from their f
   POST /rest/feature/redisRead
   Authorization: ...
   ```
-- Response TODO
+- Response
+  ```
+  HTTP/1.1 200 OK
+  ...
+  ```
+  ```json
+  {
+    "/check/priority": {
+      "fallbackValue": 0,
+      "rootValue": 1,
+      "scopedValues": {
+        "tenant::people": 10,
+        "user::alice@wonderland.com": 100
+      },
+      "config": {
+        "SOURCE": "FILE",
+        "TYPE": "number",
+        "VALIDATIONS": [
+          {
+            "scopes": ["user", "tenant"]
+          },
+          {
+            "regex": "^\\d+$"
+          },
+          {
+            "module": "$CONFIG_DIR/validators",
+            "call": "validateTenantScope"
+          }
+        ]
+      }
+    },
+    "/legacy-key": {
+      "rootValue": 10,
+      "scopedValues": {
+        "tenant::a": 100,
+        "tenant::b": 1000
+      },
+      "config": {
+        "SOURCE": "NONE"
+      }
+    }
+  }
   ```
 
-  ```
+{: .info }
+Note that reading the redis state directly can reveal legacy key values that used to be configured and maintained but
+are no longer in the configuration. These values can be cleaned up by using the [redisUpdate](#update-feature-toggle) endpoint with the `remoteOnly` option.
+
+## Service Endpoints for Write Privilege
+
+Similar to the read privilege endpoints, these endpoints are meant to modify toggle state. For practical requests,
+check the [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
 
 ### Update Feature Toggle
 
