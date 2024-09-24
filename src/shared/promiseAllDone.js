@@ -3,7 +3,7 @@
  * rejecting.
  *
  * @ignore
- * @module PromiseAllDone
+ * @module shared/promise-all-done
  */
 "use strict";
 

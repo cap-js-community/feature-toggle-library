@@ -1,7 +1,7 @@
 /**
  * RedisWrapper is a thin wrapper around the node redis module.
  *
- * @module RedisWrapper
+ * @module redis-wrapper
  */
 "use strict";
 
