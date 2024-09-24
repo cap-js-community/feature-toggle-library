@@ -1,6 +1,7 @@
 /**
  * RedisWrapper is a thin wrapper around the node redis module.
  *
+ * @see {@link https://www.npmjs.com/package/redis|redis on npm}
  * @module redis-wrapper
  */
 "use strict";
