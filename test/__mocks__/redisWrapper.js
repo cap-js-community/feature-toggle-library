@@ -56,6 +56,7 @@ module.exports = {
   publishMessage,
   type,
   getObject,
+  hashGetAllObjects: jest.fn(),
   watchedHashGetSetObject,
   subscribe: jest.fn(),
   getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.CF_REDIS),

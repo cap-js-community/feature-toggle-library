@@ -549,11 +549,30 @@ describe("feature toggles test", () => {
           "fallbackValue": "best",
         }
       `);
+      expect(toggles.getFeatureInfo("unmanaged-key")).toBe(null);
     });
 
     test("getFeaturesInfos", async () => {
       await toggles.initializeFeatures({ config: mockConfig });
+
       expect(toggles.getFeaturesInfos()).toMatchSnapshot();
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
+    test("getRemoteFeaturesInfos", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      redisWrapperMock.hashGetAllObjects.mockImplementationOnce(() => ({
+        [FEATURE.B]: { [SCOPE_ROOT_KEY]: 1, [FeatureToggles.getScopeKey({ tenant: "a" })]: 10 },
+        "legacy-key": {
+          [SCOPE_ROOT_KEY]: "legacy-root",
+          [FeatureToggles.getScopeKey({ tenant: "a" })]: "legacy-scoped-value",
+        },
+      }));
+
+      expect(await toggles.getRemoteFeaturesInfos()).toMatchSnapshot();
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
     });
 
     test("getFeatureValue", async () => {
