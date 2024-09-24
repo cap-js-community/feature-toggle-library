@@ -330,9 +330,9 @@ await toggles.changeFeatureValue("/legacy-key", null, {}, { clearSubScopes: true
 will remove all Redis toggle values associated with the `/legacy-key` key.
 
 {: .info }
-Changes with the `{ remoteOnly: true }` option will be blocked for _configured_ toggles. In order to avoid situations
-where the remote state of these toggles is accidentally changed in a way that bypasses validations and server state
-updates.
+Changes with the `{ remoteOnly: true }` option will be blocked for _configured_ toggles. This happens to avoid
+situations where the remote state of these toggles is accidentally changed in a way that bypasses validations and
+server state updates.
 
 ### Resetting Feature Value
 
