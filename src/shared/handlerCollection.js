@@ -2,6 +2,7 @@
 
 /**
  * HandlerCollection is a convenience API to keep track of lists of (async) handlers.
+ * @ignore
  */
 class HandlerCollection {
   constructor() {
