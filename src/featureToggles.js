@@ -1575,7 +1575,6 @@ class FeatureToggles {
    *
    * @param {string}     featureKey
    * @param {Validator}  validator
-   *
    */
   registerFeatureValueValidation(featureKey, validator) {
     this.__featureValueValidators.registerHandler(featureKey, validator);
