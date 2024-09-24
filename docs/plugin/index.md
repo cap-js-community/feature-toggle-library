@@ -281,6 +281,29 @@ Update the toggle state on Redis, which in turn is published to all server insta
   ...
   ```
 
+- Valid Request with [remoteOnly]({{ site.baseurl }}/usage/#updating-feature-value)
+  ```
+  POST /rest/feature/redisUpdate
+  Authorization: ...
+  Content-Type: application/json
+  ```
+  ```json
+  {
+    "key": "/legacy-key",
+    "value": null,
+    "options": {
+      "clearSubScopes": true,
+      "remoteOnly": true
+    }
+  }
+  ```
+- Response
+
+  ```
+  HTTP/1.1 204 No Content
+  ...
+  ```
+
 - Invalid Request
   ```
   POST /rest/feature/redisUpdate
