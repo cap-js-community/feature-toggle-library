@@ -638,7 +638,17 @@ describe("feature toggles test", () => {
       await toggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      expect(await toggles.changeFeatureValue(FEATURE.C, "newa")).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.C, "newer")).toBeUndefined();
+      expect(toggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "RUNTIME",
+            "TYPE": "string",
+          },
+          "fallbackValue": "best",
+          "rootValue": "newer",
+        }
+      `);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(1);
       expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledWith(redisKey, FEATURE.C, expect.any(Function));
       expect(redisWrapperMock.publishMessage).toHaveBeenCalledTimes(1);
@@ -646,7 +656,7 @@ describe("feature toggles test", () => {
         [
           [
             "feature-channel",
-            "[{"featureKey":"test/feature_c","newValue":"newa"}]",
+            "[{"featureKey":"test/feature_c","newValue":"newer"}]",
           ],
         ]
       `);
@@ -669,9 +679,69 @@ describe("feature toggles test", () => {
           },
         ]
       `);
+      expect(toggles.getFeatureInfo(FEATURE.C)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "RUNTIME",
+            "TYPE": "string",
+          },
+          "fallbackValue": "best",
+        }
+      `);
       expect(redisWrapperMock.watchedHashGetSetObject).not.toHaveBeenCalled();
       expect(redisWrapperMock.publishMessage).not.toHaveBeenCalled();
       expect(redisWrapperMock.getObject).not.toHaveBeenCalled();
+
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
+    test("changeFeatureValue with option clearSubScopes", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      expect(await toggles.changeFeatureValue(FEATURE.B, 10)).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.B, 100, { tenant: "a" })).toBeUndefined();
+      expect(await toggles.changeFeatureValue(FEATURE.B, 1000, { tenant: "b" })).toBeUndefined();
+      redisWrapperMock.publishMessage.mockClear();
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
+
+      expect(await toggles.changeFeatureValue(FEATURE.B, 11, {}, { clearSubScopes: true })).toBeUndefined();
+      expect(toggles.getFeatureInfo(FEATURE.B)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "RUNTIME",
+            "TYPE": "number",
+          },
+          "fallbackValue": 1,
+          "rootValue": 11,
+        }
+      `);
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(1);
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledWith(redisKey, FEATURE.B, expect.any(Function));
+      expect(redisWrapperMock.publishMessage).toHaveBeenCalledTimes(1);
+      expect(redisWrapperMock.publishMessage.mock.calls).toMatchInlineSnapshot(`
+        [
+          [
+            "feature-channel",
+            "[{"featureKey":"test/feature_b","newValue":11,"scopeMap":{},"options":{"clearSubScopes":true}}]",
+          ],
+        ]
+      `);
+      expect(redisWrapperMock.getObject).toHaveBeenCalledTimes(0);
+
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
+    test("changeFeatureValue with option remoteOnly", async () => {
+      await toggles.initializeFeatures({ config: mockConfig });
+      // TODO
+
+      expect(loggerSpy.warning).not.toHaveBeenCalled();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    });
+
+    test("changeFeatureValue with option remoteOnly failing", async () => {
+      // TODO
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
