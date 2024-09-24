@@ -671,8 +671,8 @@ describe("feature toggles test", () => {
       await toggles.initializeFeatures({ config: mockConfig });
       redisWrapperMock.watchedHashGetSetObject.mockClear();
 
-      const validationErrorsInvalidKey = await toggles.changeFeatureValue("invalid", 1);
-      expect(validationErrorsInvalidKey).toMatchInlineSnapshot(`
+      const validationErrors = await toggles.changeFeatureValue("invalid", 1);
+      expect(validationErrors).toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "feature key is not valid",
@@ -787,7 +787,64 @@ describe("feature toggles test", () => {
     });
 
     test("changeFeatureValue with option remoteOnly failing", async () => {
-      // TODO
+      await toggles.initializeFeatures({ config: mockConfig });
+      redisWrapperMock.watchedHashGetSetObject.mockClear();
+      redisWrapperMock._setValues({
+        [FEATURE.B]: {
+          [SCOPE_ROOT_KEY]: 10,
+          [FeatureToggles.getScopeKey({ tenant: "a" })]: 100,
+          [FeatureToggles.getScopeKey({ tenant: "b" })]: 1000,
+        },
+        [legacyKey]: {
+          [SCOPE_ROOT_KEY]: 20,
+          [FeatureToggles.getScopeKey({ tenant: "a" })]: 200,
+          [FeatureToggles.getScopeKey({ tenant: "b" })]: 2000,
+        },
+      });
+
+      const validationErrors = await toggles.changeFeatureValue(
+        FEATURE.B,
+        11,
+        {},
+        { clearSubScopes: true, remoteOnly: true }
+      );
+      expect(validationErrors).toMatchInlineSnapshot(`
+        [
+          {
+            "errorMessage": "remoteOnly is not allowed for configured toggles",
+            "featureKey": "test/feature_b",
+          },
+        ]
+      `);
+      expect(await toggles.getRemoteFeaturesInfos()).toMatchInlineSnapshot(`
+        {
+          "legacy-key": {
+            "config": {
+              "SOURCE": "NONE",
+            },
+            "rootValue": 20,
+            "scopedValues": {
+              "tenant::a": 200,
+              "tenant::b": 2000,
+            },
+          },
+          "test/feature_b": {
+            "config": {
+              "SOURCE": "RUNTIME",
+              "TYPE": "number",
+            },
+            "fallbackValue": 1,
+            "rootValue": 10,
+            "scopedValues": {
+              "tenant::a": 100,
+              "tenant::b": 1000,
+            },
+          },
+        }
+      `);
+      expect(redisWrapperMock.watchedHashGetSetObject).toHaveBeenCalledTimes(0);
+      expect(redisWrapperMock.publishMessage).toHaveBeenCalledTimes(0);
+      expect(redisWrapperMock.getObject).toHaveBeenCalledTimes(0);
 
       expect(loggerSpy.warning).not.toHaveBeenCalled();
       expect(loggerSpy.error).not.toHaveBeenCalled();
