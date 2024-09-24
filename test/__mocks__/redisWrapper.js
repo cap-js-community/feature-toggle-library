@@ -10,6 +10,11 @@ const getObject = jest.fn(async (key) => {
   return mockRedisState.values[key];
 });
 
+const hashGetAllObjects = jest.fn(async () => {
+  mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
+  return mockRedisState.values[redisKey];
+});
+
 const type = jest.fn(async () => "hash");
 
 const watchedHashGetSetObject = jest.fn(async (key, field, newValueCallback) => {
@@ -56,7 +61,7 @@ module.exports = {
   publishMessage,
   type,
   getObject,
-  hashGetAllObjects: jest.fn(),
+  hashGetAllObjects,
   watchedHashGetSetObject,
   subscribe: jest.fn(),
   getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.CF_REDIS),
