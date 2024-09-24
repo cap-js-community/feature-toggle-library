@@ -509,10 +509,10 @@ describe("feature toggles test", () => {
 
       const invalidKeys = [undefined, () => {}, [], {}, null, 0, "", true, "nonsense"];
       const validKeys = Object.keys(mockConfig);
-      expect(invalidKeys.map((key) => FeatureToggles._isValidFeatureKey(toggles.__fallbackValues, key))).toStrictEqual(
+      expect(invalidKeys.map((key) => FeatureToggles._isValidFeatureKey(toggles.__config, key))).toStrictEqual(
         invalidKeys.map(() => false)
       );
-      expect(validKeys.map((key) => FeatureToggles._isValidFeatureKey(toggles.__fallbackValues, key))).toStrictEqual(
+      expect(validKeys.map((key) => FeatureToggles._isValidFeatureKey(toggles.__config, key))).toStrictEqual(
         validKeys.map(() => true)
       );
 

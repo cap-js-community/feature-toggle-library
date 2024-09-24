@@ -348,8 +348,8 @@ class FeatureToggles {
   // START OF VALIDATION SECTION
   // ========================================
 
-  static _isValidFeatureKey(fallbackValues, featureKey) {
-    return typeof featureKey === "string" && Object.prototype.hasOwnProperty.call(fallbackValues, featureKey);
+  static _isValidFeatureKey(config, featureKey) {
+    return typeof featureKey === "string" && Object.prototype.hasOwnProperty.call(config, featureKey);
   }
 
   static _isValidFeatureValueType(value) {
@@ -378,7 +378,7 @@ class FeatureToggles {
       return [];
     }
 
-    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
+    if (!FeatureToggles._isValidFeatureKey(this.__config, featureKey)) {
       return [{ featureKey, errorMessage: "feature key is not valid" }];
     }
 
@@ -667,7 +667,7 @@ class FeatureToggles {
     let migrationCount = 0;
     for (const [featureKey, value] of stringTypeStateEntries) {
       if (
-        !FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey) ||
+        !FeatureToggles._isValidFeatureKey(this.__config, featureKey) ||
         this.__fallbackValues[featureKey] === value
       ) {
         continue;
@@ -897,7 +897,7 @@ class FeatureToggles {
    */
   getFeatureInfo(featureKey) {
     this._ensureInitialized();
-    if (!FeatureToggles._isValidFeatureKey(this.__fallbackValues, featureKey)) {
+    if (!FeatureToggles._isValidFeatureKey(this.__config, featureKey)) {
       return null;
     }
     return this._getFeatureInfo(featureKey);
