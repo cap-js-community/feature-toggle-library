@@ -116,7 +116,7 @@ Get all information about the current in-memory state of all toggles.
 <b>Example Request/Response</b>
 
 - Request
-  ```http
+  ```
   GET /rest/feature/state
   Authorization: ...
   ```
@@ -180,7 +180,7 @@ Update the toggle state on Redis, which in turn is published to all server insta
 <b>Example Request/Responses</b>
 
 - Valid Request
-  ```http
+  ```
   POST /rest/feature/redisUpdate
   Authorization: ...
   Content-Type: application/json
@@ -200,7 +200,7 @@ Update the toggle state on Redis, which in turn is published to all server insta
   ```
 
 - Valid Request with [clearSubScopes]({{ site.baseurl }}/usage/#updating-feature-value)
-  ```http
+  ```
   POST /rest/feature/redisUpdate
   Authorization: ...
   Content-Type: application/json
@@ -222,7 +222,7 @@ Update the toggle state on Redis, which in turn is published to all server insta
   ```
 
 - Invalid Request
-  ```http
+  ```
   POST /rest/feature/redisUpdate
   Authorization: ...
   Content-Type: application/json
@@ -256,7 +256,7 @@ Force server to re-sync with Redis, this should never be necessary. It returns t
 <b>Example Request/Response</b>
 
 - Request
-  ```http
+  ```
   POST /rest/feature/redisRead
   Authorization: ...
   ```
@@ -274,7 +274,7 @@ Send an arbitrary command to Redis. [https://redis.io/commands/](https://redis.i
 <b>Example Request/Responses</b>
 
 - Request INFO
-  ```http
+  ```
   POST /rest/feature/redisSendCommand
   Authorization: ...
   Content-Type: application/json
@@ -298,7 +298,7 @@ Send an arbitrary command to Redis. [https://redis.io/commands/](https://redis.i
   ...
   ```
 - Request KEYS
-  ```http
+  ```
   POST /rest/feature/redisSendCommand
   Authorization: ...
   Content-Type: application/json
