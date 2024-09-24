@@ -550,7 +550,7 @@ describe("feature toggles test", () => {
           "fallbackValue": "best",
         }
       `);
-      expect(toggles.getFeatureInfo("unmanaged-key")).toBe(null);
+      expect(toggles.getFeatureInfo(legacyKey)).toBe(null);
     });
 
     test("getFeaturesInfos", async () => {
