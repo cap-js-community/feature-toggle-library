@@ -753,16 +753,10 @@ describe("feature toggles test", () => {
       });
 
       expect(
-        await toggles.changeFeatureValue(legacyKey, 21, {}, { clearSubScopes: true, remoteOnly: true })
+        await toggles.changeFeatureValue(legacyKey, null, {}, { clearSubScopes: true, remoteOnly: true })
       ).toBeUndefined();
       expect(await toggles.getRemoteFeaturesInfos()).toMatchInlineSnapshot(`
         {
-          "legacy-key": {
-            "config": {
-              "SOURCE": "NONE",
-            },
-            "rootValue": 21,
-          },
           "test/feature_b": {
             "config": {
               "SOURCE": "RUNTIME",

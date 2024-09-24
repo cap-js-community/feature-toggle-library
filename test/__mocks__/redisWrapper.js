@@ -20,8 +20,13 @@ const type = jest.fn(async () => "hash");
 const watchedHashGetSetObject = jest.fn(async (key, field, newValueCallback) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
   mockRedisState.values[key] = mockRedisState.values[key] ? mockRedisState.values[key] : {};
-  mockRedisState.values[key][field] = await newValueCallback(mockRedisState.values[key][field]);
-  return mockRedisState.values[key][field];
+  const newValue = await newValueCallback(mockRedisState.values[key][field]);
+  if (newValue === null) {
+    Reflect.deleteProperty(mockRedisState.values[key], field);
+  } else {
+    mockRedisState.values[key][field] = newValue;
+  }
+  return newValue;
 });
 
 const registerMessageHandler = jest.fn((channel, handler) => {
