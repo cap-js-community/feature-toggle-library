@@ -178,8 +178,15 @@ values, so they will use their fallback values.
 
 ### Read Redis State
 
-Get information about the remote redis state of all maintained toggles, even ones that are not configured. This
-endpoint will show the state within redis. Only toggles that differ from their fallback values are visible there.
+Get information about the remote redis state of all toggles with maintained values, even ones that are not configured.
+This endpoint will show the state within redis. Only toggles with maintained values will be shown here. In the example,
+we can see `/check/priority` with the maintained values. We can also see a `/legacy-key` toggle, which has maintained
+values that are not associated with a configuration `{ "SOURCE": "NONE" }`.
+
+{: .info }
+Note that reading the redis state can reveal legacy key values that used to be configured and maintained but are no
+longer in the configuration. These values can be cleaned up by using the [redisUpdate](#update-feature-toggle) endpoint
+with the `remoteOnly` option.
 
 <b>Example Request/Response</b>
 
@@ -231,10 +238,6 @@ endpoint will show the state within redis. Only toggles that differ from their f
     }
   }
   ```
-
-{: .info }
-Note that reading the redis state directly can reveal legacy key values that used to be configured and maintained but
-are no longer in the configuration. These values can be cleaned up by using the [redisUpdate](#update-feature-toggle) endpoint with the `remoteOnly` option.
 
 ## Service Endpoints for Write Privilege
 
