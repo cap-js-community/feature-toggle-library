@@ -305,7 +305,7 @@ value.
 _Option: clearSubScopes_
 
 Since setting values for scope-combinations happens additively, it can become hard to keep track of which combinations
-have dedicated values attached to them. If you want to set a value _and_ make sure that there isn't a more specific
+have maintained values attached to them. If you want to set a value _and_ make sure that there isn't a more specific
 scope-combination, which overrides that value, then you can use the option `{ clearSubScopes: true }` as a third
 argument. For example
 
@@ -319,15 +319,15 @@ will set the root-scope value to `"error"` and remove all sub-scopes. See
 _Option: remoteOnly_
 
 When you find toggle values in Redis that are not configured, marked with `{ "SOURCE": "NONE" }`, it usually makes
-sense to remove them. In this situation we want to change _just Redis_, but bypass the local server state update and
-the usual validation, change handlers, and server instance change propagation. To achieve this, you can use the
+sense to remove them. In this situation, we want to change _just Redis_ and bypass the local server state update, the
+usual validation, change handlers, and server instance change propagation. To achieve this, you can use the
 `{ remoteOnly: true }` option. For example
 
 ```javascript
 await toggles.changeFeatureValue("/legacy-key", null, {}, { clearSubScopes: true, remoteOnly: true });
 ```
 
-will remove all Redis toggle values associated with the `/legacy-key` key.
+will remove all maintained values associated with the `/legacy-key` key in Redis.
 
 {: .info }
 Changes with the `{ remoteOnly: true }` option will be blocked for _configured_ toggles. This happens to avoid

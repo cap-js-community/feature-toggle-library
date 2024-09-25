@@ -188,7 +188,7 @@ Note that reading the redis state can reveal legacy key values that used to be c
 longer in the configuration. These values can be cleaned up by using the [redisUpdate](#update-feature-toggle) endpoint
 with the `remoteOnly` option.
 
-<b>Example Request/Response</b>
+<b>Example Request/Responses</b>
 
 - Request
   ```
@@ -246,7 +246,7 @@ check the [http file](https://github.com/cap-js-community/feature-toggle-library
 
 ### Update Feature Toggle
 
-Update the toggle state on Redis, which in turn is published to all server instances.
+Maintain a particular toggle value on Redis, which is automatically propagated to all server instances.
 
 <b>Example Request/Responses</b>
 
