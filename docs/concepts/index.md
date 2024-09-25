@@ -83,7 +83,7 @@ And we could change the behavior again with for the more specific user `john` an
 
 - `changeFeatureValue(key, "new value just for john within t1", { user: "john", tenant: "t1" })`
 
-{: .warn}
+{: .warn }
 As we can see in the precedence check order, if we had just set `changeFeatureValue(key, "new value for john", { user: "john" })`,
 then it depends on the order used in the `getFeatureValue` call, whether the `user` scope is evaluated before
 the `tenant` scope.

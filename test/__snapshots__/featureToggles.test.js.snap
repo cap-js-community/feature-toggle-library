@@ -123,6 +123,31 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 }
 `;
 
+exports[`feature toggles test basic apis getRemoteFeaturesInfos 1`] = `
+{
+  "legacy-key": {
+    "config": {
+      "SOURCE": "NONE",
+    },
+    "rootValue": "legacy-root",
+    "scopedValues": {
+      "tenant::a": "legacy-scoped-value",
+    },
+  },
+  "test/feature_b": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "number",
+    },
+    "fallbackValue": 1,
+    "rootValue": 1,
+    "scopedValues": {
+      "tenant::a": 10,
+    },
+  },
+}
+`;
+
 exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
 {
   "test/feature_a": {

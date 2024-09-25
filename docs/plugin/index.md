@@ -44,7 +44,7 @@ It will usually be sufficient to set the `serviceAccessRoles` configuration, whi
 endpoints, but not the admin endpoints. If more discriminating access control is required, the `readAccessRoles` and
 `writeAccessRoles` can be set separately. For debugging purposes, you can also set the `adminAccessRoles`.
 
-{: .warn}
+{: .warn }
 As the name suggests, the `adminAccessRoles` should be considered sensitive. It allows direct root access to the
 underlying redis.
 
@@ -97,7 +97,7 @@ automatically detect it and configure it as follows:
   fallbackValue: false
 ```
 
-{: .info}
+{: .info }
 This automatic configuration can be _overwritten_, by using a configuration file and adding a dedicated configuration
 with the same key `/fts/my-feature`.
 
@@ -109,14 +109,17 @@ for the related requests. For an example check out the [Example CAP Server](http
 This service endpoint will enable operations teams to understand toggle states. For practical requests, check the
 [http file](https://github.com/cap-js-community/feature-toggle-library/blob/main/example-cap-server/http/feature-service.http) in our example CAP Server.
 
-### Read Feature Toggles State
+### Read Server State
 
-Get all information about the current in-memory state of all toggles.
+Get information about the current in-memory state of all configured toggles. The response will give you transparency
+about maintained values and the underlying configuration of the toggles. In the following example, the
+`/check/priority` toggle has a maintained root value, and two scoped values. All other toggles have no maintained
+values, so they will use their fallback values.
 
 <b>Example Request/Response</b>
 
 - Request
-  ```http
+  ```
   GET /rest/feature/state
   Authorization: ...
   ```
@@ -129,6 +132,11 @@ Get all information about the current in-memory state of all toggles.
   {
     "/check/priority": {
       "fallbackValue": 0,
+      "rootValue": 1,
+      "scopedValues": {
+        "tenant::people": 10,
+        "user::alice@wonderland.com": 100
+      },
       "config": {
         "SOURCE": "FILE",
         "TYPE": "number",
@@ -168,6 +176,69 @@ Get all information about the current in-memory state of all toggles.
   }
   ```
 
+### Read Redis State
+
+Get information about the remote redis state of all toggles with maintained values, even ones that are not configured.
+This endpoint will show the state within redis. Only toggles with maintained values will be shown here. In the example,
+we can see `/check/priority` with the maintained values. We can also see a `/legacy-key` toggle, which has maintained
+values that are not associated with a configuration `{ "SOURCE": "NONE" }`.
+
+{: .info }
+Note that reading the redis state can reveal legacy key values that used to be configured and maintained but are no
+longer in the configuration. These values can be cleaned up by using the [redisUpdate](#update-feature-toggle) endpoint
+with the `remoteOnly` option.
+
+<b>Example Request/Responses</b>
+
+- Request
+  ```
+  POST /rest/feature/redisRead
+  Authorization: ...
+  ```
+- Response
+  ```
+  HTTP/1.1 200 OK
+  ...
+  ```
+  ```json
+  {
+    "/check/priority": {
+      "fallbackValue": 0,
+      "rootValue": 1,
+      "scopedValues": {
+        "tenant::people": 10,
+        "user::alice@wonderland.com": 100
+      },
+      "config": {
+        "SOURCE": "FILE",
+        "TYPE": "number",
+        "VALIDATIONS": [
+          {
+            "scopes": ["user", "tenant"]
+          },
+          {
+            "regex": "^\\d+$"
+          },
+          {
+            "module": "$CONFIG_DIR/validators",
+            "call": "validateTenantScope"
+          }
+        ]
+      }
+    },
+    "/legacy-key": {
+      "rootValue": 10,
+      "scopedValues": {
+        "tenant::a": 100,
+        "tenant::b": 1000
+      },
+      "config": {
+        "SOURCE": "NONE"
+      }
+    }
+  }
+  ```
+
 ## Service Endpoints for Write Privilege
 
 Similar to the read privilege endpoints, these endpoints are meant to modify toggle state. For practical requests,
@@ -175,12 +246,12 @@ check the [http file](https://github.com/cap-js-community/feature-toggle-library
 
 ### Update Feature Toggle
 
-Update the toggle state on Redis, which in turn is published to all server instances.
+Maintain a particular toggle value on Redis, which is automatically propagated to all server instances.
 
 <b>Example Request/Responses</b>
 
 - Valid Request
-  ```http
+  ```
   POST /rest/feature/redisUpdate
   Authorization: ...
   Content-Type: application/json
@@ -200,7 +271,7 @@ Update the toggle state on Redis, which in turn is published to all server insta
   ```
 
 - Valid Request with [clearSubScopes]({{ site.baseurl }}/usage/#updating-feature-value)
-  ```http
+  ```
   POST /rest/feature/redisUpdate
   Authorization: ...
   Content-Type: application/json
@@ -221,8 +292,31 @@ Update the toggle state on Redis, which in turn is published to all server insta
   ...
   ```
 
+- Valid Request with [remoteOnly]({{ site.baseurl }}/usage/#updating-feature-value)
+  ```
+  POST /rest/feature/redisUpdate
+  Authorization: ...
+  Content-Type: application/json
+  ```
+  ```json
+  {
+    "key": "/legacy-key",
+    "value": null,
+    "options": {
+      "clearSubScopes": true,
+      "remoteOnly": true
+    }
+  }
+  ```
+- Response
+
+  ```
+  HTTP/1.1 204 No Content
+  ...
+  ```
+
 - Invalid Request
-  ```http
+  ```
   POST /rest/feature/redisUpdate
   Authorization: ...
   Content-Type: application/json
@@ -248,21 +342,6 @@ Update the toggle state on Redis, which in turn is published to all server insta
   }
   ```
 
-### Re-Sync Server with Redis
-
-Force server to re-sync with Redis, this should never be necessary. It returns the same JSON structure as
-`/state`, after re-syncing.
-
-<b>Example Request/Response</b>
-
-- Request
-  ```http
-  POST /rest/feature/redisRead
-  Authorization: ...
-  ```
-- Response<br>
-  Same as [Read Feature Toggles State](#read-feature-toggles-state).
-
 ## Service Endpoints for Admin Privilege
 
 The service also offers an additional endpoint for deep problem analysis.
@@ -274,7 +353,7 @@ Send an arbitrary command to Redis. [https://redis.io/commands/](https://redis.i
 <b>Example Request/Responses</b>
 
 - Request INFO
-  ```http
+  ```
   POST /rest/feature/redisSendCommand
   Authorization: ...
   Content-Type: application/json
@@ -298,7 +377,7 @@ Send an arbitrary command to Redis. [https://redis.io/commands/](https://redis.i
   ...
   ```
 - Request KEYS
-  ```http
+  ```
   POST /rest/feature/redisSendCommand
   Authorization: ...
   Content-Type: application/json

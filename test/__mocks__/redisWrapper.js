@@ -10,13 +10,23 @@ const getObject = jest.fn(async (key) => {
   return mockRedisState.values[key];
 });
 
+const hashGetAllObjects = jest.fn(async () => {
+  mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
+  return mockRedisState.values[redisKey];
+});
+
 const type = jest.fn(async () => "hash");
 
 const watchedHashGetSetObject = jest.fn(async (key, field, newValueCallback) => {
   mockRedisState.values = mockRedisState.values ? mockRedisState.values : {};
   mockRedisState.values[key] = mockRedisState.values[key] ? mockRedisState.values[key] : {};
-  mockRedisState.values[key][field] = await newValueCallback(mockRedisState.values[key][field]);
-  return mockRedisState.values[key][field];
+  const newValue = await newValueCallback(mockRedisState.values[key][field]);
+  if (newValue === null) {
+    Reflect.deleteProperty(mockRedisState.values[key], field);
+  } else {
+    mockRedisState.values[key][field] = newValue;
+  }
+  return newValue;
 });
 
 const registerMessageHandler = jest.fn((channel, handler) => {
@@ -56,6 +66,7 @@ module.exports = {
   publishMessage,
   type,
   getObject,
+  hashGetAllObjects,
   watchedHashGetSetObject,
   subscribe: jest.fn(),
   getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.CF_REDIS),
