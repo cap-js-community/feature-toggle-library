@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
+## v1.2.0 - 2024-09-25
+
+⚠️ This release contains two minor breaking changes.
+
+### Changed
+
+- The main class of the library is no longer explicitly exported. You can access it implicitly as constructor of the
+  exported class instance.
+
+  ```javascript
+  // before
+  const { FeatureToggles } = require("@cap-js-community/feature-toggle-library");
+  const myToggles = new FeatureToggles({ uniqueName: "snowflake" });
+
+  // after
+  const toggles = require("@cap-js-community/feature-toggle-library");
+  const FeatureToggles = toggles.constructor;
+  const myToggles = new FeatureToggles({ uniqueName: "snowflake" });
+  ```
+
+- cds-plugin: rewrote `/rest/feature/redisRead` endpoint to show all Redis maintained toggle values, including those of
+  toggles that are _not configured_. The endpoint no longer refreshes the server-local toggle state. Consequently, it
+  will work with `read` access privileges, since it can no longer modify the server-local state (fixes #69).
+
+### Added
+
+- added `remoteOnly` option for `/rest/feature/redisUpdate` endpoint and the `changeFeatureValue()` API. With this
+  option, you can clean up Redis maintained values that are no longer configured (fixes #69).
+- cds-plugin: better detection of serve mode following changes in [@sap/cds](https://www.npmjs.com/package/@sap/cds)
+  v8.2.3
+
+### Fixed
+
+- multiple, even concurrent, calls of `initializeFeatures()` will only ever trigger one execution of the underlying
+  initialization.
+
 ## v1.1.7 - 2024-09-17
 
 ### Fixed
