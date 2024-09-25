@@ -111,7 +111,10 @@ This service endpoint will enable operations teams to understand toggle states. 
 
 ### Read Server State
 
-Get information about the current in-memory state of all configured toggles.
+Get information about the current in-memory state of all configured toggles. The response will give you transparency
+about maintained values and the underlying configuration of the toggles. In the following example, the
+`/check/priority` toggle has a maintained root value, and two scoped values. All other toggles have no maintained
+values, so they will use their fallback values.
 
 <b>Example Request/Response</b>
 
@@ -129,6 +132,11 @@ Get information about the current in-memory state of all configured toggles.
   {
     "/check/priority": {
       "fallbackValue": 0,
+      "rootValue": 1,
+      "scopedValues": {
+        "tenant::people": 10,
+        "user::alice@wonderland.com": 100
+      },
       "config": {
         "SOURCE": "FILE",
         "TYPE": "number",
