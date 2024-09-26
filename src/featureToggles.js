@@ -920,7 +920,7 @@ class FeatureToggles {
   async getRemoteFeaturesInfos() {
     this._ensureInitialized();
     if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
-      return null;
+      return {};
     }
 
     const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
