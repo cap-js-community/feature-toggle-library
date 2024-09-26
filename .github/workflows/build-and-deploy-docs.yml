@@ -23,7 +23,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'cap-js-community'  # don't build on forks
+    if: github.repository_owner == 'cap-js-community' # don't build on forks
     defaults:
       run:
         working-directory: docs
