@@ -86,6 +86,13 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
       "TYPE": "number",
       "VALIDATIONS": [
         {
+          "scopes": [
+            "component",
+            "layer",
+            "tenant",
+          ],
+        },
+        {
           "regex": "^\\d{1}$",
         },
       ],
@@ -195,12 +202,24 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
     "TYPE": "number",
     "VALIDATIONS": [
       {
+        "scopes": [
+          "component",
+          "layer",
+          "tenant",
+        ],
+      },
+      {
         "regex": "^\\d{1}$",
       },
     ],
     "VALIDATIONS_REGEX": [
       /\\^\\\\d\\{1\\}\\$/,
     ],
+    "VALIDATIONS_SCOPES_MAP": {
+      "component": true,
+      "layer": true,
+      "tenant": true,
+    },
   },
   "test/feature_f": {
     "SOURCE": "RUNTIME",

@@ -41,7 +41,7 @@ const mockConfig = {
   [FEATURE.E]: {
     fallbackValue: 5,
     type: "number",
-    validations: [{ regex: "^\\d{1}$" }],
+    validations: [{ scopes: ["component", "layer", "tenant"] }, { regex: "^\\d{1}$" }],
   },
   [FEATURE.F]: {
     fallbackValue: "best",

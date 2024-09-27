@@ -1,40 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 1`] = `
-[
-  {
-    "errorMessage": "value "{0}" does not match validation regular expression {1}",
-    "errorMessageValues": [
-      10,
-      "/^\\d{1}$/",
-    ],
-    "featureKey": "test/feature_e",
-    "scopeKey": "component::c1##tenant::t1",
-  },
-]
-`;
-
-exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes 8`] = `[]`;
-
-exports[`local integration test common config init getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue 7`] = `[]`;
-
-exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 1`] = `
-[
-  {
-    "errorMessage": "value "{0}" does not match validation regular expression {1}",
-    "errorMessageValues": [
-      10,
-      "/^\\d{1}$/",
-    ],
-    "featureKey": "test/feature_e",
-    "scopeKey": "//",
-  },
-]
-`;
-
-exports[`local integration test common config init getFeatureValue, changeFeatureValue without scopes 4`] = `[]`;
-
-exports[`local integration test common config init getFeaturesKeys, getFeatureValues, getFeaturesInfos 1`] = `
+exports[`cds-service endpoints state response 1`] = `
 {
   "test/feature_a": {
     "config": {
