@@ -10,61 +10,11 @@ jest.mock("fs", () => ({
 }));
 
 const { stateFromInfo } = require("../__common__/fromInfo");
+const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
 let featureTogglesLoggerSpy;
 let redisWrapperLoggerSpy;
 let toggles;
-
-const FEATURE = {
-  A: "test/feature_a",
-  B: "test/feature_b",
-  C: "test/feature_c",
-  D: "test/feature_d",
-  E: "test/feature_e",
-  F: "test/feature_f",
-  G: "test/feature_g",
-  H: "test/feature_h",
-};
-
-const config = {
-  [FEATURE.A]: {
-    fallbackValue: false,
-    type: "boolean",
-  },
-  [FEATURE.B]: {
-    fallbackValue: 1,
-    type: "number",
-  },
-  [FEATURE.C]: {
-    fallbackValue: "best",
-    type: "string",
-  },
-  [FEATURE.D]: {
-    fallbackValue: true,
-    type: "boolean",
-    validations: [{ regex: "^(?:true)$" }],
-  },
-  [FEATURE.E]: {
-    fallbackValue: 5,
-    type: "number",
-    validations: [{ scopes: ["component", "layer", "tenant"] }, { regex: "^\\d{1}$" }],
-  },
-  [FEATURE.F]: {
-    fallbackValue: "best",
-    type: "string",
-    validations: [{ regex: "^(?:best|worst)$" }],
-  },
-  [FEATURE.G]: {
-    active: false,
-    fallbackValue: "activeTest",
-    type: "string",
-  },
-  [FEATURE.H]: {
-    fallbackValue: "appUrlTest",
-    type: "string",
-    appUrl: "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
-  },
-};
 
 describe("local integration test", () => {
   beforeEach(async () => {
@@ -346,9 +296,9 @@ describe("local integration test", () => {
         [
           [
             "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            8,
+            9,
             "s",
-            8,
+            9,
             0,
             0,
             "NO_REDIS",
@@ -382,9 +332,9 @@ describe("local integration test", () => {
         [
           [
             "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            8,
+            9,
             "s",
-            8,
+            9,
             0,
             0,
             "NO_REDIS",
@@ -525,9 +475,9 @@ describe("local integration test", () => {
         [
           [
             "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            8,
+            9,
             "s",
-            8,
+            9,
             0,
             0,
             "NO_REDIS",
@@ -628,9 +578,9 @@ describe("local integration test", () => {
         [
           [
             "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            8,
+            9,
             "s",
-            8,
+            9,
             0,
             0,
             "NO_REDIS",

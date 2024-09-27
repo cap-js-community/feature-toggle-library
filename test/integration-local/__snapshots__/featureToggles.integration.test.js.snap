@@ -43,6 +43,21 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
     },
     "fallbackValue": false,
   },
+  "test/feature_aa": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "boolean",
+      "VALIDATIONS": [
+        {
+          "scopes": [
+            "tenant",
+            "user",
+          ],
+        },
+      ],
+    },
+    "fallbackValue": false,
+  },
   "test/feature_b": {
     "config": {
       "SOURCE": "RUNTIME",
