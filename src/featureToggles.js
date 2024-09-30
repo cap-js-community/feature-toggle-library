@@ -960,7 +960,7 @@ class FeatureToggles {
     let remoteStateScopedValues;
     // NOTE: for NO_REDIS mode, we show local updates
     if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
-      remoteStateScopedValues = this.__stateScopedValues ?? {};
+      remoteStateScopedValues = this.__stateScopedValues;
     } else {
       remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
     }
