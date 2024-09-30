@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
+## v1.2.1 - 2024-09-30
+
+### Changed
+
+- cds-plugin: service endpoint `/rest/feature/redisRead` will return server in-memory changes in NO_REDIS mode in
+  order to be consistent with `/rest/feature/redisUpdate`.
+
+### Added
+
+- cds-plugin: added `cds.test()` basic request/response tests for service.
+
+### Fixed
+
+- cds-plugin: service endpoint `/rest/feature/redisRead` works without http errors in NO_REDIS mode.
+
 ## v1.2.0 - 2024-09-25
 
 ⚠️ This release contains two minor breaking changes.
