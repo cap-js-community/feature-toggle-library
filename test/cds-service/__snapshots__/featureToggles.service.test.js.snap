@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`cds-service endpoints state response 1`] = `
+exports[`cds-service endpoints state response no change 1`] = `
 {
   "test/feature_a": {
     "config": {
@@ -30,6 +30,111 @@ exports[`cds-service endpoints state response 1`] = `
       "TYPE": "number",
     },
     "fallbackValue": 1,
+  },
+  "test/feature_c": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "string",
+    },
+    "fallbackValue": "best",
+  },
+  "test/feature_d": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "boolean",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:true)$",
+        },
+      ],
+    },
+    "fallbackValue": true,
+  },
+  "test/feature_e": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "number",
+      "VALIDATIONS": [
+        {
+          "scopes": [
+            "component",
+            "layer",
+            "tenant",
+          ],
+        },
+        {
+          "regex": "^\\d{1}$",
+        },
+      ],
+    },
+    "fallbackValue": 5,
+  },
+  "test/feature_f": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "string",
+      "VALIDATIONS": [
+        {
+          "regex": "^(?:best|worst)$",
+        },
+      ],
+    },
+    "fallbackValue": "best",
+  },
+  "test/feature_g": {
+    "config": {
+      "ACTIVE": false,
+      "SOURCE": "RUNTIME",
+      "TYPE": "string",
+    },
+    "fallbackValue": "activeTest",
+  },
+  "test/feature_h": {
+    "config": {
+      "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
+      "SOURCE": "RUNTIME",
+      "TYPE": "string",
+    },
+    "fallbackValue": "appUrlTest",
+  },
+}
+`;
+
+exports[`cds-service endpoints state response with changes 1`] = `
+{
+  "test/feature_a": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "boolean",
+    },
+    "fallbackValue": false,
+  },
+  "test/feature_aa": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "boolean",
+      "VALIDATIONS": [
+        {
+          "scopes": [
+            "tenant",
+            "user",
+          ],
+        },
+      ],
+    },
+    "fallbackValue": false,
+  },
+  "test/feature_b": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "number",
+    },
+    "fallbackValue": 1,
+    "rootValue": 2,
+    "scopedValues": {
+      "tenant::a": 20,
+      "tenant::b": 30,
+    },
   },
   "test/feature_c": {
     "config": {
