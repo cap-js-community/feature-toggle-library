@@ -298,6 +298,11 @@ class FeatureToggles {
     );
   }
 
+  /**
+   * Implementation for {@link constructor}.
+   *
+   * @param {ConstructorOptions} [options]
+   */
   _reset({
     uniqueName = FeatureToggles._getDefaultUniqueName(),
     redisChannel = DEFAULT_REDIS_CHANNEL,
@@ -321,7 +326,7 @@ class FeatureToggles {
   }
 
   /**
-   * @typedef FeatureTogglesOptions
+   * @typedef ConstructorOptions
    * @type object
    * @property {string}  [uniqueName]     unique name to prefix both Redis channel and key
    * @property {string}  [redisChannel]   channel for Redis pub/sub to propagate changes across servers
@@ -329,7 +334,7 @@ class FeatureToggles {
    */
   /**
    * NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-   * @param {FeatureTogglesOptions}  [options]
+   * @param {ConstructorOptions}  [options]
    */
   constructor(options) {
     this._reset(options);
@@ -726,6 +731,11 @@ class FeatureToggles {
     );
   }
 
+  /**
+   * Implementation for {@link initializeFeatures}.
+   *
+   * @param {InitializeOptions}  [options]
+   */
   async _initializeFeatures({ config: configRuntime, configFile: configFilepath, configAuto } = {}) {
     if (this.__isInitialized) {
       return;
@@ -854,8 +864,22 @@ class FeatureToggles {
   }
 
   /**
+   * TODO
+   * @typedef Config
+   * @type object
+   */
+  /**
+   * @typedef InitializeOptions
+   * @type object
+   * @property {Config}  [config]
+   * @property {string}  [configFile]
+   * @property {Config}  [configAuto]
+   */
+  /**
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
+   *
+   * @param {InitializeOptions}  [options]
    */
   async initializeFeatures(options) {
     if (!this.__initializePromise) {
