@@ -119,6 +119,30 @@ class FeatureToggles {
   // START OF CONSTRUCTOR SECTION
   // ========================================
 
+  static _getDefaultUniqueName() {
+    if (ENV_UNIQUE_NAME) {
+      return ENV_UNIQUE_NAME;
+    }
+    let cfApp;
+    try {
+      cfApp = cfEnv.cfApp;
+      if (cfApp.application_name) {
+        return cfApp.application_name;
+      }
+    } catch (err) {
+      throw new VError(
+        {
+          name: VERROR_CLUSTER_NAME,
+          cause: err,
+          info: {
+            cfApp: JSON.stringify(cfApp),
+          },
+        },
+        "error determining cf app name"
+      );
+    }
+  }
+
   _processValidations(featureKey, validations, configFilepath) {
     const configDir = configFilepath ? pathlib.dirname(configFilepath) : process.cwd();
 
@@ -274,7 +298,16 @@ class FeatureToggles {
     );
   }
 
-  _reset({ uniqueName, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY }) {
+  /**
+   * Implementation for {@link constructor}.
+   *
+   * @param {ConstructorOptions} [options]
+   */
+  _reset({
+    uniqueName = FeatureToggles._getDefaultUniqueName(),
+    redisChannel = DEFAULT_REDIS_CHANNEL,
+    redisKey = DEFAULT_REDIS_KEY,
+  } = {}) {
     this.__redisChannel = uniqueName ? redisChannel + "-" + uniqueName : redisChannel;
     this.__redisKey = uniqueName ? redisKey + "-" + uniqueName : redisKey;
 
@@ -292,9 +325,19 @@ class FeatureToggles {
     this.__isConfigProcessed = false;
   }
 
-  // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-  constructor({ uniqueName = undefined, redisChannel = DEFAULT_REDIS_CHANNEL, redisKey = DEFAULT_REDIS_KEY } = {}) {
-    this._reset({ uniqueName, redisChannel, redisKey });
+  /**
+   * @typedef ConstructorOptions
+   * @type object
+   * @property {string}  [uniqueName]     unique name to prefix both Redis channel and key
+   * @property {string}  [redisChannel]   channel for Redis pub/sub to propagate changes across servers
+   * @property {string}  [redisKey]       key in Redis to save non-fallback values
+   */
+  /**
+   * NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
+   * @param {ConstructorOptions}  [options]
+   */
+  constructor(options) {
+    this._reset(options);
   }
 
   // ========================================
@@ -304,30 +347,6 @@ class FeatureToggles {
   // START OF SINGLETON SECTION
   // ========================================
 
-  static _getInstanceUniqueName() {
-    if (ENV_UNIQUE_NAME) {
-      return ENV_UNIQUE_NAME;
-    }
-    let cfApp;
-    try {
-      cfApp = cfEnv.cfApp;
-      if (cfApp.application_name) {
-        return cfApp.application_name;
-      }
-    } catch (err) {
-      throw new VError(
-        {
-          name: VERROR_CLUSTER_NAME,
-          cause: err,
-          info: {
-            cfApp: JSON.stringify(cfApp),
-          },
-        },
-        "error determining cf app name"
-      );
-    }
-  }
-
   /**
    * Get singleton instance
    *
@@ -335,8 +354,7 @@ class FeatureToggles {
    */
   static getInstance() {
     if (!FeatureToggles.__instance) {
-      const uniqueName = FeatureToggles._getInstanceUniqueName();
-      FeatureToggles.__instance = new FeatureToggles({ uniqueName });
+      FeatureToggles.__instance = new FeatureToggles();
     }
     return FeatureToggles.__instance;
   }
@@ -713,6 +731,11 @@ class FeatureToggles {
     );
   }
 
+  /**
+   * Implementation for {@link initializeFeatures}.
+   *
+   * @param {InitializeOptions}  [options]
+   */
   async _initializeFeatures({ config: configRuntime, configFile: configFilepath, configAuto } = {}) {
     if (this.__isInitialized) {
       return;
@@ -841,8 +864,22 @@ class FeatureToggles {
   }
 
   /**
+   * TODO
+   * @typedef Config
+   * @type object
+   */
+  /**
+   * @typedef InitializeOptions
+   * @type object
+   * @property {Config}  [config]
+   * @property {string}  [configFile]
+   * @property {Config}  [configAuto]
+   */
+  /**
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up
    * related internal state, and starts communication with redis.
+   *
+   * @param {InitializeOptions}  [options]
    */
   async initializeFeatures(options) {
     if (!this.__initializePromise) {
@@ -919,11 +956,15 @@ class FeatureToggles {
    */
   async getRemoteFeaturesInfos() {
     this._ensureInitialized();
+
+    let remoteStateScopedValues;
+    // NOTE: for NO_REDIS mode, we show local updates
     if ((await redis.getIntegrationMode()) === REDIS_INTEGRATION_MODE.NO_REDIS) {
-      return {};
+      remoteStateScopedValues = this.__stateScopedValues ?? {};
+    } else {
+      remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
     }
 
-    const remoteStateScopedValues = await redis.hashGetAllObjects(this.__redisKey);
     if (!remoteStateScopedValues) {
       return null;
     }

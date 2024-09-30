@@ -12,7 +12,7 @@ describe("singleton", () => {
 
     const toggles = require("../src/");
     const FeatureToggles = toggles.constructor;
-    expect(FeatureToggles._getInstanceUniqueName()).toMatchInlineSnapshot(`"test_app_name"`);
+    expect(FeatureToggles._getDefaultUniqueName()).toMatchInlineSnapshot(`"test_app_name"`);
 
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");
   });
@@ -23,7 +23,7 @@ describe("singleton", () => {
 
     const toggles = require("../src/");
     const FeatureToggles = toggles.constructor;
-    expect(FeatureToggles._getInstanceUniqueName()).toMatchInlineSnapshot(`"test_unique_name"`);
+    expect(FeatureToggles._getDefaultUniqueName()).toMatchInlineSnapshot(`"test_unique_name"`);
 
     Reflect.deleteProperty(process.env, "VCAP_APPLICATION");
     Reflect.deleteProperty(process.env, ENV.UNIQUE_NAME);
