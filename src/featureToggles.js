@@ -320,9 +320,19 @@ class FeatureToggles {
     this.__isConfigProcessed = false;
   }
 
-  // NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
-  constructor({ uniqueName, redisChannel, redisKey } = {}) {
-    this._reset({ uniqueName, redisChannel, redisKey });
+  /**
+   * @typedef FeatureTogglesOptions
+   * @type object
+   * @property {string}  [uniqueName]     unique name to prefix both Redis channel and key
+   * @property {string}  [redisChannel]   channel for Redis pub/sub to propagate changes across servers
+   * @property {string}  [redisKey]       key in Redis to save non-fallback values
+   */
+  /**
+   * NOTE: constructors cannot be async, so we need to split this state preparation part from the initialize part
+   * @param {FeatureTogglesOptions}  [options]
+   */
+  constructor(options) {
+    this._reset(options);
   }
 
   // ========================================
