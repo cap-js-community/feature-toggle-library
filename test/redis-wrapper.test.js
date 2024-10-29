@@ -32,7 +32,7 @@ jest.mock("redis", () => ({
   createClient: jest.fn(() => mockClient),
 }));
 
-const redisWrapper = require("../src/redisWrapper");
+const redisWrapper = require("../src/redis-wrapper");
 
 const channel = "channel";
 const channelTwo = "channelTwo";

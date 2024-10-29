@@ -10,7 +10,7 @@ const redis = require("redis");
 const VError = require("verror");
 const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
-const { HandlerCollection } = require("./shared/handlerCollection");
+const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
 const { tryJsonParse } = require("./shared/static");
 
