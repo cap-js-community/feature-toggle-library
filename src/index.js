@@ -1,6 +1,6 @@
 "use strict";
 
-const { FeatureToggles } = require("./featureToggles");
+const { FeatureToggles } = require("./feature-toggles");
 
 const toggles = FeatureToggles.getInstance();
 

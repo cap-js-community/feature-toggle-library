@@ -17,11 +17,11 @@ const pathlib = require("path");
 const { readFile } = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
-const redis = require("./redisWrapper");
+const redis = require("./redis-wrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
 const cfEnv = require("./shared/env");
 const { Logger } = require("./shared/logger");
-const { HandlerCollection } = require("./shared/handlerCollection");
+const { HandlerCollection } = require("./shared/handler-collection");
 const { LimitedLazyCache } = require("./shared/cache");
 const { ENV, isObject, tryRequire, tryPathReadable, tryJsonParse } = require("./shared/static");
 

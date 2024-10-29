@@ -8,7 +8,7 @@ const pathlib = require("path");
 const cds = require("@sap/cds");
 const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./");
-const { closeMainClient, closeSubscriberClient } = require("./redisWrapper");
+const { closeMainClient, closeSubscriberClient } = require("./redis-wrapper");
 
 const FEATURE_KEY_REGEX = /\/fts\/([^\s/]+)$/;
 const FTS_AUTO_CONFIG = {

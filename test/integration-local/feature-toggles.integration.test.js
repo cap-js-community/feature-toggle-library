@@ -9,7 +9,7 @@ jest.mock("fs", () => ({
   access: jest.fn((cb) => cb()),
 }));
 
-const { stateFromInfo } = require("../__common__/fromInfo");
+const { stateFromInfo } = require("../__common__/from-info");
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
 let featureTogglesLoggerSpy;
@@ -21,14 +21,14 @@ describe("local integration test", () => {
     jest.resetModules();
     toggles = require("../../src/");
 
-    const featureTogglesModule = require("../../src/featureToggles");
+    const featureTogglesModule = require("../../src/feature-toggles");
     featureTogglesLoggerSpy = {
       info: jest.spyOn(featureTogglesModule._._getLogger(), "info"),
       warning: jest.spyOn(featureTogglesModule._._getLogger(), "warning"),
       error: jest.spyOn(featureTogglesModule._._getLogger(), "error"),
     };
 
-    const redisWrapper = require("../../src/redisWrapper");
+    const redisWrapper = require("../../src/redis-wrapper");
     redisWrapperLoggerSpy = {
       info: jest.spyOn(redisWrapper._._getLogger(), "info"),
       warning: jest.spyOn(redisWrapper._._getLogger(), "warning"),

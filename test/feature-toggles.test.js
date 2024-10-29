@@ -4,11 +4,11 @@ const util = require("util");
 
 const VError = require("verror");
 const yaml = require("yaml");
-const featureTogglesModule = require("../src/featureToggles");
+const featureTogglesModule = require("../src/feature-toggles");
 const { LimitedLazyCache } = require("../src/shared/cache");
 
 const { FEATURE, mockConfig, redisKey, redisChannel } = require("./__common__/mockdata");
-const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/fromInfo");
+const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/from-info");
 
 const {
   FeatureToggles,
@@ -24,8 +24,8 @@ jest.mock("fs", () => ({
 const envMock = require("../src/shared/env");
 jest.mock("../src/shared/env", () => require("./__mocks__/env"));
 
-const redisWrapperMock = require("../src/redisWrapper");
-jest.mock("../src/redisWrapper", () => require("./__mocks__/redisWrapper"));
+const redisWrapperMock = require("../src/redis-wrapper");
+jest.mock("../src/redis-wrapper", () => require("./__mocks__/redis-wrapper"));
 
 const outputFromErrorLogger = (calls) =>
   calls.map((args) => util.format("%s\n%O", args[0], VError.info(args[0]))).join("\n");
