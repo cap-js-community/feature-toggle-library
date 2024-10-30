@@ -19,11 +19,17 @@ const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redis-wrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
-const cfEnv = require("./shared/env");
+const cfEnv = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { LimitedLazyCache } = require("./shared/cache");
-const { ENV, isObject, tryRequire, tryPathReadable, tryJsonParse } = require("./shared/static");
+const { isObject, tryRequire, tryPathReadable, tryJsonParse } = require("./shared/static");
+
+const ENV = Object.freeze({
+  UNIQUE_NAME: "BTP_FEATURES_UNIQUE_NAME",
+  REDIS_KEY: "BTP_FEATURES_REDIS_KEY",
+  REDIS_CHANNEL: "BTP_FEATURES_REDIS_CHANNEL",
+});
 
 const ENV_UNIQUE_NAME = process.env[ENV.UNIQUE_NAME];
 const DEFAULT_REDIS_CHANNEL = process.env[ENV.REDIS_CHANNEL] || "features";
@@ -1649,6 +1655,7 @@ module.exports = {
   FeatureToggles,
 
   _: {
+    ENV,
     DEFAULT_REDIS_CHANNEL,
     DEFAULT_REDIS_KEY,
     SCOPE_ROOT_KEY,

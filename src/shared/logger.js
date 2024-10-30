@@ -2,9 +2,13 @@
 const util = require("util");
 const VError = require("verror");
 
-const cfEnv = require("./env");
-const { ENV, tryRequire } = require("./static");
+const cfEnv = require("./cf-env");
+const { tryRequire } = require("./static");
 const cds = tryRequire("@sap/cds");
+
+const ENV = Object.freeze({
+  LOG_LEVEL: "BTP_FEATURES_LOG_LEVEL",
+});
 
 // NOTE: logger levels are tricky. looking at console, npm, winston, and cap there is no real consistency. we will
 //   offer the same levels as console and an additional "off" level.
@@ -247,6 +251,7 @@ class Logger {
 }
 
 module.exports = {
+  ENV,
   LEVEL,
   FORMAT,
 

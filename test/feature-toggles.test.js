@@ -21,8 +21,8 @@ jest.mock("fs", () => ({
   access: jest.fn((cb) => cb()),
 }));
 
-const envMock = require("../src/shared/env");
-jest.mock("../src/shared/env", () => require("./__mocks__/env"));
+const envMock = require("../src/shared/cf-env");
+jest.mock("../src/shared/cf-env", () => require("./__mocks__/cf-env"));
 
 const redisWrapperMock = require("../src/redis-wrapper");
 jest.mock("../src/redis-wrapper", () => require("./__mocks__/redis-wrapper"));
