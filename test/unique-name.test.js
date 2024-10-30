@@ -1,6 +1,8 @@
 "use strict";
 
-const { ENV } = require("../src/shared/static");
+const {
+  _: { ENV },
+} = require("../src/feature-toggles");
 
 describe("singleton", () => {
   beforeEach(() => {

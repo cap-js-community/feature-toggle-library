@@ -1,6 +1,13 @@
 "use strict";
 
-const { ENV } = require("./static");
+const ENV = Object.freeze({
+  USER: "USER",
+  CF_APP: "VCAP_APPLICATION",
+  CF_SERVICES: "VCAP_SERVICES",
+  CF_INSTANCE_GUID: "CF_INSTANCE_GUID",
+  CF_INSTANCE_IP: "CF_INSTANCE_IP",
+  CF_INSTANCE_INDEX: "CF_INSTANCE_INDEX",
+});
 
 /**
  * CfEnv is a singleton class to interact with the Cloud Foundry environment variables.
