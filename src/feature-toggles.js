@@ -19,7 +19,7 @@ const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redis-wrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
-const cfEnv = require("./shared/cf-env");
+const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { LimitedLazyCache } = require("./shared/cache");
@@ -113,6 +113,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 ];
 
 const readFileAsync = promisify(readFile);
+const cfEnv = CfEnv.getInstance();
 let logger = new Logger(COMPONENT_NAME);
 
 /**

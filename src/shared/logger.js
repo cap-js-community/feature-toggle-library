@@ -2,9 +2,10 @@
 const util = require("util");
 const VError = require("verror");
 
-const cfEnv = require("./cf-env");
+const { CfEnv } = require("./cf-env");
 const { tryRequire } = require("./static");
 const cds = tryRequire("@sap/cds");
+const cfEnv = CfEnv.getInstance();
 
 const ENV = Object.freeze({
   LOG_LEVEL: "BTP_FEATURES_LOG_LEVEL",
@@ -254,6 +255,5 @@ module.exports = {
   ENV,
   LEVEL,
   FORMAT,
-
   Logger,
 };

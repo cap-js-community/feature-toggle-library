@@ -1,13 +1,26 @@
 "use strict";
 
-const cfEnv = {
+class CfEnvMock {
   _reset() {
     this.isOnCf = false;
     this.cfApp = {};
     this.cfServices = {};
-    this.cfServiceCredentialsForLabel = jest.fn().mockReturnValue({});
-  },
-};
-cfEnv._reset();
+  }
 
-module.exports = cfEnv;
+  constructor() {
+    this._reset();
+  }
+
+  cfServiceCredentialsForLabel = jest.fn().mockReturnValue({});
+
+  static getInstance() {
+    if (!CfEnvMock.__instance) {
+      CfEnvMock.__instance = new CfEnvMock();
+    }
+    return CfEnvMock.__instance;
+  }
+}
+
+module.exports = {
+  CfEnv: CfEnvMock,
+};
