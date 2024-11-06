@@ -2,7 +2,7 @@
 const util = require("util");
 const VError = require("verror");
 
-const { cfEnv } = require("./cf-env");
+const { CfEnv } = require("./cf-env");
 const { tryRequire } = require("./static");
 const cds = tryRequire("@sap/cds");
 
@@ -75,6 +75,7 @@ const FORMAT = Object.freeze({
 const MILLIS_IN_NANOS_NUMBER = 1000000;
 const MILLIS_IN_NANOS_BIGINT = BigInt(MILLIS_IN_NANOS_NUMBER);
 
+const cfEnv = CfEnv.getInstance();
 const cfApp = cfEnv.cfApp;
 const cfAppData = cfEnv.isOnCf
   ? {

@@ -64,5 +64,5 @@ class CfEnv {
 
 module.exports = {
   ENV,
-  cfEnv: CfEnv.getInstance(),
+  CfEnv,
 };
