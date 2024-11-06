@@ -8,7 +8,7 @@
 
 const redis = require("redis");
 const VError = require("verror");
-const cfEnv = require("./shared/cf-env");
+const { cfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");

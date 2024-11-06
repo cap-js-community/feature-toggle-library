@@ -8,7 +8,7 @@ const { ENV, LEVEL, FORMAT, Logger } = require("../../src/shared/logger");
 const redisWrapperMock = require("../../src/redis-wrapper");
 jest.mock("../../src/redis-wrapper", () => require("../__mocks__/redis-wrapper"));
 
-const envMock = require("../../src/shared/cf-env");
+const { cfEnv: envMock } = require("../../src/shared/cf-env");
 jest.mock("../../src/shared/cf-env", () => require("../__mocks__/cf-env"));
 
 const { FEATURE, mockConfig, redisKey, redisChannel, refreshMessage } = require("../__common__/mockdata");

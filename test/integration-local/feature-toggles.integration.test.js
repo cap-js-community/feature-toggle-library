@@ -4,9 +4,11 @@
 // and test only the local mode here.
 
 const fs = jest.requireActual("fs");
+const mockReadFile = jest.fn();
+const mockAccess = jest.fn((cb) => cb());
 jest.mock("fs", () => ({
-  readFile: jest.fn(),
-  access: jest.fn((cb) => cb()),
+  readFile: mockReadFile,
+  access: mockAccess,
 }));
 
 const { stateFromInfo } = require("../__common__/from-info");
@@ -42,8 +44,7 @@ describe("local integration test", () => {
 
   describe("init", () => {
     test("init fails resolving for bad config paths", async () => {
-      const { readFile: readFileSpy } = require("fs");
-      readFileSpy.mockImplementationOnce(fs.readFile);
+      mockReadFile.mockImplementationOnce(fs.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
         `[FeatureTogglesError: initialization aborted, could not read config file: ENOENT: no such file or directory, open 'fantasy_name']`
       );
@@ -57,8 +58,6 @@ describe("local integration test", () => {
     });
 
     test("init config precedence", async () => {
-      const { readFile: readFileSpy } = require("fs");
-
       const configForRuntime = {
         [FEATURE.A]: {
           fallbackValue: "fallbackRuntimeA",
@@ -97,7 +96,7 @@ describe("local integration test", () => {
           type: "string",
         },
       };
-      readFileSpy.mockImplementationOnce((filepath, callback) =>
+      mockReadFile.mockImplementationOnce((filepath, callback) =>
         callback(null, Buffer.from(JSON.stringify(configForFile)))
       );
 
@@ -232,8 +231,6 @@ describe("local integration test", () => {
     test("custom module validations just module from CONFIG_DIR", async () => {
       jest.mock("./virtual-validator-just-module", () => jest.fn(), { virtual: true });
       const mockValidator = require("./virtual-validator-just-module");
-      const { readFile: readFileSpy } = require("fs");
-
       const config = {
         [FEATURE.A]: {
           fallbackValue: "fallback",
@@ -242,7 +239,7 @@ describe("local integration test", () => {
         },
       };
       const configBuffer = Buffer.from(JSON.stringify(config));
-      readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
+      mockReadFile.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
       await toggles.initializeFeatures({
         configFile: "./test/integration-local/virtual-config.json",
       });
@@ -254,7 +251,6 @@ describe("local integration test", () => {
     test("custom module validations with call from CONFIG_DIR", async () => {
       jest.mock("./virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
       const { validator: mockValidator } = require("./virtual-validator-with-call");
-      const { readFile: readFileSpy } = require("fs");
 
       const config = {
         [FEATURE.A]: {
@@ -264,7 +260,7 @@ describe("local integration test", () => {
         },
       };
       const configBuffer = Buffer.from(JSON.stringify(config));
-      readFileSpy.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
+      mockReadFile.mockImplementationOnce((filepath, callback) => callback(null, configBuffer));
       await toggles.initializeFeatures({
         configFile: "./test/integration-local/virtual-config.json",
       });

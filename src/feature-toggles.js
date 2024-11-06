@@ -19,7 +19,7 @@ const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redis-wrapper");
 const { REDIS_INTEGRATION_MODE } = redis;
-const cfEnv = require("./shared/cf-env");
+const { cfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { LimitedLazyCache } = require("./shared/cache");
@@ -1652,13 +1652,14 @@ class FeatureToggles {
 }
 
 module.exports = {
+  ENV,
+  DEFAULT_REDIS_CHANNEL,
+  DEFAULT_REDIS_KEY,
+  SCOPE_ROOT_KEY,
   FeatureToggles,
+  toggles: FeatureToggles.getInstance(),
 
   _: {
-    ENV,
-    DEFAULT_REDIS_CHANNEL,
-    DEFAULT_REDIS_KEY,
-    SCOPE_ROOT_KEY,
     CONFIG_KEY,
     CONFIG_INFO_KEY,
     _getLogger: () => logger,
