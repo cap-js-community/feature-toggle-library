@@ -862,9 +862,8 @@ class FeatureToggles {
         "finished initialization",
         ...(this.__uniqueName ? [`of "${this.__uniqueName}"`] : []),
         util.format(
-          "with %i feature toggle%s (%i runtime, %i file, %i auto)",
+          "with %i feature toggles (%i runtime, %i file, %i auto)",
           totalCount,
-          totalCount === 1 ? "" : "s",
           toggleCounts[CONFIG_SOURCE.RUNTIME],
           toggleCounts[CONFIG_SOURCE.FILE],
           toggleCounts[CONFIG_SOURCE.AUTO]
