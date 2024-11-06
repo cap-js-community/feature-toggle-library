@@ -860,7 +860,7 @@ class FeatureToggles {
     logger.info(
       [
         "finished initialization",
-        ...(this.__uniqueName ? [` of "${this.__uniqueName}"`] : []),
+        ...(this.__uniqueName ? [`of "${this.__uniqueName}"`] : []),
         util.format(
           "with %i feature toggle%s (%i runtime, %i file, %i auto)",
           totalCount,
