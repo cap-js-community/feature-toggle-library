@@ -8,7 +8,7 @@
 
 const redis = require("redis");
 const VError = require("verror");
-const { cfEnv } = require("./shared/cf-env");
+const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
@@ -25,6 +25,7 @@ const INTEGRATION_MODE = Object.freeze({
 });
 const CF_REDIS_SERVICE_LABEL = "redis-cache";
 
+const cfEnv = CfEnv.getInstance();
 const logger = new Logger(COMPONENT_NAME);
 
 const MODE = Object.freeze({

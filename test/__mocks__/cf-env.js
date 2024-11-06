@@ -10,4 +10,8 @@ const cfEnv = {
 };
 cfEnv._reset();
 
-module.exports = { cfEnv };
+const CfEnv = {
+  getInstance: () => cfEnv,
+};
+
+module.exports = { CfEnv };
