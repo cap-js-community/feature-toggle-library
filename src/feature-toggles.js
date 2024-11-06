@@ -12,7 +12,7 @@
 
 // TODO locale for validation messages
 
-const { promisify } = require("util");
+const util = require("util");
 const pathlib = require("path");
 const { readFile } = require("fs");
 const VError = require("verror");
@@ -112,7 +112,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
   ],
 ];
 
-const readFileAsync = promisify(readFile);
+const readFileAsync = util.promisify(readFile);
 let logger = new Logger(COMPONENT_NAME);
 
 /**
@@ -314,6 +314,7 @@ class FeatureToggles {
     redisChannel = DEFAULT_REDIS_CHANNEL,
     redisKey = DEFAULT_REDIS_KEY,
   } = {}) {
+    this.__uniqueName = uniqueName;
     this.__redisChannel = uniqueName ? redisChannel + "-" + uniqueName : redisChannel;
     this.__redisKey = uniqueName ? redisKey + "-" + uniqueName : redisKey;
 
@@ -857,13 +858,18 @@ class FeatureToggles {
     const totalCount =
       toggleCounts[CONFIG_SOURCE.RUNTIME] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.AUTO];
     logger.info(
-      "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-      totalCount,
-      totalCount === 1 ? "" : "s",
-      toggleCounts[CONFIG_SOURCE.RUNTIME],
-      toggleCounts[CONFIG_SOURCE.FILE],
-      toggleCounts[CONFIG_SOURCE.AUTO],
-      redisIntegrationMode
+      [
+        "finished initialization",
+        ...(this.__uniqueName ? [`of "${this.__uniqueName}"`] : []),
+        util.format(
+          "with %i feature toggles (%i runtime, %i file, %i auto)",
+          totalCount,
+          toggleCounts[CONFIG_SOURCE.RUNTIME],
+          toggleCounts[CONFIG_SOURCE.FILE],
+          toggleCounts[CONFIG_SOURCE.AUTO]
+        ),
+        `using ${redisIntegrationMode}`,
+      ].join(" ")
     );
     this.__isInitialized = true;
     return this;
