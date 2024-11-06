@@ -62,4 +62,7 @@ class CfEnv {
   }
 }
 
-module.exports = CfEnv.getInstance();
+module.exports = {
+  ENV,
+  cfEnv: CfEnv.getInstance(),
+};

@@ -108,7 +108,7 @@ describe("cfenv test", () => {
     backupCfServicesEnv = process.env.VCAP_SERVICES;
     process.env.VCAP_APPLICATION = JSON.stringify(mockCfAppEnv);
     process.env.VCAP_SERVICES = JSON.stringify(mockCfServicesEnv);
-    cfEnv = require("../../src/shared/cf-env");
+    ({ cfEnv } = require("../../src/shared/cf-env"));
   });
 
   afterAll(() => {

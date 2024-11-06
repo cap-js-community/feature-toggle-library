@@ -11,8 +11,11 @@ const { FEATURE, mockConfig, redisKey, redisChannel } = require("./__common__/mo
 const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/from-info");
 
 const {
+  DEFAULT_REDIS_CHANNEL,
+  DEFAULT_REDIS_KEY,
+  SCOPE_ROOT_KEY,
   FeatureToggles,
-  _: { DEFAULT_REDIS_CHANNEL, DEFAULT_REDIS_KEY, SCOPE_ROOT_KEY, CONFIG_KEY, CONFIG_INFO_KEY },
+  _: { CONFIG_KEY, CONFIG_INFO_KEY },
 } = featureTogglesModule;
 
 const { readFile: readFileSpy } = require("fs");
@@ -21,7 +24,7 @@ jest.mock("fs", () => ({
   access: jest.fn((cb) => cb()),
 }));
 
-const envMock = require("../src/shared/cf-env");
+const { cfEnv: envMock } = require("../src/shared/cf-env");
 jest.mock("../src/shared/cf-env", () => require("./__mocks__/cf-env"));
 
 const redisWrapperMock = require("../src/redis-wrapper");
@@ -52,7 +55,6 @@ describe("feature toggles test", () => {
   beforeEach(async () => {
     envMock._reset();
     redisWrapperMock._reset();
-    envMock._reset();
     toggles = new FeatureToggles({ redisKey, redisChannel });
     jest.clearAllMocks();
   });

@@ -10,4 +10,4 @@ const cfEnv = {
 };
 cfEnv._reset();
 
-module.exports = cfEnv;
+module.exports = { cfEnv };

@@ -1,6 +1,6 @@
 "use strict";
 
-const envMock = require("../src/shared/cf-env");
+const { cfEnv: envMock } = require("../src/shared/cf-env");
 jest.mock("../src/shared/cf-env", () => require("./__mocks__/cf-env"));
 
 const mockMessageHandler = jest.fn();
