@@ -141,13 +141,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            4,
-            "s",
-            2,
-            1,
-            1,
-            "NO_REDIS",
+            "finished initialization with 4 feature toggles (2 runtime, 1 file, 1 auto) using NO_REDIS",
           ],
         ]
       `);
@@ -291,13 +285,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            9,
-            "s",
-            9,
-            0,
-            0,
-            "NO_REDIS",
+            "finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
           ],
         ]
       `);
@@ -327,13 +315,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            9,
-            "s",
-            9,
-            0,
-            0,
-            "NO_REDIS",
+            "finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
           ],
         ]
       `);
@@ -470,13 +452,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            9,
-            "s",
-            9,
-            0,
-            0,
-            "NO_REDIS",
+            "finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
           ],
         ]
       `);
@@ -573,13 +549,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization with %i feature toggle%s (%i runtime, %i file, %i auto) with %s",
-            9,
-            "s",
-            9,
-            0,
-            0,
-            "NO_REDIS",
+            "finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
           ],
         ]
       `);

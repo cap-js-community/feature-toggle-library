@@ -84,7 +84,7 @@ describe("logger test", () => {
       }",
         ],
         [
-          "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) with CF_REDIS",
+          "88:88:88.888 | INFO | /test | finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) using CF_REDIS",
         ],
       ]
     `);
@@ -126,7 +126,7 @@ describe("logger test", () => {
           "{"level":"warn","msg":"FeatureTogglesError: found invalid fallback values during initialization\\n{\\n  validationErrors: '[{\\"featureKey\\":\\"test/feature_b\\",\\"errorMessage\\":\\"registered validator \\\\\\\\\\"{0}\\\\\\\\\\" failed for value \\\\\\\\\\"{1}\\\\\\\\\\" with error {2}\\",\\"errorMessageValues\\":[\\"mockConstructor\\",1,\\"bad validator\\"]}]'\\n}","type":"log","layer":"/test"}",
         ],
         [
-          "{"level":"info","msg":"finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) with CF_REDIS","type":"log","layer":"/test"}",
+          "{"level":"info","msg":"finished initialization with 9 feature toggles (9 runtime, 0 file, 0 auto) using CF_REDIS","type":"log","layer":"/test"}",
         ],
       ]
     `);
