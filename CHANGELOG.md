@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
+## v1.2.2 - 2024-11-14
+
+### Changed
+
+- the initialization log of the library will now show the unique name used. this name is used to derive both the redis
+  storage key and pub/sub channel.
+
+### Fixed
+
+- internal naming cleanup and consistency work.
+
 ## v1.2.1 - 2024-09-30
 
 ### Changed
