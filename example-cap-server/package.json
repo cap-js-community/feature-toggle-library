@@ -12,14 +12,15 @@
     "build:copy-library": "npx shx rm -rf gen/srv/node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p gen/srv/node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src gen/srv/node_modules/@cap-js-community/feature-toggle-library",
     "deploy": "npm run build && cf push",
     "cloc": "npx cloc --vcs=git --read-lang-def=../cloc.def .",
-    "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i"
+    "reset-library-dependency": "sed -i '' 's/\"@cap-js-community\\/feature-toggle-library\": \".*\"/\"@cap-js-community\\/feature-toggle-library\": \"*\"/' package.json",
+    "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i && npm run reset-library-dependency"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
-    "@sap/cds": "^8.4.1",
+    "@sap/cds": "^8.4.2",
     "@sap/cds-mtxs": "^1.18.3",
     "express": "^4.21.1"
   },
