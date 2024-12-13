@@ -29,6 +29,6 @@ const priorityHandler = async (context) => {
 };
 
 module.exports = async (srv) => {
-  const { priority } = srv.operations("CheckService");
+  const { priority } = srv.operations;
   srv.on(priority, priorityHandler);
 };

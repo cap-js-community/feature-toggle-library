@@ -126,7 +126,7 @@ const redisSendCommandHandler = async (context) => {
 };
 
 module.exports = async (srv) => {
-  const { state, redisRead, redisUpdate, redisSendCommand } = srv.operations("FeatureService");
+  const { state, redisRead, redisUpdate, redisSendCommand } = srv.operations;
   srv.on(state, stateHandler);
   srv.on(redisRead, redisReadHandler);
   srv.on(redisUpdate, redisUpdateHandler);
