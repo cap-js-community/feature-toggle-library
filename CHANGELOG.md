@@ -9,7 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.2.3 - tbd
 
-- use proper cds syntax to get service operations (by [johannes-vogel](https://github.com/johannes-vogel))
+### Added
+
+- enable node v22 voters.
+
+### Fixed
+
+- use proper cds syntax to get service operations (by [johannes-vogel](https://github.com/johannes-vogel)).
 
 ## v1.2.2 - 2024-11-14
 
