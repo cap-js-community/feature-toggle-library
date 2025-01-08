@@ -553,9 +553,9 @@ const _getIntegrationMode = async () => {
 
 const getIntegrationMode = async () => {
   if (integrationMode === null) {
-    integrationMode = await _getIntegrationMode();
+    integrationMode = _getIntegrationMode();
   }
-  return integrationMode;
+  return await integrationMode;
 };
 
 module.exports = {
