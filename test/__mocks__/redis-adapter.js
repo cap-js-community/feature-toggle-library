@@ -1,6 +1,6 @@
 "use strict";
 
-const { REDIS_INTEGRATION_MODE } = jest.requireActual("../../src/redis-wrapper");
+const { REDIS_INTEGRATION_MODE } = jest.requireActual("../../src/redis-adapter");
 
 const redisKey = "feature-key";
 let mockRedisState = {};

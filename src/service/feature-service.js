@@ -7,7 +7,7 @@
 
 const VError = require("verror");
 const toggles = require("../");
-const redis = require("../redis-wrapper");
+const redis = require("../redis-adapter");
 const { Logger } = require("../shared/logger");
 
 const COMPONENT_NAME = "/FeatureService";

@@ -5,8 +5,8 @@ const featureTogglesModule = require("../../src/feature-toggles");
 const { FeatureToggles } = featureTogglesModule;
 const { ENV, LEVEL, FORMAT, Logger } = require("../../src/shared/logger");
 
-const redisWrapperMock = require("../../src/redis-wrapper");
-jest.mock("../../src/redis-wrapper", () => require("../__mocks__/redis-wrapper"));
+const redisAdapterMock = require("../../src/redis-adapter");
+jest.mock("../../src/redis-adapter", () => require("../__mocks__/redis-adapter"));
 
 const { CfEnv } = require("../../src/shared/cf-env");
 const envMock = CfEnv.getInstance();
@@ -59,7 +59,7 @@ let layer = "/test";
 describe("logger test", () => {
   beforeEach(() => {
     Logger._reset();
-    redisWrapperMock._reset();
+    redisAdapterMock._reset();
     envMock._reset();
     toggles = new FeatureToggles({ redisKey, redisChannel, refreshMessage });
   });

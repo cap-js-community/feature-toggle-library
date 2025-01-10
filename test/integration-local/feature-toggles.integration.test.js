@@ -15,7 +15,7 @@ const { stateFromInfo } = require("../__common__/from-info");
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
 let featureTogglesLoggerSpy;
-let redisWrapperLoggerSpy;
+let redisAdapterLoggerSpy;
 let toggles;
 
 describe("local integration test", () => {
@@ -31,11 +31,11 @@ describe("local integration test", () => {
       error: jest.spyOn(featureTogglesModule._._getLogger(), "error"),
     };
 
-    const redisWrapper = require("../../src/redis-wrapper");
-    redisWrapperLoggerSpy = {
-      info: jest.spyOn(redisWrapper._._getLogger(), "info"),
-      warning: jest.spyOn(redisWrapper._._getLogger(), "warning"),
-      error: jest.spyOn(redisWrapper._._getLogger(), "error"),
+    const redisAdapter = require("../../src/redis-adapter");
+    redisAdapterLoggerSpy = {
+      info: jest.spyOn(redisAdapter._._getLogger(), "info"),
+      warning: jest.spyOn(redisAdapter._._getLogger(), "warning"),
+      error: jest.spyOn(redisAdapter._._getLogger(), "error"),
     };
   });
 
@@ -292,8 +292,8 @@ describe("local integration test", () => {
       `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.warning).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.info).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.warning).toHaveBeenCalledTimes(0);
     });
 
     test("getFeatureValue, changeFeatureValue without scopes", async () => {
@@ -322,9 +322,9 @@ describe("local integration test", () => {
       `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-      expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.info).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.warning.mock.calls).toMatchSnapshot();
+      expect(redisAdapterLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
     test("getFeatureValue with bad scopes", async () => {
@@ -459,9 +459,9 @@ describe("local integration test", () => {
       `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-      expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.info).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.warning.mock.calls).toMatchSnapshot();
+      expect(redisAdapterLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
     test("getFeatureValue, changeFeatureValue with scopes and clearSubScopes, resetFeatureValue", async () => {
@@ -556,9 +556,9 @@ describe("local integration test", () => {
       `);
       expect(featureTogglesLoggerSpy.warning).toHaveBeenCalledTimes(0);
       expect(featureTogglesLoggerSpy.error).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.info).toHaveBeenCalledTimes(0);
-      expect(redisWrapperLoggerSpy.warning.mock.calls).toMatchSnapshot();
-      expect(redisWrapperLoggerSpy.error).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.info).toHaveBeenCalledTimes(0);
+      expect(redisAdapterLoggerSpy.warning.mock.calls).toMatchSnapshot();
+      expect(redisAdapterLoggerSpy.error).toHaveBeenCalledTimes(0);
     });
 
     test("validateFeatureValue with invalid scopes", async () => {

@@ -1,8 +1,8 @@
 /**
- * RedisWrapper is a thin wrapper around the node redis module.
+ * redis-adapter is a thin wrapper around the node redis module.
  *
  * @see {@link https://www.npmjs.com/package/redis|redis on npm}
- * @module redis-wrapper
+ * @module redis-adapter
  */
 "use strict";
 
@@ -14,8 +14,8 @@ const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
 const { tryJsonParse } = require("./shared/static");
 
-const COMPONENT_NAME = "/RedisWrapper";
-const VERROR_CLUSTER_NAME = "RedisWrapperError";
+const COMPONENT_NAME = "/RedisAdapter";
+const VERROR_CLUSTER_NAME = "RedisAdapterError";
 
 const INTEGRATION_MODE = Object.freeze({
   CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
