@@ -133,8 +133,10 @@ const _registerFeatureProvider = (envFeatureToggles) => {
 };
 
 const _registerClientCloseOnShutdown = () => {
-  cds.on("shutdown", async () => {
-    await Promise.allSettled([closeMainClient(), closeSubscriberClient()]);
+  cds.on("shutdown", () => {
+    // NOTE: we just want to kick off the closing in shutdown
+    closeMainClient();
+    closeSubscriberClient();
   });
 };
 
