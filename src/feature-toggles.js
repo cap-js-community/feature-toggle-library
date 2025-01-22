@@ -744,13 +744,21 @@ class FeatureToggles {
    *
    * @param {InitializeOptions}  [options]
    */
-  async _initializeFeatures({ config: configRuntime, configFile: configFilepath, configAuto } = {}) {
+  async _initializeFeatures({
+    config: configRuntime,
+    configFile: configFilepath,
+    configFiles: configFilepaths,
+    configAuto,
+  } = {}) {
     if (this.__isInitialized) {
       return;
     }
 
     let configFromFile;
     try {
+      if (configFilepaths && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
+        configFilepath = DEFAULT_CONFIG_FILEPATH;
+      }
       if (!configFilepath && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
         configFilepath = DEFAULT_CONFIG_FILEPATH;
       }
@@ -779,10 +787,10 @@ class FeatureToggles {
           name: VERROR_CLUSTER_NAME,
           cause: err,
           info: {
-            ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
-            ...(configFromFile && { configFromFile: JSON.stringify(configFromFile) }),
-            ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
             configFilepath,
+            ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
+            ...(configFromFile && { configFromFile: JSON.stringify(configFromFile) }),
+            ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
           },
         },
         "initialization aborted, could not process configuration"
