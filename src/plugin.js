@@ -159,9 +159,7 @@ const _discoverFtsAutoConfig = async () => {
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
   const ftsAutoConfig = await _discoverFtsAutoConfig();
-  if (!envFeatureToggles?.config && !envFeatureToggles?.configFile && !ftsAutoConfig) {
-    return;
-  }
+
   _overwriteUniqueName(envFeatureToggles);
   _overwriteAccessRoles(envFeatureToggles);
   _registerClientCloseOnShutdown();
