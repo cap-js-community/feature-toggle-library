@@ -282,7 +282,7 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig([configRuntime, configFromFile, configAuto], configFilepath) {
+  _processConfig({ configRuntime, configFromFilesMap, configAuto } = {}) {
     const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime, configFilepath);
     const configFromFileCount = this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
     const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto, configFilepath);
@@ -739,6 +739,20 @@ class FeatureToggles {
     );
   }
 
+  static _consolidatedConfigFilepaths(configFilepath, configFilepaths) {
+    const result = [];
+    if (configFilepath) {
+      result.push(configFilepath);
+    }
+    if (configFilepaths) {
+      result.concat(Object.values(configFilepaths));
+    }
+    if (result.length === 0) {
+      result.push(DEFAULT_CONFIG_FILEPATH);
+    }
+    return result;
+  }
+
   /**
    * Implementation for {@link initializeFeatures}.
    *
@@ -754,42 +768,38 @@ class FeatureToggles {
       return;
     }
 
-    let configFromFile;
-    try {
-      if (configFilepaths && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
-        configFilepath = DEFAULT_CONFIG_FILEPATH;
-      }
-      if (!configFilepath && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
-        configFilepath = DEFAULT_CONFIG_FILEPATH;
-      }
-      if (configFilepath) {
-        configFromFile = await FeatureToggles.readConfigFromFile(configFilepath);
-      }
-    } catch (err) {
-      throw new VError(
-        {
-          name: VERROR_CLUSTER_NAME,
-          cause: err,
-          info: {
-            configFilepath,
+    const consolidatedConfigFilepaths = FeatureToggles._consolidatedConfigFilepaths(configFilepath, configFilepaths);
+    const configFromFilesMap = {};
+    for (const configFilepath of consolidatedConfigFilepaths) {
+      try {
+        if (await tryPathReadable(configFilepath)) {
+          configFromFilesMap[configFilepath] = await FeatureToggles.readConfigFromFile(configFilepath);
+        }
+      } catch (err) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            cause: err,
+            info: {
+              configFilepath,
+            },
           },
-        },
-        "initialization aborted, could not read config file"
-      );
+          "initialization aborted, could not read config file"
+        );
+      }
     }
 
     let toggleCounts;
     try {
-      toggleCounts = this._processConfig([configRuntime, configFromFile, configAuto], configFilepath);
+      toggleCounts = this._processConfig({ configRuntime, configFromFilesMap, configAuto, configFilepath });
     } catch (err) {
       throw new VError(
         {
           name: VERROR_CLUSTER_NAME,
           cause: err,
           info: {
-            configFilepath,
             ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
-            ...(configFromFile && { configFromFile: JSON.stringify(configFromFile) }),
+            ...(configFromFilesMap && { configFromFilesMap: JSON.stringify(configFromFilesMap) }),
             ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
           },
         },
