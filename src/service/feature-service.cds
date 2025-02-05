@@ -1,5 +1,6 @@
 @protocol: 'rest'
 
+@impl: '@cap-js-community/feature-toggle-library/src/service/feature-service.js'
 service FeatureService {
     @(requires: ['system-user'])
     function state() returns {};

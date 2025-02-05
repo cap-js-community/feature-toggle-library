@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.2.3 - tbd
 
+### Added
+
+- cds-plugin: added explicit implementation for `FeatureService`.
+
 ### Fixed
 
 - cds-plugin: allow feature toggles to initialize with no configured toggles.
