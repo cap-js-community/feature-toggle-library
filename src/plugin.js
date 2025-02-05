@@ -172,6 +172,7 @@ const activate = async () => {
   await toggles.initializeFeatures({
     config: envFeatureToggles?.config,
     configFile: envFeatureToggles?.configFile,
+    configFiles: envFeatureToggles?.configFiles,
     configAuto: ftsAutoConfig,
   });
 

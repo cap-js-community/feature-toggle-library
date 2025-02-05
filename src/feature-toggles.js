@@ -282,9 +282,9 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig({ configRuntime, configFromFilesWithPath, configAuto } = {}) {
+  _processConfig({ configRuntime, configFromFilesEntries, configAuto } = {}) {
     const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime);
-    const configFromFileCount = configFromFilesWithPath.reduce((count, { configFilepath, configFromFile }) => {
+    const configFromFileCount = configFromFilesEntries.reduce((count, [configFilepath, configFromFile]) => {
       count += this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
       return count;
     }, 0);
@@ -743,12 +743,12 @@ class FeatureToggles {
   }
 
   static async _consolidatedConfigFilepaths(configFilepath, configFilepaths) {
-    const result = [];
+    let result = [];
     if (configFilepath) {
       result.push(configFilepath);
     }
     if (configFilepaths) {
-      result.concat(Object.values(configFilepaths));
+      result = result.concat(Object.values(configFilepaths));
     }
     if (result.length === 0 && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
       result.push(DEFAULT_CONFIG_FILEPATH);
@@ -775,10 +775,10 @@ class FeatureToggles {
       configFilepath,
       configFilepaths
     );
-    const configFromFilesWithPath = await Promise.all(
+    const configFromFilesEntries = await Promise.all(
       consolidatedConfigFilepaths.map(async (configFilepath) => {
         try {
-          return { configFilepath, configFromFile: await FeatureToggles.readConfigFromFile(configFilepath) };
+          return [configFilepath, await FeatureToggles.readConfigFromFile(configFilepath)];
         } catch (err) {
           throw new VError(
             {
@@ -796,7 +796,11 @@ class FeatureToggles {
 
     let toggleCounts;
     try {
-      toggleCounts = this._processConfig({ configRuntime, configFromFilesWithPath, configAuto });
+      toggleCounts = this._processConfig({
+        configRuntime,
+        configFromFilesEntries,
+        configAuto,
+      });
     } catch (err) {
       throw new VError(
         {
@@ -804,7 +808,7 @@ class FeatureToggles {
           cause: err,
           info: {
             ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
-            ...(configFromFilesWithPath && { configFromFilesMap: JSON.stringify(configFromFilesWithPath) }),
+            ...(configFromFilesEntries && { configFromFilesMap: JSON.stringify(configFromFilesEntries) }),
             ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
           },
         },
