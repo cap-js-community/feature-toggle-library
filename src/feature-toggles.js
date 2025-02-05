@@ -229,7 +229,17 @@ class FeatureToggles {
     const entries = Object.entries(configFromSource);
     for (const [featureKey, value] of entries) {
       if (this.__config[featureKey]) {
-        continue;
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+              ...(configFilepath && { configFilepath }),
+            },
+          },
+          "feature is configured twice"
+        );
       }
       count++;
 
