@@ -294,10 +294,11 @@ class FeatureToggles {
    */
   _processConfig({ configRuntime, configFromFilesEntries, configAuto } = {}) {
     const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime);
-    const configFromFileCount = configFromFilesEntries.reduce((count, [configFilepath, configFromFile]) => {
-      count += this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
-      return count;
-    }, 0);
+    const configFromFileCount = configFromFilesEntries.reduce(
+      (count, [configFilepath, configFromFile]) =>
+        count + this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath),
+      0
+    );
     const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto);
 
     this.__isConfigProcessed = true;
