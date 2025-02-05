@@ -739,7 +739,7 @@ class FeatureToggles {
     );
   }
 
-  static _consolidatedConfigFilepaths(configFilepath, configFilepaths) {
+  static async _consolidatedConfigFilepaths(configFilepath, configFilepaths) {
     const result = [];
     if (configFilepath) {
       result.push(configFilepath);
@@ -747,7 +747,7 @@ class FeatureToggles {
     if (configFilepaths) {
       result.concat(Object.values(configFilepaths));
     }
-    if (result.length === 0) {
+    if (result.length === 0 && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
       result.push(DEFAULT_CONFIG_FILEPATH);
     }
     return result;
@@ -768,30 +768,32 @@ class FeatureToggles {
       return;
     }
 
-    const consolidatedConfigFilepaths = FeatureToggles._consolidatedConfigFilepaths(configFilepath, configFilepaths);
-    const configFromFilesMap = {};
-    for (const configFilepath of consolidatedConfigFilepaths) {
-      try {
-        if (await tryPathReadable(configFilepath)) {
-          configFromFilesMap[configFilepath] = await FeatureToggles.readConfigFromFile(configFilepath);
-        }
-      } catch (err) {
-        throw new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            cause: err,
-            info: {
-              configFilepath,
+    const consolidatedConfigFilepaths = await FeatureToggles._consolidatedConfigFilepaths(
+      configFilepath,
+      configFilepaths
+    );
+    const configFromFilesWithPath = await Promise.all(
+      consolidatedConfigFilepaths.map(async (configFilepath) => {
+        try {
+          return { configFilepath, configFromFile: await FeatureToggles.readConfigFromFile(configFilepath) };
+        } catch (err) {
+          throw new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              cause: err,
+              info: {
+                configFilepath,
+              },
             },
-          },
-          "initialization aborted, could not read config file"
-        );
-      }
-    }
+            "initialization aborted, could not read config file"
+          );
+        }
+      })
+    );
 
     let toggleCounts;
     try {
-      toggleCounts = this._processConfig({ configRuntime, configFromFilesMap, configAuto, configFilepath });
+      toggleCounts = this._processConfig({ configRuntime, configFromFilesWithPath, configAuto, configFilepath });
     } catch (err) {
       throw new VError(
         {
