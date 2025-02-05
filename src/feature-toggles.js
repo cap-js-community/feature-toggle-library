@@ -282,10 +282,13 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig({ configRuntime, configFromFilesMap, configAuto } = {}) {
-    const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime, configFilepath);
-    const configFromFileCount = this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
-    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto, configFilepath);
+  _processConfig({ configRuntime, configFromFilesWithPath, configAuto } = {}) {
+    const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime);
+    const configFromFileCount = configFromFilesWithPath.reduce((count, { configFilepath, configFromFile }) => {
+      count += this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
+      return count;
+    }, 0);
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto);
 
     this.__isConfigProcessed = true;
     return {
@@ -793,7 +796,7 @@ class FeatureToggles {
 
     let toggleCounts;
     try {
-      toggleCounts = this._processConfig({ configRuntime, configFromFilesWithPath, configAuto, configFilepath });
+      toggleCounts = this._processConfig({ configRuntime, configFromFilesWithPath, configAuto });
     } catch (err) {
       throw new VError(
         {
@@ -801,7 +804,7 @@ class FeatureToggles {
           cause: err,
           info: {
             ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
-            ...(configFromFilesMap && { configFromFilesMap: JSON.stringify(configFromFilesMap) }),
+            ...(configFromFilesWithPath && { configFromFilesMap: JSON.stringify(configFromFilesWithPath) }),
             ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
           },
         },
