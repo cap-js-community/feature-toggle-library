@@ -808,7 +808,7 @@ class FeatureToggles {
           cause: err,
           info: {
             ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
-            ...(configFromFilesEntries && { configFromFilesMap: JSON.stringify(configFromFilesEntries) }),
+            ...(configFromFilesEntries && { configFromFilesEntries: JSON.stringify(configFromFilesEntries) }),
             ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
           },
         },
