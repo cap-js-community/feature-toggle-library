@@ -11,6 +11,8 @@ jest.mock("fs", () => ({
   access: mockAccess,
 }));
 
+const VError = require("verror");
+
 const { stateFromInfo } = require("../__common__/from-info");
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
@@ -99,21 +101,41 @@ describe("local integration test", () => {
       };
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForConflict))));
 
-      await expect(
-        toggles.initializeFeatures({ config: configForRuntime, configFile: "toggles.json" })
-      ).rejects.toMatchInlineSnapshot(
+      const caught = await toggles
+        .initializeFeatures({ config: configForRuntime, configFile: "toggles.json" })
+        .catch((err) => err);
+      expect(caught).toMatchInlineSnapshot(
         `[FeatureTogglesError: initialization aborted, could not process configuration: feature is configured twice]`
       );
+      expect(VError.info(caught)).toMatchInlineSnapshot(`
+        {
+          "featureKey": "test/feature_a",
+          "sourceConflicting": "FILE",
+          "sourceExisting": "RUNTIME",
+          "sourceFilepathConflicting": "toggles.json",
+        }
+      `);
     });
 
     test("init config conflict between file A and file B throws", async () => {
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
-      await expect(
-        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
-      ).rejects.toMatchInlineSnapshot(
+
+      const caught = await toggles
+        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+        .catch((err) => err);
+      expect(caught).toMatchInlineSnapshot(
         `[FeatureTogglesError: initialization aborted, could not process configuration: feature is configured twice]`
       );
+      expect(VError.info(caught)).toMatchInlineSnapshot(`
+        {
+          "featureKey": "test/feature_c",
+          "sourceConflicting": "FILE",
+          "sourceExisting": "FILE",
+          "sourceFilepathConflicting": "toggles-2.json",
+          "sourceFilepathExisting": "toggles-1.json",
+        }
+      `);
     });
 
     test("init config conflict between file and auto preserves", async () => {
