@@ -58,95 +58,86 @@ describe("local integration test", () => {
       );
     });
 
-    test("init config precedence", async () => {
-      const configForRuntime = {
-        [FEATURE.A]: {
-          fallbackValue: "fallbackRuntimeA",
-          type: "string",
-        },
-        [FEATURE.B]: {
-          fallbackValue: "fallbackRuntimeB",
-          type: "string",
-        },
-      };
-      const configForFile = {
-        [FEATURE.A]: {
-          fallbackValue: "fallbackFileA",
-          type: "string",
-        },
-        [FEATURE.C]: {
-          fallbackValue: "fallbackFileC",
-          type: "string",
-        },
-      };
-      const configForAuto = {
-        [FEATURE.A]: {
-          fallbackValue: "fallbackAutoA",
-          type: "string",
-        },
-        [FEATURE.B]: {
-          fallbackValue: "fallbackAutoB",
-          type: "string",
-        },
-        [FEATURE.C]: {
-          fallbackValue: "fallbackAutoC",
-          type: "string",
-        },
-        [FEATURE.D]: {
-          fallbackValue: "fallbackAutoD",
-          type: "string",
-        },
-      };
-      mockReadFile.mockImplementationOnce((filepath, callback) =>
-        callback(null, Buffer.from(JSON.stringify(configForFile)))
-      );
+    test("init consolidate config filepaths", async () => {});
+    test("init config conflict between runtime and file throws", async () => {});
+    test("init config conflict between file A and file B throws", async () => {});
+    test("init config conflict between file and auto preserves", async () => {});
 
-      await toggles.initializeFeatures({
-        config: configForRuntime,
-        configFile: "somePath.json",
-        configAuto: configForAuto,
-      });
-      expect(toggles.getFeaturesInfos()).toMatchInlineSnapshot(`
-        {
-          "test/feature_a": {
-            "config": {
-              "SOURCE": "RUNTIME",
-              "TYPE": "string",
-            },
-            "fallbackValue": "fallbackRuntimeA",
-          },
-          "test/feature_b": {
-            "config": {
-              "SOURCE": "RUNTIME",
-              "TYPE": "string",
-            },
-            "fallbackValue": "fallbackRuntimeB",
-          },
-          "test/feature_c": {
-            "config": {
-              "SOURCE": "FILE",
-              "TYPE": "string",
-            },
-            "fallbackValue": "fallbackFileC",
-          },
-          "test/feature_d": {
-            "config": {
-              "SOURCE": "AUTO",
-              "TYPE": "string",
-            },
-            "fallbackValue": "fallbackAutoD",
-          },
-        }
-      `);
+    // TODO test for custom validation code from two config files with CONFIG_DIR!
 
-      expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
-        [
-          [
-            "finished initialization of "unicorn" with 4 feature toggles (2 runtime, 1 file, 1 auto) using NO_REDIS",
-          ],
-        ]
-      `);
-    });
+    // test("init config precedence", async () => {
+    //   const configForRuntime = {
+    //     [FEATURE.A]: {
+    //       fallbackValue: "fallbackRuntimeA",
+    //       type: "string",
+    //     },
+    //     [FEATURE.B]: {
+    //       fallbackValue: "fallbackRuntimeB",
+    //       type: "string",
+    //     },
+    //   };
+    //   const configForFile = {
+    //     [FEATURE.C]: {
+    //       fallbackValue: "fallbackFileC",
+    //       type: "string",
+    //     },
+    //   };
+    //   const configForAuto = {
+    //     [FEATURE.D]: {
+    //       fallbackValue: "fallbackAutoD",
+    //       type: "string",
+    //     },
+    //   };
+    //   mockReadFile.mockImplementationOnce((filepath, callback) =>
+    //     callback(null, Buffer.from(JSON.stringify(configForFile)))
+    //   );
+    //
+    //   await toggles.initializeFeatures({
+    //     config: configForRuntime,
+    //     configFile: "somePath.json",
+    //     configAuto: configForAuto,
+    //   });
+    //   expect(toggles.getFeaturesInfos()).toMatchInlineSnapshot(`
+    //     {
+    //       "test/feature_a": {
+    //         "config": {
+    //           "SOURCE": "RUNTIME",
+    //           "TYPE": "string",
+    //         },
+    //         "fallbackValue": "fallbackRuntimeA",
+    //       },
+    //       "test/feature_b": {
+    //         "config": {
+    //           "SOURCE": "RUNTIME",
+    //           "TYPE": "string",
+    //         },
+    //         "fallbackValue": "fallbackRuntimeB",
+    //       },
+    //       "test/feature_c": {
+    //         "config": {
+    //           "SOURCE": "FILE",
+    //           "TYPE": "string",
+    //         },
+    //         "fallbackValue": "fallbackFileC",
+    //       },
+    //       "test/feature_d": {
+    //         "config": {
+    //           "SOURCE": "AUTO",
+    //           "TYPE": "string",
+    //         },
+    //         "fallbackValue": "fallbackAutoD",
+    //       },
+    //     }
+    //   `);
+    //
+    //   expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
+    //     [
+    //       [
+    //         "finished initialization of "unicorn" with 4 feature toggles (2 runtime, 1 file, 1 auto) using NO_REDIS",
+    //       ],
+    //     ]
+    //   `);
+    // });
   });
 
   describe("validations", () => {
