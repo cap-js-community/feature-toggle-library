@@ -14,7 +14,7 @@
 
 const util = require("util");
 const pathlib = require("path");
-const { readFile } = require("fs");
+const fs = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redis-adapter");
@@ -120,7 +120,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 ];
 
 const cfEnv = CfEnv.getInstance();
-const readFileAsync = util.promisify(readFile);
+const readFileAsync = util.promisify(fs.readFile);
 let logger = new Logger(COMPONENT_NAME);
 
 /**
@@ -1726,6 +1726,7 @@ module.exports = {
   ENV,
   DEFAULT_REDIS_CHANNEL,
   DEFAULT_REDIS_KEY,
+  DEFAULT_CONFIG_FILEPATH,
   SCOPE_ROOT_KEY,
   FeatureToggles,
 
