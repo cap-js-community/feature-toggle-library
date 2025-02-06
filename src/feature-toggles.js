@@ -225,7 +225,7 @@ class FeatureToggles {
     }
   }
 
-  _processConfigSource(source, mergeConflictBehavior, configFromSource, configFilepath) {
+  _processConfigSource(source, mergeConflictBehavior, configFromSource, sourceFilepath) {
     let count = 0;
     if (!isObject(configFromSource)) {
       return count;
@@ -244,7 +244,7 @@ class FeatureToggles {
             const sourceExisting = this.__config[featureKey][CONFIG_KEY.SOURCE];
             const sourceConflicting = source;
             const sourceFilepathExisting = this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH];
-            const sourceFilepathConflicting = configFilepath;
+            const sourceFilepathConflicting = sourceFilepath;
             throw new VError(
               {
                 name: VERROR_CLUSTER_NAME,
@@ -270,6 +270,7 @@ class FeatureToggles {
             info: {
               featureKey,
               source,
+              ...(sourceFilepath && { sourceFilepath }),
             },
           },
           "feature configuration is not an object"
@@ -284,8 +285,8 @@ class FeatureToggles {
 
       this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
 
-      if (configFilepath) {
-        this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH] = configFilepath;
+      if (sourceFilepath) {
+        this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH] = sourceFilepath;
       }
 
       if (type) {
@@ -306,7 +307,7 @@ class FeatureToggles {
 
       if (validations) {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
-        this._processValidations(featureKey, validations, configFilepath);
+        this._processValidations(featureKey, validations, sourceFilepath);
       }
     }
 
@@ -782,7 +783,7 @@ class FeatureToggles {
         name: VERROR_CLUSTER_NAME,
         info: { configFilepath },
       },
-      "configFilepath with unsupported extension, allowed extensions are .yaml and .json"
+      "config filepath with unsupported extension, allowed extensions are .yaml and .json"
     );
   }
 
@@ -850,11 +851,6 @@ class FeatureToggles {
         {
           name: VERROR_CLUSTER_NAME,
           cause: err,
-          info: {
-            ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
-            ...(configFromFilesEntries && { configFromFilesEntries: JSON.stringify(configFromFilesEntries) }),
-            ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
-          },
         },
         "initialization aborted, could not process configuration"
       );
