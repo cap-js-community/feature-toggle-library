@@ -58,6 +58,7 @@ const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
   SOURCE: "SOURCE",
+  SOURCE_FILEPATH: "SOURCE_FILEPATH",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
   VALIDATIONS: "VALIDATIONS",
@@ -240,13 +241,19 @@ class FeatureToggles {
           }
           case CONFIG_MERGE_CONFLICT.THROW: // eslint-disable-current-line no-fallthrough
           default: {
+            const sourceExisting = this.__config[featureKey][CONFIG_KEY.SOURCE];
+            const sourceConflicting = source;
+            const sourceFilepathExisting = this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH];
+            const sourceFilepathConflicting = configFilepath;
             throw new VError(
               {
                 name: VERROR_CLUSTER_NAME,
                 info: {
                   featureKey,
-                  source,
-                  ...(configFilepath && { configFilepath }),
+                  sourceExisting,
+                  sourceConflicting,
+                  ...(sourceFilepathExisting && { sourceFilepathExisting }),
+                  ...(sourceFilepathConflicting && { sourceFilepathConflicting }),
                 },
               },
               "feature is configured twice"
@@ -276,6 +283,10 @@ class FeatureToggles {
       this.__config[featureKey] = {};
 
       this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
+
+      if (configFilepath) {
+        this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH] = configFilepath;
+      }
 
       if (type) {
         this.__config[featureKey][CONFIG_KEY.TYPE] = type;
