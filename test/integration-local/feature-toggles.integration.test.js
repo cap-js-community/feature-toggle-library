@@ -155,8 +155,6 @@ describe("local integration test", () => {
         ]
       `);
     });
-
-    // TODO test for custom validation code from two config files with CONFIG_DIR!
   });
 
   describe("validations", () => {
@@ -272,6 +270,59 @@ describe("local integration test", () => {
 
       expect(mockValidator).toHaveBeenCalledTimes(1);
       expect(mockValidator).toHaveBeenCalledWith("fallback", undefined, undefined);
+    });
+
+    test("custom module validations with call from CONFIG_DIR from two config filepath", async () => {
+      jest.mock("./1/virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      jest.mock("./2/virtual-validator-with-call", () => ({ validator: jest.fn() }), { virtual: true });
+      const { validator: mockValidator1 } = require("./1/virtual-validator-with-call");
+      const { validator: mockValidator2 } = require("./2/virtual-validator-with-call");
+
+      const configForFile1 = {
+        [FEATURE.A]: {
+          fallbackValue: "fallback1",
+          type: "string",
+          validations: [{ module: "$CONFIG_DIR/virtual-validator-with-call", call: "validator" }],
+        },
+      };
+      const configForFile2 = {
+        [FEATURE.B]: {
+          fallbackValue: "fallback2",
+          type: "string",
+          validations: [{ module: "$CONFIG_DIR/virtual-validator-with-call", call: "validator" }],
+        },
+      };
+      mockReadFile.mockImplementationOnce((filepath, callback) =>
+        callback(null, Buffer.from(JSON.stringify(configForFile1)))
+      );
+      mockReadFile.mockImplementationOnce((filepath, callback) =>
+        callback(null, Buffer.from(JSON.stringify(configForFile2)))
+      );
+
+      await toggles.initializeFeatures({
+        configFiles: [
+          "./test/integration-local/1/virtual-config.json",
+          "./test/integration-local/2/virtual-config.json",
+        ],
+      });
+
+      expect(mockReadFile).toHaveBeenCalledTimes(2);
+      expect(mockReadFile.mock.calls).toMatchInlineSnapshot(`
+        [
+          [
+            "./test/integration-local/1/virtual-config.json",
+            [Function],
+          ],
+          [
+            "./test/integration-local/2/virtual-config.json",
+            [Function],
+          ],
+        ]
+      `);
+      expect(mockValidator1).toHaveBeenCalledTimes(1);
+      expect(mockValidator1).toHaveBeenCalledWith("fallback1", undefined, undefined);
+      expect(mockValidator2).toHaveBeenCalledTimes(1);
+      expect(mockValidator1).toHaveBeenCalledWith("fallback2", undefined, undefined);
     });
   });
 
