@@ -14,7 +14,7 @@
 
 const util = require("util");
 const pathlib = require("path");
-const { readFile } = require("fs");
+const fs = require("fs");
 const VError = require("verror");
 const yaml = require("yaml");
 const redis = require("./redis-adapter");
@@ -49,10 +49,17 @@ const CONFIG_SOURCE = Object.freeze({
   AUTO: "AUTO",
 });
 
+const CONFIG_MERGE_CONFLICT = Object.freeze({
+  THROW: "THROW",
+  PRESERVE: "PRESERVE",
+  OVERRIDE: "OVERRIDE",
+});
+
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
   SOURCE: "SOURCE",
+  SOURCE_FILEPATH: "SOURCE_FILEPATH",
   APP_URL: "APP_URL",
   APP_URL_ACTIVE: "APP_URL_ACTIVE",
   VALIDATIONS: "VALIDATIONS",
@@ -113,7 +120,7 @@ const SCOPE_PREFERENCE_ORDER_MASKS = [
 ];
 
 const cfEnv = CfEnv.getInstance();
-const readFileAsync = util.promisify(readFile);
+const readFileAsync = util.promisify(fs.readFile);
 let logger = new Logger(COMPONENT_NAME);
 
 /**
@@ -219,7 +226,7 @@ class FeatureToggles {
     }
   }
 
-  _processConfigSource(source, configFromSource, configFilepath) {
+  _processConfigSource(source, mergeConflictBehavior, configFromSource, sourceFilepath) {
     let count = 0;
     if (!isObject(configFromSource)) {
       return count;
@@ -229,7 +236,31 @@ class FeatureToggles {
     const entries = Object.entries(configFromSource);
     for (const [featureKey, value] of entries) {
       if (this.__config[featureKey]) {
-        continue;
+        switch (mergeConflictBehavior) {
+          case CONFIG_MERGE_CONFLICT.PRESERVE: {
+            continue;
+          }
+          case CONFIG_MERGE_CONFLICT.THROW: // eslint-disable-current-line no-fallthrough
+          default: {
+            const sourceExisting = this.__config[featureKey][CONFIG_KEY.SOURCE];
+            const sourceConflicting = source;
+            const sourceFilepathExisting = this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH];
+            const sourceFilepathConflicting = sourceFilepath;
+            throw new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                info: {
+                  featureKey,
+                  sourceExisting,
+                  sourceConflicting,
+                  ...(sourceFilepathExisting && { sourceFilepathExisting }),
+                  ...(sourceFilepathConflicting && { sourceFilepathConflicting }),
+                },
+              },
+              "feature is configured twice"
+            );
+          }
+        }
       }
       count++;
 
@@ -240,6 +271,7 @@ class FeatureToggles {
             info: {
               featureKey,
               source,
+              ...(sourceFilepath && { sourceFilepath }),
             },
           },
           "feature configuration is not an object"
@@ -253,6 +285,10 @@ class FeatureToggles {
       this.__config[featureKey] = {};
 
       this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
+
+      if (sourceFilepath) {
+        this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH] = sourceFilepath;
+      }
 
       if (type) {
         this.__config[featureKey][CONFIG_KEY.TYPE] = type;
@@ -272,7 +308,7 @@ class FeatureToggles {
 
       if (validations) {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
-        this._processValidations(featureKey, validations, configFilepath);
+        this._processValidations(featureKey, validations, sourceFilepath);
       }
     }
 
@@ -282,10 +318,19 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig([configRuntime, configFromFile, configAuto], configFilepath) {
-    const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime, configFilepath);
-    const configFromFileCount = this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath);
-    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto, configFilepath);
+  _processConfig({ configRuntime, configFromFilesEntries, configAuto } = {}) {
+    const configRuntimeCount = this._processConfigSource(
+      CONFIG_SOURCE.RUNTIME,
+      CONFIG_MERGE_CONFLICT.THROW,
+      configRuntime
+    );
+    const configFromFileCount = configFromFilesEntries.reduce(
+      (count, [configFilepath, configFromFile]) =>
+        count +
+        this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.THROW, configFromFile, configFilepath),
+      0
+    );
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, CONFIG_MERGE_CONFLICT.PRESERVE, configAuto);
 
     this.__isConfigProcessed = true;
     return {
@@ -735,8 +780,22 @@ class FeatureToggles {
         name: VERROR_CLUSTER_NAME,
         info: { configFilepath },
       },
-      "configFilepath with unsupported extension, allowed extensions are .yaml and .json"
+      "config filepath with unsupported extension, allowed extensions are .yaml and .json"
     );
+  }
+
+  static async _consolidatedConfigFilepaths(configFilepath, configFilepaths) {
+    let result = [];
+    if (configFilepath) {
+      result.push(configFilepath);
+    }
+    if (configFilepaths) {
+      result = result.concat(Object.values(configFilepaths));
+    }
+    if (result.length === 0 && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
+      result.push(DEFAULT_CONFIG_FILEPATH);
+    }
+    return result;
   }
 
   /**
@@ -744,46 +803,51 @@ class FeatureToggles {
    *
    * @param {InitializeOptions}  [options]
    */
-  async _initializeFeatures({ config: configRuntime, configFile: configFilepath, configAuto } = {}) {
+  async _initializeFeatures({
+    config: configRuntime,
+    configFile: configFilepath,
+    configFiles: configFilepaths,
+    configAuto,
+  } = {}) {
     if (this.__isInitialized) {
       return;
     }
 
-    let configFromFile;
-    try {
-      if (!configFilepath && (await tryPathReadable(DEFAULT_CONFIG_FILEPATH))) {
-        configFilepath = DEFAULT_CONFIG_FILEPATH;
-      }
-      if (configFilepath) {
-        configFromFile = await FeatureToggles.readConfigFromFile(configFilepath);
-      }
-    } catch (err) {
-      throw new VError(
-        {
-          name: VERROR_CLUSTER_NAME,
-          cause: err,
-          info: {
-            configFilepath,
-          },
-        },
-        "initialization aborted, could not read config file"
-      );
-    }
+    const consolidatedConfigFilepaths = await FeatureToggles._consolidatedConfigFilepaths(
+      configFilepath,
+      configFilepaths
+    );
+    const configFromFilesEntries = await Promise.all(
+      consolidatedConfigFilepaths.map(async (configFilepath) => {
+        try {
+          return [configFilepath, await FeatureToggles.readConfigFromFile(configFilepath)];
+        } catch (err) {
+          throw new VError(
+            {
+              name: VERROR_CLUSTER_NAME,
+              cause: err,
+              info: {
+                configFilepath,
+              },
+            },
+            "initialization aborted, could not read config file"
+          );
+        }
+      })
+    );
 
     let toggleCounts;
     try {
-      toggleCounts = this._processConfig([configRuntime, configFromFile, configAuto], configFilepath);
+      toggleCounts = this._processConfig({
+        configRuntime,
+        configFromFilesEntries,
+        configAuto,
+      });
     } catch (err) {
       throw new VError(
         {
           name: VERROR_CLUSTER_NAME,
           cause: err,
-          info: {
-            ...(configAuto && { configAuto: JSON.stringify(configAuto) }),
-            ...(configFromFile && { configFromFile: JSON.stringify(configFromFile) }),
-            ...(configRuntime && { configRuntime: JSON.stringify(configRuntime) }),
-            configFilepath,
-          },
         },
         "initialization aborted, could not process configuration"
       );
@@ -1662,6 +1726,7 @@ module.exports = {
   ENV,
   DEFAULT_REDIS_CHANNEL,
   DEFAULT_REDIS_KEY,
+  DEFAULT_CONFIG_FILEPATH,
   SCOPE_ROOT_KEY,
   FeatureToggles,
 

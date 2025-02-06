@@ -1,5 +1,14 @@
 "use strict";
 
+const fsActual = jest.requireActual("fs");
+const mockReadFile = jest.fn();
+const mockAccess = jest.fn();
+jest.mock("fs", () => ({
+  readFile: mockReadFile,
+  access: mockAccess,
+  constants: jest.requireActual("fs").constants,
+}));
+
 const util = require("util");
 
 const VError = require("verror");
@@ -13,16 +22,11 @@ const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/from-i
 const {
   DEFAULT_REDIS_CHANNEL,
   DEFAULT_REDIS_KEY,
+  DEFAULT_CONFIG_FILEPATH,
   SCOPE_ROOT_KEY,
   FeatureToggles,
   _: { CONFIG_KEY, CONFIG_INFO_KEY },
 } = featureTogglesModule;
-
-const { readFile: readFileSpy } = require("fs");
-jest.mock("fs", () => ({
-  readFile: jest.fn(),
-  access: jest.fn((cb) => cb()),
-}));
 
 const { CfEnv } = require("../src/shared/cf-env");
 const envMock = CfEnv.getInstance();
@@ -62,7 +66,11 @@ describe("feature toggles test", () => {
 
   describe("enums", () => {
     test("config info consistency", () => {
-      const internalKeys = [CONFIG_KEY.VALIDATIONS_SCOPES_MAP, CONFIG_KEY.VALIDATIONS_REGEX];
+      const internalKeys = [
+        CONFIG_KEY.VALIDATIONS_SCOPES_MAP,
+        CONFIG_KEY.VALIDATIONS_REGEX,
+        CONFIG_KEY.SOURCE_FILEPATH,
+      ];
       const configKeysCheck = [].concat(Object.keys(CONFIG_INFO_KEY), internalKeys).sort();
       const configKeys = Object.values(CONFIG_KEY).sort();
 
@@ -74,6 +82,56 @@ describe("feature toggles test", () => {
   });
 
   describe("static functions", () => {
+    test("readConfigFromFile json", async () => {
+      const mockFilePath = "inmemory.json";
+      const mockConfigData = Buffer.from(JSON.stringify(mockConfig));
+      mockReadFile.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
+      const config = await FeatureToggles.readConfigFromFile(mockFilePath);
+
+      expect(mockReadFile).toHaveBeenCalledTimes(1);
+      expect(mockReadFile).toHaveBeenCalledWith(mockFilePath, expect.any(Function));
+      expect(config).toStrictEqual(mockConfig);
+    });
+
+    test("readConfigFromFile yaml", async () => {
+      const mockFilePath = "in_memory.yml";
+      const mockConfigData = Buffer.from(yaml.stringify(mockConfig));
+      mockReadFile.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
+      const config = await FeatureToggles.readConfigFromFile(mockFilePath);
+
+      expect(mockReadFile).toHaveBeenCalledTimes(1);
+      expect(mockReadFile).toHaveBeenCalledWith(mockFilePath, expect.any(Function));
+      expect(config).toStrictEqual(mockConfig);
+    });
+
+    test("_consolidatedConfigFilepaths", async () => {
+      const filepathSingle = "filepath-single";
+      const filepathsArray = [1, 2, 3].map((id) => `filepath-${id}`);
+      const filepathsObject = [1, 2, 3].reduce((acc, id) => {
+        acc[`label-${id}`] = `filepath-${id}`;
+        return acc;
+      }, {});
+      expect(await FeatureToggles._consolidatedConfigFilepaths(filepathSingle)).toStrictEqual([filepathSingle]);
+      expect(await FeatureToggles._consolidatedConfigFilepaths(filepathSingle, filepathsArray)).toStrictEqual([
+        filepathSingle,
+        ...filepathsArray,
+      ]);
+      expect(await FeatureToggles._consolidatedConfigFilepaths(filepathSingle, filepathsObject)).toStrictEqual([
+        filepathSingle,
+        ...filepathsArray,
+      ]);
+      expect(await FeatureToggles._consolidatedConfigFilepaths(undefined, filepathsArray)).toStrictEqual(
+        filepathsArray
+      );
+      expect(await FeatureToggles._consolidatedConfigFilepaths(undefined, filepathsObject)).toStrictEqual(
+        filepathsArray
+      );
+      mockAccess.mockImplementationOnce((path, mode, cb) => cb());
+      expect(mockAccess).toHaveBeenCalledTimes(0);
+      expect(await FeatureToggles._consolidatedConfigFilepaths()).toStrictEqual([DEFAULT_CONFIG_FILEPATH]);
+      expect(mockAccess).toHaveBeenCalledTimes(1);
+    });
+
     test("_getSuperScopeKeys", () => {
       const cache = new LimitedLazyCache({ sizeLimit: 10 });
       const allSuperScopeKeys = (scopeMap) => FeatureToggles._getNonRootSuperScopeKeys(cache, scopeMap);
@@ -235,6 +293,7 @@ describe("feature toggles test", () => {
 
   describe("basic apis", () => {
     test("initializeFeatureToggles", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       expect(toggles.__isInitialized).toBe(true);
@@ -276,6 +335,7 @@ describe("feature toggles test", () => {
       };
       const fallbackValues = configToFallbackValues(badMockConfig);
       const activeKeys = configToActiveKeys(badMockConfig);
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: badMockConfig });
 
       expect(toggles.__isInitialized).toBe(true);
@@ -308,6 +368,7 @@ describe("feature toggles test", () => {
     });
 
     test("_changeRemoteFeatureValues", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock.watchedHashGetSetObject.mockClear();
 
@@ -351,6 +412,7 @@ describe("feature toggles test", () => {
     });
 
     test("validateFeatureValue", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
@@ -420,6 +482,7 @@ describe("feature toggles test", () => {
     });
 
     test("validateFeatureValue with scopes", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       const inputArgsList = [
@@ -497,6 +560,7 @@ describe("feature toggles test", () => {
         ]
       `);
 
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       expect(await toggles.validateFeatureValue(FEATURE.E, 1)).toStrictEqual([]);
     });
@@ -509,6 +573,7 @@ describe("feature toggles test", () => {
     });
 
     test("isValidFeatureKey", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       const invalidKeys = [undefined, () => {}, [], {}, null, 0, "", true, "nonsense"];
@@ -525,6 +590,7 @@ describe("feature toggles test", () => {
     });
 
     test("getFeatureInfo", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       expect(toggles.getFeatureInfo(FEATURE.A)).toMatchInlineSnapshot(`
         {
@@ -557,6 +623,7 @@ describe("feature toggles test", () => {
     });
 
     test("getFeaturesInfos", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       expect(toggles.getFeaturesInfos()).toMatchSnapshot();
@@ -565,6 +632,7 @@ describe("feature toggles test", () => {
     });
 
     test("getRemoteFeaturesInfos", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock._setValues({
         [FEATURE.B]: { [SCOPE_ROOT_KEY]: 1, [FeatureToggles.getScopeKey({ tenant: "a" })]: 10 },
@@ -595,6 +663,7 @@ describe("feature toggles test", () => {
       for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisAdapterMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       expect(mockFeatureValuesEntries.map(([key]) => toggles.getFeatureValue(key))).toStrictEqual(
@@ -624,6 +693,7 @@ describe("feature toggles test", () => {
       for (let i = 0; i < mockFeatureValuesEntries.length; i++) {
         redisAdapterMock.watchedHashGetSetObject.mockImplementationOnce((key, field) => mockFeatureValues[field]);
       }
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
 
       expect(mockFeatureValuesEntries.map(([key]) => toggles.getFeatureValue(key))).toStrictEqual(
@@ -639,6 +709,7 @@ describe("feature toggles test", () => {
     });
 
     test("changeFeatureValue", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock.watchedHashGetSetObject.mockClear();
 
@@ -671,6 +742,7 @@ describe("feature toggles test", () => {
     });
 
     test("changeFeatureValue failing", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock.watchedHashGetSetObject.mockClear();
 
@@ -701,6 +773,7 @@ describe("feature toggles test", () => {
     });
 
     test("changeFeatureValue with option clearSubScopes", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock.watchedHashGetSetObject.mockClear();
       await redisAdapterMock._setValues({
@@ -740,6 +813,7 @@ describe("feature toggles test", () => {
     });
 
     test("changeFeatureValue with option remoteOnly", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock.watchedHashGetSetObject.mockClear();
       redisAdapterMock._setValues({
@@ -784,6 +858,7 @@ describe("feature toggles test", () => {
     });
 
     test("changeFeatureValue with option remoteOnly failing", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       redisAdapterMock.watchedHashGetSetObject.mockClear();
       redisAdapterMock._setValues({
@@ -848,6 +923,7 @@ describe("feature toggles test", () => {
     });
 
     test("refreshFeatureValues", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       expect(toggles.__stateScopedValues).toStrictEqual({});
       const remoteState = { [FEATURE.B]: { [SCOPE_ROOT_KEY]: 42 } };
@@ -871,6 +947,7 @@ describe("feature toggles test", () => {
     });
 
     test("refreshFeatureValues with invalid state", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       expect(toggles.__stateScopedValues).toStrictEqual({});
       redisAdapterMock.watchedHashGetSetObject.mockClear();
@@ -901,9 +978,11 @@ describe("feature toggles test", () => {
     });
 
     test("FeatureValueChangeHandler and changeFeatureValue", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
+      await toggles.initializeFeatures({ config: mockConfig });
+
       const newValue = "newValue";
       const newNewValue = "newNewValue";
-      await toggles.initializeFeatures({ config: mockConfig });
       const oldValue = toggles.getFeatureValue(FEATURE.C);
       const handler = jest.fn();
       toggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
@@ -938,8 +1017,10 @@ describe("feature toggles test", () => {
     });
 
     test("FeatureValueValidation", async () => {
-      const newValue = "newValue";
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
+
+      const newValue = "newValue";
 
       const validator = jest.fn();
       toggles.registerFeatureValueValidation(FEATURE.C, validator);
@@ -1053,8 +1134,10 @@ describe("feature toggles test", () => {
     });
 
     test("FeatureValueValidation and inactive", async () => {
-      const newValue = "newValue";
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
+
+      const newValue = "newValue";
       const oldValue = toggles.getFeatureValue(FEATURE.G);
       const featureConfig = toggles.getFeatureInfo(FEATURE.G).config;
 
@@ -1072,8 +1155,10 @@ describe("feature toggles test", () => {
 
     test("FeatureValueValidation and appUrl working", async () => {
       envMock.cfApp = { uris: ["https://it.cfapps.sap.hana.ondemand.com"] };
-      const newValue = "newValue";
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
+
+      const newValue = "newValue";
       const featureConfig = toggles.getFeatureInfo(FEATURE.H).config;
 
       expect(featureConfig.APP_URL).toMatchInlineSnapshot(`"\\.cfapps\\.sap\\.hana\\.ondemand\\.com$"`);
@@ -1084,8 +1169,9 @@ describe("feature toggles test", () => {
 
     test("FeatureValueValidation and appUrl failing", async () => {
       envMock.cfApp = { uris: ["https://not-it.com"] };
-      const newValue = "newValue";
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
+      const newValue = "newValue";
       const oldValue = toggles.getFeatureValue(FEATURE.H);
       const featureConfig = toggles.getFeatureInfo(FEATURE.H).config;
 
@@ -1106,10 +1192,11 @@ describe("feature toggles test", () => {
     });
 
     test("validateInput throws error", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
+      await toggles.initializeFeatures({ config: mockConfig });
+
       const error = new Error("bad validator");
       const validator = jest.fn().mockRejectedValue(error);
-
-      await toggles.initializeFeatures({ config: mockConfig });
 
       toggles.registerFeatureValueValidation(FEATURE.B, validator);
 
@@ -1138,30 +1225,6 @@ describe("feature toggles test", () => {
     });
   });
 
-  describe("readConfigFromFile", () => {
-    test("readConfigFromFile json", async () => {
-      const mockFilePath = "inmemory.json";
-      const mockConfigData = Buffer.from(JSON.stringify(mockConfig));
-      readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
-      const config = await FeatureToggles.readConfigFromFile(mockFilePath);
-
-      expect(readFileSpy).toHaveBeenCalledTimes(1);
-      expect(readFileSpy).toHaveBeenCalledWith(mockFilePath, expect.any(Function));
-      expect(config).toStrictEqual(mockConfig);
-    });
-
-    test("readConfigFromFile yaml", async () => {
-      const mockFilePath = "in_memory.yml";
-      const mockConfigData = Buffer.from(yaml.stringify(mockConfig));
-      readFileSpy.mockImplementationOnce((filename, callback) => callback(null, mockConfigData));
-      const config = await FeatureToggles.readConfigFromFile(mockFilePath);
-
-      expect(readFileSpy).toHaveBeenCalledTimes(1);
-      expect(readFileSpy).toHaveBeenCalledWith(mockFilePath, expect.any(Function));
-      expect(config).toStrictEqual(mockConfig);
-    });
-  });
-
   describe("always fallback", () => {
     const fallbackValue = "fallback";
     const fallbackValues = { [FEATURE.A]: fallbackValue, [FEATURE.B]: fallbackValue };
@@ -1171,9 +1234,8 @@ describe("feature toggles test", () => {
     };
 
     beforeEach(async () => {
-      await toggles.initializeFeatures({
-        config,
-      });
+      mockAccess.mockImplementationOnce(fsActual.access);
+      await toggles.initializeFeatures({ config });
       loggerSpy.warning.mockClear();
     });
 
@@ -1274,6 +1336,7 @@ describe("feature toggles test", () => {
 
   describe("active to inactive to active again", () => {
     test("setting a toggle inactive does not change it in redis on init or refresh", async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
@@ -1293,6 +1356,7 @@ describe("feature toggles test", () => {
       // !! first reset
       redisAdapterMock.watchedHashGetSetObject.mockClear();
       toggles._reset({ redisKey, redisChannel });
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
@@ -1323,6 +1387,7 @@ describe("feature toggles test", () => {
       // !! second reset
       redisAdapterMock.watchedHashGetSetObject.mockClear();
       toggles._reset({ redisKey, redisChannel });
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({
         config: {
           [FEATURE.B]: {
@@ -1346,6 +1411,7 @@ describe("feature toggles test", () => {
 
   describe("message handling", () => {
     beforeEach(async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
     });
 
@@ -1424,6 +1490,7 @@ describe("feature toggles test", () => {
     const tenantUserValue = "t1u1";
 
     beforeEach(async () => {
+      mockAccess.mockImplementationOnce(fsActual.access);
       await toggles.initializeFeatures({ config: mockConfig });
       toggles.registerFeatureValueChangeHandler(FEATURE.C, handler);
       await toggles.changeFeatureValue(FEATURE.C, rootValue);
