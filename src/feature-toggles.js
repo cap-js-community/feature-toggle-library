@@ -49,6 +49,11 @@ const CONFIG_SOURCE = Object.freeze({
   AUTO: "AUTO",
 });
 
+const CONFIG_MERGE_CONFLICT = Object.freeze({
+  THROW: "THROW",
+  KEEP_EXISTING: "KEEP_EXISTING",
+});
+
 const CONFIG_KEY = Object.freeze({
   TYPE: "TYPE",
   ACTIVE: "ACTIVE",
@@ -219,7 +224,7 @@ class FeatureToggles {
     }
   }
 
-  _processConfigSource(source, configFromSource, configFilepath) {
+  _processConfigSource(source, mergeConflictBehavior, configFromSource, configFilepath) {
     let count = 0;
     if (!isObject(configFromSource)) {
       return count;
@@ -229,17 +234,25 @@ class FeatureToggles {
     const entries = Object.entries(configFromSource);
     for (const [featureKey, value] of entries) {
       if (this.__config[featureKey]) {
-        throw new VError(
-          {
-            name: VERROR_CLUSTER_NAME,
-            info: {
-              featureKey,
-              source,
-              ...(configFilepath && { configFilepath }),
-            },
-          },
-          "feature is configured twice"
-        );
+        switch (mergeConflictBehavior) {
+          case CONFIG_MERGE_CONFLICT.KEEP_EXISTING: {
+            continue;
+          }
+          case CONFIG_MERGE_CONFLICT.THROW: // eslint-disable-current-line no-fallthrough
+          default: {
+            throw new VError(
+              {
+                name: VERROR_CLUSTER_NAME,
+                info: {
+                  featureKey,
+                  source,
+                  ...(configFilepath && { configFilepath }),
+                },
+              },
+              "feature is configured twice"
+            );
+          }
+        }
       }
       count++;
 
@@ -293,13 +306,22 @@ class FeatureToggles {
    * Populate this.__config.
    */
   _processConfig({ configRuntime, configFromFilesEntries, configAuto } = {}) {
-    const configRuntimeCount = this._processConfigSource(CONFIG_SOURCE.RUNTIME, configRuntime);
+    const configRuntimeCount = this._processConfigSource(
+      CONFIG_SOURCE.RUNTIME,
+      CONFIG_MERGE_CONFLICT.THROW,
+      configRuntime
+    );
     const configFromFileCount = configFromFilesEntries.reduce(
       (count, [configFilepath, configFromFile]) =>
-        count + this._processConfigSource(CONFIG_SOURCE.FILE, configFromFile, configFilepath),
+        count +
+        this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.THROW, configFromFile, configFilepath),
       0
     );
-    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, configAuto);
+    const configAutoCount = this._processConfigSource(
+      CONFIG_SOURCE.AUTO,
+      CONFIG_MERGE_CONFLICT.KEEP_EXISTING,
+      configAuto
+    );
 
     this.__isConfigProcessed = true;
     return {
