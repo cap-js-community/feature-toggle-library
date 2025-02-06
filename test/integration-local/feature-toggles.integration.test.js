@@ -119,7 +119,7 @@ describe("local integration test", () => {
     test("init config conflict between file and auto preserves", async () => {
       const firstEntry = Object.entries(configForFile)[0];
       const configForConflict = Object.fromEntries(
-        [firstEntry].map(([key, value]) => [key, { type: "number", fallbackValue: 0 }])
+        [firstEntry].map(([key]) => [key, { type: "number", fallbackValue: 0 }])
       );
       mockReadFile.mockImplementationOnce((filepath, callback) =>
         callback(null, Buffer.from(JSON.stringify(configForFile)))
