@@ -13,15 +13,19 @@ const { fallbackValuesFromInfos, stateFromInfos } = require("./__common__/from-i
 const {
   DEFAULT_REDIS_CHANNEL,
   DEFAULT_REDIS_KEY,
+  DEFAULT_CONFIG_FILEPATH,
   SCOPE_ROOT_KEY,
   FeatureToggles,
   _: { CONFIG_KEY, CONFIG_INFO_KEY },
 } = featureTogglesModule;
 
-const { readFile: readFileSpy } = require("fs");
+const { readFile: readFileSpy, access: accessSpy } = require("fs");
 jest.mock("fs", () => ({
   readFile: jest.fn(),
-  access: jest.fn((cb) => cb()),
+  access: jest.fn((path, mode, cb) => cb()),
+  constants: {
+    R_OK: "R_OK",
+  },
 }));
 
 const { CfEnv } = require("../src/shared/cf-env");
@@ -74,6 +78,33 @@ describe("feature toggles test", () => {
   });
 
   describe("static functions", () => {
+    test("_consolidatedConfigFilepaths", async () => {
+      const filepathSingle = "filepath-single";
+      const filepathsArray = [1, 2, 3].map((id) => `filepath-${id}`);
+      const filepathsObject = [1, 2, 3].reduce((acc, id) => {
+        acc[`label-${id}`] = `filepath-${id}`;
+        return acc;
+      }, {});
+      expect(await FeatureToggles._consolidatedConfigFilepaths(filepathSingle)).toStrictEqual([filepathSingle]);
+      expect(await FeatureToggles._consolidatedConfigFilepaths(filepathSingle, filepathsArray)).toStrictEqual([
+        filepathSingle,
+        ...filepathsArray,
+      ]);
+      expect(await FeatureToggles._consolidatedConfigFilepaths(filepathSingle, filepathsObject)).toStrictEqual([
+        filepathSingle,
+        ...filepathsArray,
+      ]);
+      expect(await FeatureToggles._consolidatedConfigFilepaths(undefined, filepathsArray)).toStrictEqual(
+        filepathsArray
+      );
+      expect(await FeatureToggles._consolidatedConfigFilepaths(undefined, filepathsObject)).toStrictEqual(
+        filepathsArray
+      );
+      expect(accessSpy).toHaveBeenCalledTimes(0);
+      expect(await FeatureToggles._consolidatedConfigFilepaths()).toStrictEqual([DEFAULT_CONFIG_FILEPATH]);
+      expect(accessSpy).toHaveBeenCalledTimes(1);
+    });
+
     test("_getSuperScopeKeys", () => {
       const cache = new LimitedLazyCache({ sizeLimit: 10 });
       const allSuperScopeKeys = (scopeMap) => FeatureToggles._getNonRootSuperScopeKeys(cache, scopeMap);
