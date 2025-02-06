@@ -51,7 +51,8 @@ const CONFIG_SOURCE = Object.freeze({
 
 const CONFIG_MERGE_CONFLICT = Object.freeze({
   THROW: "THROW",
-  KEEP_EXISTING: "KEEP_EXISTING",
+  PRESERVE: "PRESERVE",
+  OVERRIDE: "OVERRIDE",
 });
 
 const CONFIG_KEY = Object.freeze({
@@ -236,7 +237,7 @@ class FeatureToggles {
     for (const [featureKey, value] of entries) {
       if (this.__config[featureKey]) {
         switch (mergeConflictBehavior) {
-          case CONFIG_MERGE_CONFLICT.KEEP_EXISTING: {
+          case CONFIG_MERGE_CONFLICT.PRESERVE: {
             continue;
           }
           case CONFIG_MERGE_CONFLICT.THROW: // eslint-disable-current-line no-fallthrough
@@ -329,11 +330,7 @@ class FeatureToggles {
         this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.THROW, configFromFile, configFilepath),
       0
     );
-    const configAutoCount = this._processConfigSource(
-      CONFIG_SOURCE.AUTO,
-      CONFIG_MERGE_CONFLICT.KEEP_EXISTING,
-      configAuto
-    );
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, CONFIG_MERGE_CONFLICT.PRESERVE, configAuto);
 
     this.__isConfigProcessed = true;
     return {
