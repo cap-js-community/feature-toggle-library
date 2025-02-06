@@ -3,7 +3,7 @@
 //NOTE: if a local redis is running when these integration tests are performed, then they will not work. we rely on
 // and test only the local mode here.
 
-const actualFs = jest.requireActual("fs");
+const fsActual = jest.requireActual("fs");
 const mockReadFile = jest.fn();
 const mockAccess = jest.fn();
 jest.mock("fs", () => ({
@@ -72,7 +72,7 @@ describe("local integration test", () => {
     };
 
     test("init throws for non-existing filepaths", async () => {
-      mockReadFile.mockImplementationOnce(actualFs.readFile);
+      mockReadFile.mockImplementationOnce(fsActual.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
         `[FeatureTogglesError: initialization aborted, could not read config file: ENOENT: no such file or directory, open 'fantasy_name']`
       );
