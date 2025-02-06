@@ -322,7 +322,7 @@ describe("local integration test", () => {
       expect(mockValidator1).toHaveBeenCalledTimes(1);
       expect(mockValidator1).toHaveBeenCalledWith("fallback1", undefined, undefined);
       expect(mockValidator2).toHaveBeenCalledTimes(1);
-      expect(mockValidator1).toHaveBeenCalledWith("fallback2", undefined, undefined);
+      expect(mockValidator2).toHaveBeenCalledWith("fallback2", undefined, undefined);
     });
   });
 
