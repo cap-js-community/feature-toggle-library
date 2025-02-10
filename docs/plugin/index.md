@@ -37,8 +37,8 @@ all of them the same unique name. See
 
 _serviceAccessRoles_, _readAccessRoles_, _writeAccessRoles_, _adminAccessRoles_<br>
 By default the `FeatureService` read and write endpoints are accessible only to users with the CAP pseudo-role
-[system-user](https://cap.cloud.sap/docs/guides/authorization#pseudo-roles). Different projects have their own access role preferences, so this setting allows them to set a
-list of strings, which represent the roles required to access the service. For details see [@requires](https://cap.cloud.sap/docs/guides/authorization#requires).
+[internal-user](https://cap.cloud.sap/docs/guides/security/authorization#pseudo-roles). Different projects have their own access role preferences, so this setting allows them to set a
+list of strings, which represent the roles required to access the service. For details see [@requires](https://cap.cloud.sap/docs/guides/security/authorization#requires).
 
 It will usually be sufficient to set the `serviceAccessRoles` configuration, which covers both the read and write
 endpoints, but not the admin endpoints. If more discriminating access control is required, the `readAccessRoles` and

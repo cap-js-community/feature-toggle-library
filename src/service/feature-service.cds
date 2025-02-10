@@ -2,13 +2,13 @@
 
 @impl: '@cap-js-community/feature-toggle-library/src/service/feature-service.js'
 service FeatureService {
-    @(requires: ['system-user'])
+    @(requires: ['internal-user'])
     function state() returns {};
-    @(requires: ['system-user'])
+    @(requires: ['internal-user'])
     action redisRead() returns {};
 
     // NOTE: expects an object as input
-    @(requires: ['system-user'])
+    @(requires: ['internal-user'])
     @open
     action redisUpdate(newValues: {});
 

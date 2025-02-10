@@ -6,8 +6,7 @@
         "system": {
           "tenant": "system",
           "password": "system",
-          "id": "system-user",
-          "roles": ["system-user"]
+          "roles": ["internal-user"]
         },
         "alice": {
           "tenant": "people",
