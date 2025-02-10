@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- cds-plugin: change default access role to `internal-user` (fixes #90).
+- cds-plugin: change default service access role to `internal-user` (fixes #90).
 
 ## v1.2.3 - 2025-02-05
 
