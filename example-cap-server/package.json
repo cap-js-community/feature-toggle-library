@@ -31,7 +31,7 @@
     "featureToggles": {
       "configFile": "./srv/feature/toggles.yaml",
       "serviceAccessRoles": [
-        "system-user",
+        "internal-user",
         "custom-role"
       ]
     }
