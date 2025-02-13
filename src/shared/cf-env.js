@@ -24,6 +24,14 @@ class CfEnv {
   }
 
   constructor(env = process.env) {
+    if (env.NODE_ENV !== "production") {
+      try {
+        const { VCAP_APPLICATION, VCAP_SERVICES } = require(process.cwd() + "/default-env.json");
+        env.VCAP_APPLICATION = JSON.stringify(VCAP_APPLICATION);
+        env.VCAP_SERVICES = JSON.stringify(VCAP_SERVICES);
+      } catch (err) {} // eslint-disable-line no-empty
+    }
+
     this.isOnCf = env[ENV.USER] === "vcap";
     this.cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
     this.cfServices = CfEnv.parseEnvVar(env, ENV.CF_SERVICES) || {};
