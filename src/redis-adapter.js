@@ -99,6 +99,7 @@ const _createClientBase = (clientName) => {
       } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
       const redisClientOptions = {
         password,
+        pingInterval: 5 * 60000,
         socket: {
           host,
           port,
