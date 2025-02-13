@@ -194,6 +194,24 @@ const canGetClient = async () => {
   return await __canGetClient;
 };
 
+const _getIntegrationMode = async () => {
+  if (!(await canGetClient())) {
+    return INTEGRATION_MODE.NO_REDIS;
+  }
+  if (cfEnv.isOnCf) {
+    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
+  }
+  return INTEGRATION_MODE.LOCAL_REDIS;
+};
+
+const getIntegrationMode = async () => {
+  if (__integrationMode === null) {
+    __integrationMode = _getIntegrationMode();
+  }
+  return await __integrationMode;
+};
+
 /**
  * Lazily create a regular client to be used
  * - for getting/setting values
@@ -556,32 +574,15 @@ const removeMessageHandler = (channel, handler) => __messageHandlers.removeHandl
  */
 const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandlers(channel);
 
-const _getIntegrationMode = async () => {
-  if (!(await canGetClient())) {
-    return INTEGRATION_MODE.NO_REDIS;
-  }
-  if (cfEnv.isOnCf) {
-    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
-  }
-  return INTEGRATION_MODE.LOCAL_REDIS;
-};
-
-const getIntegrationMode = async () => {
-  if (__integrationMode === null) {
-    __integrationMode = _getIntegrationMode();
-  }
-  return await __integrationMode;
-};
-
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
   setClientOptions,
+  canGetClient,
+  getIntegrationMode,
   getMainClient,
   closeMainClient,
   getSubscriberClient,
   closeSubscriberClient,
-  getIntegrationMode,
   sendCommand,
   type,
   get,
