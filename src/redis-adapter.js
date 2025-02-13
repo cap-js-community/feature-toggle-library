@@ -174,7 +174,7 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const setClientOptions = (clientOptions, socketOptions, tlsOptions) => {
+const setClientOptions = ({ clientOptions, socketOptions, tlsOptions } = {}) => {
   __clientOptions = clientOptions;
   __socketOptions = socketOptions;
   __tlsOptions = tlsOptions;
