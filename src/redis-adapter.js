@@ -12,7 +12,7 @@ const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
-const { tryJsonParse } = require("./shared/static");
+const { tryJsonParse, shallowMerge } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
@@ -102,22 +102,23 @@ const _createClientBase = (clientName) => {
         password,
         tls,
       } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-      const redisClientOptions = {
-        ...{
+      const redisClientOptions = shallowMerge(
+        {
           password,
           pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
         },
-        ...__clientOptions,
-        socket: {
-          host,
-          port,
-          ...__clientOptions?.socket,
-          tls: {
-            ...tls,
-            ...__clientOptions?.socket?.tls,
-          },
-        },
-      };
+        __clientOptions,
+        {
+          socket: shallowMerge(
+            {
+              host,
+              port,
+            },
+            __clientOptions?.socket,
+            { tls: shallowMerge(tls, __clientOptions?.socket?.tls) }
+          ),
+        }
+      );
       if (isCluster) {
         return redis.createCluster({
           rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
