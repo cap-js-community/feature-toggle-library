@@ -103,12 +103,19 @@ const _createClientBase = (clientName) => {
         tls,
       } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
       const redisClientOptions = {
-        password,
-        pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+        ...{
+          password,
+          pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+        },
+        ...__clientOptions,
         socket: {
           host,
           port,
-          ...(tls !== undefined && { tls: !!tls }),
+          ...__clientOptions?.socket,
+          tls: {
+            ...tls,
+            ...__clientOptions?.socket?.tls,
+          },
         },
       };
       if (isCluster) {
