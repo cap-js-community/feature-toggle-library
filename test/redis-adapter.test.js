@@ -87,17 +87,36 @@ describe("redis-adapter test", () => {
 
   test("_createClientBase on CF", async () => {
     const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
-    const mockUrlUsable = mockUrl.replace("BAD_USERNAME", "");
 
     envMock.isOnCf = true;
-    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
+    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({
+      cluster_mode: false,
+      uri: mockUrl,
+      hostname: "my-domain.com",
+      port: "1234",
+      password: "mock-password",
+      tls: { tlsOption: "tlsOption" },
+    });
 
     const client = redisAdapter._._createClientBase();
 
     expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
     expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
     expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redis.createClient).toHaveBeenCalledWith({ url: mockUrlUsable });
+    expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
+      [
+        {
+          "password": "mock-password",
+          "socket": {
+            "host": "my-domain.com",
+            "port": "1234",
+            "tls": {
+              "tlsOption": "tlsOption",
+            },
+          },
+        },
+      ]
+    `);
     expect(client).toBe(mockClient);
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });

@@ -90,20 +90,29 @@ const _createClientBase = (clientName) => {
     try {
       // NOTE: settings the user explicitly to empty resolves auth problems, see
       // https://github.com/go-redis/redis/issues/1343
-      const redisCredentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-      const redisIsCluster = redisCredentials.cluster_mode;
-      const url = redisCredentials.uri.replace(/(?<=rediss:\/\/)[\w-]+?(?=:)/, "");
-      if (redisIsCluster) {
+      const {
+        cluster_mode: isCluster,
+        hostname: host,
+        port,
+        password,
+        tls,
+      } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+      const redisClientOptions = {
+        password,
+        socket: {
+          host,
+          port,
+          tls,
+        },
+      };
+      if (isCluster) {
         return redis.createCluster({
-          rootNodes: [{ url }],
+          rootNodes: [redisClientOptions],
           // https://github.com/redis/node-redis/issues/1782
-          defaults: {
-            password: redisCredentials.password,
-            socket: { tls: redisCredentials.tls },
-          },
+          defaults: redisClientOptions,
         });
       }
-      return redis.createClient({ url });
+      return redis.createClient(redisClientOptions);
     } catch (err) {
       throw new VError(
         { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
