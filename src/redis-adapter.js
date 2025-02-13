@@ -35,11 +35,19 @@ const MODE = Object.freeze({
 });
 
 let __messageHandlers;
+let __clientOptions;
+let __socketOptions;
+let __tlsOptions;
+let __canGetClient;
 let __mainClient;
 let __subscriberClient;
 let __integrationMode;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
+  __clientOptions = null;
+  __socketOptions = null;
+  __tlsOptions = null;
+  __canGetClient = null;
   __mainClient = null;
   __subscriberClient = null;
   __integrationMode = null;
@@ -166,13 +174,24 @@ const _closeClientBase = async (client) => {
   }
 };
 
+const setClientOptions = (clientOptions, socketOptions, tlsOptions) => {
+  __clientOptions = clientOptions;
+  __socketOptions = socketOptions;
+  __tlsOptions = tlsOptions;
+};
+
 const canGetClient = async () => {
-  try {
-    const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
-    await _closeClientBase(silentClient);
-    return true;
-  } catch {} // eslint-disable-line no-empty
-  return false;
+  if (__canGetClient === null) {
+    __canGetClient = (async () => {
+      try {
+        const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
+        await _closeClientBase(silentClient);
+        return true;
+      } catch {} // eslint-disable-line no-empty
+      return false;
+    })();
+  }
+  return await __canGetClient;
 };
 
 /**
@@ -187,9 +206,9 @@ const canGetClient = async () => {
  */
 const getMainClient = async () => {
   if (!__mainClient) {
-    __mainClient = await _createClientAndConnect("main");
+    __mainClient = _createClientAndConnect("main");
   }
-  return __mainClient;
+  return await __mainClient;
 };
 
 /**
@@ -213,9 +232,9 @@ const closeMainClient = async () => {
  */
 const getSubscriberClient = async () => {
   if (!__subscriberClient) {
-    __subscriberClient = await _createClientAndConnect("subscriber");
+    __subscriberClient = _createClientAndConnect("subscriber");
   }
-  return __subscriberClient;
+  return await __subscriberClient;
 };
 
 /**
@@ -229,12 +248,8 @@ const closeSubscriberClient = async () => {
 };
 
 const _clientExec = async (functionName, argsObject) => {
-  if (!__mainClient) {
-    __mainClient = await getMainClient();
-  }
-
   try {
-    return await __mainClient[functionName](...Object.values(argsObject));
+    return await (await getMainClient())[functionName](...Object.values(argsObject));
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { functionName, ...argsObject } },
@@ -252,18 +267,15 @@ const _clientExec = async (functionName, argsObject) => {
  */
 const sendCommand = async (command) => {
   // NOTE: _clientExec would not work here, because its error logging does not allow for args with array fields
-  if (!__mainClient) {
-    __mainClient = await getMainClient();
-  }
 
   try {
     const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
-      return await __mainClient.sendCommand(undefined, undefined, command);
+      return await (await getMainClient()).sendCommand(undefined, undefined, command);
     }
-    return await __mainClient.sendCommand(command);
+    return await (await getMainClient()).sendCommand(command);
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { command: JSON.stringify(command) } },
@@ -356,17 +368,16 @@ const del = async (key) => await _clientExec("DEL", { key });
 
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
-  if (!__mainClient) {
-    __mainClient = await getMainClient();
-  }
 
   let lastAttemptError = null;
   let badReplyError = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await __mainClient.WATCH(key);
+      await (await getMainClient()).WATCH(key);
 
-      const oldValueRaw = useHash ? await __mainClient.HGET(key, field) : await __mainClient.GET(key);
+      const oldValueRaw = useHash
+        ? await (await getMainClient()).HGET(key, field)
+        : await (await getMainClient()).GET(key);
       const oldValue =
         mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
@@ -378,7 +389,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
       let validFirstReplies;
       const doDelete = newValueRaw === null;
-      const clientMulti = __mainClient.MULTI();
+      const clientMulti = (await getMainClient()).MULTI();
       if (doDelete) {
         useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
         validFirstReplies = [0, 1];
@@ -500,11 +511,8 @@ const publishMessage = async (channel, message) => await _clientExec("PUBLISH", 
  * @param channel whose messages should be processed
  */
 const subscribe = async (channel) => {
-  if (!__subscriberClient) {
-    __subscriberClient = await getSubscriberClient();
-  }
   try {
-    await __subscriberClient.SUBSCRIBE(channel, _subscribedMessageHandler);
+    await (await getSubscriberClient()).SUBSCRIBE(channel, _subscribedMessageHandler);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during subscribe");
   }
@@ -517,11 +525,8 @@ const subscribe = async (channel) => {
  * @param channel whose messages should no longer be processed
  */
 const unsubscribe = async (channel) => {
-  if (!__subscriberClient) {
-    __subscriberClient = await getSubscriberClient();
-  }
   try {
-    await __subscriberClient.UNSUBSCRIBE(channel);
+    await (await getSubscriberClient()).UNSUBSCRIBE(channel);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during unsubscribe");
   }
@@ -571,6 +576,7 @@ const getIntegrationMode = async () => {
 
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
+  setClientOptions,
   getMainClient,
   closeMainClient,
   getSubscriberClient,
