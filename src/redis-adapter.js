@@ -24,6 +24,7 @@ const INTEGRATION_MODE = Object.freeze({
   NO_REDIS: "NO_REDIS",
 });
 const CF_REDIS_SERVICE_LABEL = "redis-cache";
+const REDIS_CLIENT_DEFAULT_PING_INTERVAL = 5 * 60000;
 
 const cfEnv = CfEnv.getInstance();
 const logger = new Logger(COMPONENT_NAME);
@@ -99,11 +100,11 @@ const _createClientBase = (clientName) => {
       } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
       const redisClientOptions = {
         password,
-        pingInterval: 5 * 60000,
+        pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
         socket: {
           host,
           port,
-          tls,
+          ...(tls !== undefined && { tls }),
         },
       };
       if (isCluster) {
@@ -256,8 +257,8 @@ const sendCommand = async (command) => {
   }
 
   try {
-    const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
-    if (redisIsCluster) {
+    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
       return await mainClient.sendCommand(undefined, undefined, command);
@@ -555,8 +556,8 @@ const _getIntegrationMode = async () => {
     return INTEGRATION_MODE.NO_REDIS;
   }
   if (cfEnv.isOnCf) {
-    const redisIsCluster = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL).cluster_mode;
-    return redisIsCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
+    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   return INTEGRATION_MODE.LOCAL_REDIS;
 };
