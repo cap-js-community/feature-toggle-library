@@ -107,6 +107,7 @@ describe("redis-adapter test", () => {
       [
         {
           "password": "mock-password",
+          "pingInterval": 300000,
           "socket": {
             "host": "my-domain.com",
             "port": "1234",
