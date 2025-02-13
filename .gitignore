@@ -17,3 +17,5 @@ coverage
 
  # jsdoc
 out/
+
+default-env.json

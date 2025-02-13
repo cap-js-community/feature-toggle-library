@@ -6,3 +6,5 @@ docs/vendor/
 docs/_site/
 
 out/
+
+default-env.json
