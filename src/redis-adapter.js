@@ -137,8 +137,7 @@ const _createClientBase = (clientName) => {
     // NOTE: redis behaves a bit odd if you don't make the socket family, aka. ip stack version explicit here. For the
     //   default family value 0, it will be ipv4 in node v16, ipv6 in node v18 and ipv4+ipv6 in node v20...
     return redis.createClient({
-      url: "redis://localhost:6379",
-      socket: { family: 4, reconnectStrategy: _localReconnectStrategy },
+      socket: { family: 4, host: "localhost", port: 6379, reconnectStrategy: _localReconnectStrategy },
     });
   }
 };
