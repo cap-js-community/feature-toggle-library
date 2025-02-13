@@ -176,8 +176,6 @@ const activate = async () => {
     configFiles: envFeatureToggles?.configFiles,
     configAuto: ftsAutoConfig,
     redisClientOptions: envFeatureToggles?.clientOptions,
-    redisSocketOptions: envFeatureToggles?.socketOptions,
-    redisTlsOptions: envFeatureToggles?.tlsOptions,
   });
 
   _registerFeatureProvider(envFeatureToggles);

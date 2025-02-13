@@ -809,8 +809,6 @@ class FeatureToggles {
     configFiles: configFilepaths,
     configAuto,
     redisClientOptions,
-    redisSocketOptions,
-    redisTlsOptions,
   } = {}) {
     if (this.__isInitialized) {
       return;
@@ -869,11 +867,7 @@ class FeatureToggles {
       );
     }
 
-    redis.setClientOptions({
-      clientOptions: redisClientOptions,
-      socketOptions: redisSocketOptions,
-      tlsOptions: redisTlsOptions,
-    });
+    redis.setClientOptions(redisClientOptions);
     const redisIntegrationMode = await redis.getIntegrationMode();
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {

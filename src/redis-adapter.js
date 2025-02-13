@@ -36,8 +36,6 @@ const MODE = Object.freeze({
 
 let __messageHandlers;
 let __clientOptions;
-let __socketOptions;
-let __tlsOptions;
 let __canGetClient;
 let __mainClient;
 let __subscriberClient;
@@ -45,8 +43,6 @@ let __integrationMode;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
   __clientOptions = null;
-  __socketOptions = null;
-  __tlsOptions = null;
   __canGetClient = null;
   __mainClient = null;
   __subscriberClient = null;
@@ -174,10 +170,8 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const setClientOptions = ({ clientOptions, socketOptions, tlsOptions } = {}) => {
+const setClientOptions = (clientOptions) => {
   __clientOptions = clientOptions;
-  __socketOptions = socketOptions;
-  __tlsOptions = tlsOptions;
 };
 
 const canGetClient = async () => {
