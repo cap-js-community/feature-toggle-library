@@ -104,7 +104,7 @@ const _createClientBase = (clientName) => {
         socket: {
           host,
           port,
-          ...(tls !== undefined && { tls }),
+          ...(tls !== undefined && { tls: !!tls }),
         },
       };
       if (isCluster) {

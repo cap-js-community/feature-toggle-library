@@ -111,9 +111,7 @@ describe("redis-adapter test", () => {
           "socket": {
             "host": "my-domain.com",
             "port": "1234",
-            "tls": {
-              "tlsOption": "tlsOption",
-            },
+            "tls": true,
           },
         },
       ]
