@@ -34,15 +34,15 @@ const MODE = Object.freeze({
   OBJECT: "object",
 });
 
-let messageHandlers;
-let mainClient;
-let subscriberClient;
-let integrationMode;
+let __messageHandlers;
+let __mainClient;
+let __subscriberClient;
+let __integrationMode;
 const _reset = () => {
-  messageHandlers = new HandlerCollection();
-  mainClient = null;
-  subscriberClient = null;
-  integrationMode = null;
+  __messageHandlers = new HandlerCollection();
+  __mainClient = null;
+  __subscriberClient = null;
+  __integrationMode = null;
 };
 _reset();
 
@@ -50,7 +50,7 @@ const _logErrorOnEvent = (err) =>
   cfEnv.isOnCf ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
 
 const _subscribedMessageHandler = async (message, channel) => {
-  const handlers = messageHandlers.getHandlers(channel);
+  const handlers = __messageHandlers.getHandlers(channel);
   return handlers.length === 0
     ? null
     : await Promise.all(
@@ -186,10 +186,10 @@ const canGetClient = async () => {
  * @private
  */
 const getMainClient = async () => {
-  if (!mainClient) {
-    mainClient = await _createClientAndConnect("main");
+  if (!__mainClient) {
+    __mainClient = await _createClientAndConnect("main");
   }
-  return mainClient;
+  return __mainClient;
 };
 
 /**
@@ -198,8 +198,8 @@ const getMainClient = async () => {
  * @private
  */
 const closeMainClient = async () => {
-  await _closeClientBase(mainClient);
-  mainClient = null;
+  await _closeClientBase(__mainClient);
+  __mainClient = null;
 };
 
 /**
@@ -212,10 +212,10 @@ const closeMainClient = async () => {
  * @private
  */
 const getSubscriberClient = async () => {
-  if (!subscriberClient) {
-    subscriberClient = await _createClientAndConnect("subscriber");
+  if (!__subscriberClient) {
+    __subscriberClient = await _createClientAndConnect("subscriber");
   }
-  return subscriberClient;
+  return __subscriberClient;
 };
 
 /**
@@ -224,17 +224,17 @@ const getSubscriberClient = async () => {
  * @private
  */
 const closeSubscriberClient = async () => {
-  await _closeClientBase(subscriberClient);
-  subscriberClient = null;
+  await _closeClientBase(__subscriberClient);
+  __subscriberClient = null;
 };
 
 const _clientExec = async (functionName, argsObject) => {
-  if (!mainClient) {
-    mainClient = await getMainClient();
+  if (!__mainClient) {
+    __mainClient = await getMainClient();
   }
 
   try {
-    return await mainClient[functionName](...Object.values(argsObject));
+    return await __mainClient[functionName](...Object.values(argsObject));
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { functionName, ...argsObject } },
@@ -252,8 +252,8 @@ const _clientExec = async (functionName, argsObject) => {
  */
 const sendCommand = async (command) => {
   // NOTE: _clientExec would not work here, because its error logging does not allow for args with array fields
-  if (!mainClient) {
-    mainClient = await getMainClient();
+  if (!__mainClient) {
+    __mainClient = await getMainClient();
   }
 
   try {
@@ -261,9 +261,9 @@ const sendCommand = async (command) => {
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
-      return await mainClient.sendCommand(undefined, undefined, command);
+      return await __mainClient.sendCommand(undefined, undefined, command);
     }
-    return await mainClient.sendCommand(command);
+    return await __mainClient.sendCommand(command);
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { command: JSON.stringify(command) } },
@@ -356,17 +356,17 @@ const del = async (key) => await _clientExec("DEL", { key });
 
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
-  if (!mainClient) {
-    mainClient = await getMainClient();
+  if (!__mainClient) {
+    __mainClient = await getMainClient();
   }
 
   let lastAttemptError = null;
   let badReplyError = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await mainClient.WATCH(key);
+      await __mainClient.WATCH(key);
 
-      const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
+      const oldValueRaw = useHash ? await __mainClient.HGET(key, field) : await __mainClient.GET(key);
       const oldValue =
         mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
@@ -378,7 +378,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
       let validFirstReplies;
       const doDelete = newValueRaw === null;
-      const clientMulti = mainClient.MULTI();
+      const clientMulti = __mainClient.MULTI();
       if (doDelete) {
         useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
         validFirstReplies = [0, 1];
@@ -500,11 +500,11 @@ const publishMessage = async (channel, message) => await _clientExec("PUBLISH", 
  * @param channel whose messages should be processed
  */
 const subscribe = async (channel) => {
-  if (!subscriberClient) {
-    subscriberClient = await getSubscriberClient();
+  if (!__subscriberClient) {
+    __subscriberClient = await getSubscriberClient();
   }
   try {
-    await subscriberClient.SUBSCRIBE(channel, _subscribedMessageHandler);
+    await __subscriberClient.SUBSCRIBE(channel, _subscribedMessageHandler);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during subscribe");
   }
@@ -517,11 +517,11 @@ const subscribe = async (channel) => {
  * @param channel whose messages should no longer be processed
  */
 const unsubscribe = async (channel) => {
-  if (!subscriberClient) {
-    subscriberClient = await getSubscriberClient();
+  if (!__subscriberClient) {
+    __subscriberClient = await getSubscriberClient();
   }
   try {
-    await subscriberClient.UNSUBSCRIBE(channel);
+    await __subscriberClient.UNSUBSCRIBE(channel);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during unsubscribe");
   }
@@ -534,7 +534,7 @@ const unsubscribe = async (channel) => {
  * @param channel whose messages should be processed
  * @param handler to process messages
  */
-const registerMessageHandler = (channel, handler) => messageHandlers.registerHandler(channel, handler);
+const registerMessageHandler = (channel, handler) => __messageHandlers.registerHandler(channel, handler);
 
 /**
  * Stop a given handler from processing messages of a given subscribed channel.
@@ -542,14 +542,14 @@ const registerMessageHandler = (channel, handler) => messageHandlers.registerHan
  * @param channel whose messages should not be processed
  * @param handler to remove
  */
-const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler(channel, handler);
+const removeMessageHandler = (channel, handler) => __messageHandlers.removeHandler(channel, handler);
 
 /**
  * Stop all handlers from processing messages of a given subscribed channel.
  *
  * @param channel whose messages should not be processed
  */
-const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
+const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandlers(channel);
 
 const _getIntegrationMode = async () => {
   if (!(await canGetClient())) {
@@ -563,10 +563,10 @@ const _getIntegrationMode = async () => {
 };
 
 const getIntegrationMode = async () => {
-  if (integrationMode === null) {
-    integrationMode = _getIntegrationMode();
+  if (__integrationMode === null) {
+    __integrationMode = _getIntegrationMode();
   }
-  return await integrationMode;
+  return await __integrationMode;
 };
 
 module.exports = {
@@ -597,12 +597,12 @@ module.exports = {
 
   _: {
     _reset,
-    _getMessageHandlers: () => messageHandlers,
+    _getMessageHandlers: () => __messageHandlers,
     _getLogger: () => logger,
-    _getMainClient: () => mainClient,
-    _setMainClient: (value) => (mainClient = value),
-    _getSubscriberClient: () => subscriberClient,
-    _setSubscriberClient: (value) => (subscriberClient = value),
+    _getMainClient: () => __mainClient,
+    _setMainClient: (value) => (__mainClient = value),
+    _getSubscriberClient: () => __subscriberClient,
+    _setSubscriberClient: (value) => (__subscriberClient = value),
     _subscribedMessageHandler,
     _localReconnectStrategy,
     _createClientBase,
