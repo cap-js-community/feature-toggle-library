@@ -108,9 +108,9 @@ const _createClientBase = (clientName) => {
       };
       if (isCluster) {
         return redis.createCluster({
-          rootNodes: [redisClientOptions],
+          rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
           // https://github.com/redis/node-redis/issues/1782
-          defaults: redisClientOptions,
+          defaults: redisClientOptions, // NOTE: assume this ignores socket/url
         });
       }
       return redis.createClient(redisClientOptions);
