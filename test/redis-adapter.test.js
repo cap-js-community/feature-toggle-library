@@ -31,6 +31,7 @@ const mockClient = {
 const redis = require("@redis/client");
 jest.mock("@redis/client", () => ({
   createClient: jest.fn(() => mockClient),
+  createCluster: jest.fn(() => mockClient),
 }));
 
 const redisAdapter = require("../src/redis-adapter");
@@ -86,41 +87,23 @@ describe("redis-adapter test", () => {
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-  test("_createClientBase on CF", async () => {
-    const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
+  test.each(Object.entries(require("./__mocks__/mock-redis-credentials.json")))(
+    "_createClientBase on CF | %s",
+    async (_, credentials) => {
+      envMock.isOnCf = true;
+      envMock.cfServiceCredentialsForLabel.mockReturnValueOnce(credentials);
 
-    envMock.isOnCf = true;
-    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({
-      cluster_mode: false,
-      uri: mockUrl,
-      hostname: "my-domain.com",
-      port: "1234",
-      password: "mock-password",
-      tls: { tlsOption: "tlsOption" },
-    });
+      redisAdapter._._createClientBase();
+      const { cluster_mode: isCluster } = credentials;
+      const creator = isCluster ? redis.createCluster : redis.createClient;
 
-    const client = redisAdapter._._createClientBase();
-
-    expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
-    expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
-    expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
-      [
-        {
-          "password": "mock-password",
-          "pingInterval": 300000,
-          "socket": {
-            "host": "my-domain.com",
-            "port": "1234",
-            "tls": true,
-            "tlsOption": "tlsOption",
-          },
-        },
-      ]
-    `);
-    expect(client).toBe(mockClient);
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-  });
+      expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
+      expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
+      expect(creator).toHaveBeenCalledTimes(1);
+      expect(creator.mock.calls[0]).toMatchSnapshot();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    }
+  );
 
   test("getMainClient", async () => {
     const client = await redisAdapter.getMainClient();
