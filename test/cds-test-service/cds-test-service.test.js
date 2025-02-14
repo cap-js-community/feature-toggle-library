@@ -5,10 +5,10 @@ const toggles = require("../../src");
 
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
-const server = cds.test("test/cds-test-project");
+const server = cds.test("test/cds-test-service");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
-describe("cds-service", () => {
+describe("cds-test-service", () => {
   const featureBChanges = [
     {
       key: FEATURE.B,

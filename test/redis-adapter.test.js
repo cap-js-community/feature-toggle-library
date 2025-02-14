@@ -28,9 +28,10 @@ const mockClient = {
   MULTI: jest.fn(() => mockMultiClient),
 };
 
-const redis = require("redis");
-jest.mock("redis", () => ({
+const redis = require("@redis/client");
+jest.mock("@redis/client", () => ({
   createClient: jest.fn(() => mockClient),
+  createCluster: jest.fn(() => mockClient),
 }));
 
 const redisAdapter = require("../src/redis-adapter");
@@ -66,52 +67,17 @@ describe("redis-adapter test", () => {
   });
 
   test("_createClientBase local", async () => {
-    envMock.isOnCf = false;
     const client = redisAdapter._._createClientBase();
 
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
       [
         {
-          "socket": {
-            "family": 4,
-            "reconnectStrategy": [Function],
-          },
-          "url": "redis://localhost:6379",
-        },
-      ]
-    `);
-    expect(client).toBe(mockClient);
-    expect(loggerSpy.error).not.toHaveBeenCalled();
-  });
-
-  test("_createClientBase on CF", async () => {
-    const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
-
-    envMock.isOnCf = true;
-    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({
-      cluster_mode: false,
-      uri: mockUrl,
-      hostname: "my-domain.com",
-      port: "1234",
-      password: "mock-password",
-      tls: { tlsOption: "tlsOption" },
-    });
-
-    const client = redisAdapter._._createClientBase();
-
-    expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
-    expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
-    expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
-      [
-        {
-          "password": "mock-password",
           "pingInterval": 300000,
           "socket": {
-            "host": "my-domain.com",
-            "port": "1234",
-            "tls": true,
+            "host": "localhost",
+            "port": 6379,
+            "reconnectStrategy": [Function],
           },
         },
       ]
@@ -119,12 +85,29 @@ describe("redis-adapter test", () => {
     expect(client).toBe(mockClient);
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
+
+  test.each(Object.entries(require("./__mocks__/mock-redis-credentials.json")))(
+    "_createClientBase on CF | %s",
+    async (_, credentials) => {
+      envMock.cfServiceCredentialsForLabel.mockReturnValueOnce(credentials);
+
+      redisAdapter._._createClientBase();
+      const { cluster_mode: isCluster } = credentials;
+      const creator = isCluster ? redis.createCluster : redis.createClient;
+
+      expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledTimes(1);
+      expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
+      expect(creator).toHaveBeenCalledTimes(1);
+      expect(creator.mock.calls[0]).toMatchSnapshot();
+      expect(loggerSpy.error).not.toHaveBeenCalled();
+    }
+  );
 
   test("getMainClient", async () => {
     const client = await redisAdapter.getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(client.connect).toHaveBeenCalledTimes(1);
-    expect(redisAdapter._._getMainClient()).toBe(client);
+    await expect(redisAdapter._._getMainClient()).resolves.toBe(client);
     expect(mockClient.on).toHaveBeenCalledTimes(2);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
@@ -136,7 +119,7 @@ describe("redis-adapter test", () => {
   test("getSubscriberClient", async () => {
     const client = await redisAdapter.getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redisAdapter._._getSubscriberClient()).toBe(client);
+    await expect(redisAdapter._._getSubscriberClient()).resolves.toBe(client);
     expect(mockClient.on).toHaveBeenCalledTimes(2);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
@@ -147,7 +130,7 @@ describe("redis-adapter test", () => {
 
   test("_clientExec", async () => {
     const result = await redisAdapter._._clientExec("SET", { key: "key", value: "value" });
-    const client = redisAdapter._._getMainClient();
+    const client = await redisAdapter._._getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(client);
     expect(client.on).toHaveBeenCalledTimes(2);
@@ -444,10 +427,8 @@ describe("redis-adapter test", () => {
   });
 
   test("_subscribedMessageHandler error", async () => {
-    const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
-
+    // NOTE: this is needed so that the log is an error, not a warning
     envMock.isOnCf = true;
-    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     redisAdapter.registerMessageHandler(channel, mockMessageHandler);
     redisAdapter.registerMessageHandler(channel, mockMessageHandlerTwo);
@@ -469,7 +450,7 @@ describe("redis-adapter test", () => {
     redisAdapter.registerMessageHandler(channel, mockMessageHandler);
     await redisAdapter.subscribe(channel);
 
-    const subscriber = redisAdapter._._getSubscriberClient();
+    const subscriber = await redisAdapter._._getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(subscriber);
     expect(subscriber.on).toHaveBeenCalledTimes(2);
@@ -498,7 +479,7 @@ describe("redis-adapter test", () => {
     redisAdapter.removeMessageHandler(channel, mockMessageHandler);
     redisAdapter.removeMessageHandler(channel, mockMessageHandlerTwo);
     await redisAdapter.unsubscribe(channel);
-    const subscriber = redisAdapter._._getSubscriberClient();
+    const subscriber = await redisAdapter._._getSubscriberClient();
     await redisAdapter._._subscribedMessageHandler(message, channel);
 
     expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledTimes(1);
@@ -517,7 +498,7 @@ describe("redis-adapter test", () => {
 
     redisAdapter.removeAllMessageHandlers(channel);
     await redisAdapter.unsubscribe(channel);
-    const subscriber = redisAdapter._._getSubscriberClient();
+    const subscriber = await redisAdapter._._getSubscriberClient();
     await redisAdapter._._subscribedMessageHandler(message, channel);
 
     expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledTimes(1);

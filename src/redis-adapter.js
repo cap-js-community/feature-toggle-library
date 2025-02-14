@@ -6,7 +6,7 @@
  */
 "use strict";
 
-const redis = require("redis");
+const redis = require("@redis/client");
 const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
@@ -34,15 +34,19 @@ const MODE = Object.freeze({
   OBJECT: "object",
 });
 
-let messageHandlers;
-let mainClient;
-let subscriberClient;
-let integrationMode;
+let __messageHandlers;
+let __clientOptions;
+let __canGetClientPromise;
+let __mainClientPromise;
+let __subscriberClientPromise;
+let __integrationModePromise;
 const _reset = () => {
-  messageHandlers = new HandlerCollection();
-  mainClient = null;
-  subscriberClient = null;
-  integrationMode = null;
+  __messageHandlers = new HandlerCollection();
+  __clientOptions = null;
+  __canGetClientPromise = null;
+  __mainClientPromise = null;
+  __subscriberClientPromise = null;
+  __integrationModePromise = null;
 };
 _reset();
 
@@ -50,7 +54,7 @@ const _logErrorOnEvent = (err) =>
   cfEnv.isOnCf ? logger.error(err) : logger.warning("%s | %O", err.message, VError.info(err));
 
 const _subscribedMessageHandler = async (message, channel) => {
-  const handlers = messageHandlers.getHandlers(channel);
+  const handlers = __messageHandlers.getHandlers(channel);
   return handlers.length === 0
     ? null
     : await Promise.all(
@@ -87,48 +91,67 @@ const _localReconnectStrategy = () =>
  * @private
  */
 const _createClientBase = (clientName) => {
-  if (cfEnv.isOnCf) {
-    try {
-      // NOTE: settings the user explicitly to empty resolves auth problems, see
-      // https://github.com/go-redis/redis/issues/1343
-      const {
-        cluster_mode: isCluster,
-        hostname: host,
-        port,
-        password,
-        tls,
-      } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-      const redisClientOptions = {
-        password,
-        pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-        socket: {
-          host,
-          port,
-          ...(tls !== undefined && { tls: !!tls }),
-        },
-      };
-      if (isCluster) {
-        return redis.createCluster({
-          rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
-          // https://github.com/redis/node-redis/issues/1782
-          defaults: redisClientOptions, // NOTE: assume this ignores socket/url
-        });
-      }
-      return redis.createClient(redisClientOptions);
-    } catch (err) {
-      throw new VError(
-        { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
-        "error during create client with redis service"
-      );
-    }
-  } else {
+  try {
+    const localSocketOptions = {
+      host: "localhost",
+      port: 6379,
+    };
+    const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const hasCredentials = Object.keys(credentials).length > 0;
+    const { cluster_mode: isCluster } = credentials;
+    const credentialClientOptions = hasCredentials
+      ? {
+          password: credentials.password,
+          socket: {
+            host: credentials.hostname,
+            port: credentials.port,
+            tls: credentials.tls,
+          },
+        }
+      : undefined;
+
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
-    // NOTE: redis behaves a bit odd if you don't make the socket family, aka. ip stack version explicit here. For the
-    //   default family value 0, it will be ipv4 in node v16, ipv6 in node v18 and ipv4+ipv6 in node v20...
-    return redis.createClient({
-      url: "redis://localhost:6379",
-      socket: { family: 4, reconnectStrategy: _localReconnectStrategy },
-    });
+    const redisClientOptions = {
+      ...credentialClientOptions,
+      pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+      ...__clientOptions,
+      socket: {
+        ...localSocketOptions,
+        ...credentialClientOptions?.socket,
+        ...__clientOptions?.socket,
+      },
+    };
+
+    // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
+    //   with nonsensical values like:
+    //   - "ca": "null", a literal string spelling null, or
+    //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
+    //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+    // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
+    if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
+      redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
+    }
+
+    if (
+      redisClientOptions.socket.host === "localhost" &&
+      !Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "reconnectStrategy")
+    ) {
+      redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
+    }
+
+    if (isCluster) {
+      return redis.createCluster({
+        rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
+        // https://github.com/redis/node-redis/issues/1782
+        defaults: redisClientOptions, // NOTE: assume this ignores socket/url
+      });
+    }
+    return redis.createClient(redisClientOptions);
+  } catch (err) {
+    throw new VError(
+      { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
+      "error during create client with redis service"
+    );
   }
 };
 
@@ -166,13 +189,41 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const canGetClient = async () => {
-  try {
-    const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
-    await _closeClientBase(silentClient);
-    return true;
-  } catch {} // eslint-disable-line no-empty
-  return false;
+const setClientOptions = (clientOptions) => {
+  __clientOptions = clientOptions;
+};
+
+const _canGetClient = async () => {
+  if (__canGetClientPromise === null) {
+    __canGetClientPromise = (async () => {
+      try {
+        const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
+        await _closeClientBase(silentClient);
+        return true;
+      } catch {} // eslint-disable-line no-empty
+      return false;
+    })();
+  }
+  return await __canGetClientPromise;
+};
+
+const _getIntegrationMode = async () => {
+  const canGetClient = await _canGetClient();
+  if (!canGetClient) {
+    return INTEGRATION_MODE.NO_REDIS;
+  }
+  if (cfEnv.isOnCf) {
+    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
+  }
+  return INTEGRATION_MODE.LOCAL_REDIS;
+};
+
+const getIntegrationMode = async () => {
+  if (__integrationModePromise === null) {
+    __integrationModePromise = _getIntegrationMode();
+  }
+  return await __integrationModePromise;
 };
 
 /**
@@ -186,10 +237,10 @@ const canGetClient = async () => {
  * @private
  */
 const getMainClient = async () => {
-  if (!mainClient) {
-    mainClient = await _createClientAndConnect("main");
+  if (!__mainClientPromise) {
+    __mainClientPromise = _createClientAndConnect("main");
   }
-  return mainClient;
+  return await __mainClientPromise;
 };
 
 /**
@@ -198,8 +249,8 @@ const getMainClient = async () => {
  * @private
  */
 const closeMainClient = async () => {
-  await _closeClientBase(mainClient);
-  mainClient = null;
+  await _closeClientBase(await __mainClientPromise);
+  __mainClientPromise = null;
 };
 
 /**
@@ -212,10 +263,10 @@ const closeMainClient = async () => {
  * @private
  */
 const getSubscriberClient = async () => {
-  if (!subscriberClient) {
-    subscriberClient = await _createClientAndConnect("subscriber");
+  if (!__subscriberClientPromise) {
+    __subscriberClientPromise = _createClientAndConnect("subscriber");
   }
-  return subscriberClient;
+  return await __subscriberClientPromise;
 };
 
 /**
@@ -224,14 +275,12 @@ const getSubscriberClient = async () => {
  * @private
  */
 const closeSubscriberClient = async () => {
-  await _closeClientBase(subscriberClient);
-  subscriberClient = null;
+  await _closeClientBase(await __subscriberClientPromise);
+  __subscriberClientPromise = null;
 };
 
 const _clientExec = async (functionName, argsObject) => {
-  if (!mainClient) {
-    mainClient = await getMainClient();
-  }
+  const mainClient = await getMainClient();
 
   try {
     return await mainClient[functionName](...Object.values(argsObject));
@@ -252,9 +301,7 @@ const _clientExec = async (functionName, argsObject) => {
  */
 const sendCommand = async (command) => {
   // NOTE: _clientExec would not work here, because its error logging does not allow for args with array fields
-  if (!mainClient) {
-    mainClient = await getMainClient();
-  }
+  const mainClient = await getMainClient();
 
   try {
     const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
@@ -356,9 +403,7 @@ const del = async (key) => await _clientExec("DEL", { key });
 
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
-  if (!mainClient) {
-    mainClient = await getMainClient();
-  }
+  const mainClient = await getMainClient();
 
   let lastAttemptError = null;
   let badReplyError = null;
@@ -500,9 +545,7 @@ const publishMessage = async (channel, message) => await _clientExec("PUBLISH", 
  * @param channel whose messages should be processed
  */
 const subscribe = async (channel) => {
-  if (!subscriberClient) {
-    subscriberClient = await getSubscriberClient();
-  }
+  const subscriberClient = await getSubscriberClient();
   try {
     await subscriberClient.SUBSCRIBE(channel, _subscribedMessageHandler);
   } catch (err) {
@@ -517,9 +560,7 @@ const subscribe = async (channel) => {
  * @param channel whose messages should no longer be processed
  */
 const unsubscribe = async (channel) => {
-  if (!subscriberClient) {
-    subscriberClient = await getSubscriberClient();
-  }
+  const subscriberClient = await getSubscriberClient();
   try {
     await subscriberClient.UNSUBSCRIBE(channel);
   } catch (err) {
@@ -534,7 +575,7 @@ const unsubscribe = async (channel) => {
  * @param channel whose messages should be processed
  * @param handler to process messages
  */
-const registerMessageHandler = (channel, handler) => messageHandlers.registerHandler(channel, handler);
+const registerMessageHandler = (channel, handler) => __messageHandlers.registerHandler(channel, handler);
 
 /**
  * Stop a given handler from processing messages of a given subscribed channel.
@@ -542,40 +583,23 @@ const registerMessageHandler = (channel, handler) => messageHandlers.registerHan
  * @param channel whose messages should not be processed
  * @param handler to remove
  */
-const removeMessageHandler = (channel, handler) => messageHandlers.removeHandler(channel, handler);
+const removeMessageHandler = (channel, handler) => __messageHandlers.removeHandler(channel, handler);
 
 /**
  * Stop all handlers from processing messages of a given subscribed channel.
  *
  * @param channel whose messages should not be processed
  */
-const removeAllMessageHandlers = (channel) => messageHandlers.removeAllHandlers(channel);
-
-const _getIntegrationMode = async () => {
-  if (!(await canGetClient())) {
-    return INTEGRATION_MODE.NO_REDIS;
-  }
-  if (cfEnv.isOnCf) {
-    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
-  }
-  return INTEGRATION_MODE.LOCAL_REDIS;
-};
-
-const getIntegrationMode = async () => {
-  if (integrationMode === null) {
-    integrationMode = _getIntegrationMode();
-  }
-  return await integrationMode;
-};
+const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandlers(channel);
 
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
+  setClientOptions,
+  getIntegrationMode,
   getMainClient,
   closeMainClient,
   getSubscriberClient,
   closeSubscriberClient,
-  getIntegrationMode,
   sendCommand,
   type,
   get,
@@ -597,12 +621,12 @@ module.exports = {
 
   _: {
     _reset,
-    _getMessageHandlers: () => messageHandlers,
+    _getMessageHandlers: () => __messageHandlers,
     _getLogger: () => logger,
-    _getMainClient: () => mainClient,
-    _setMainClient: (value) => (mainClient = value),
-    _getSubscriberClient: () => subscriberClient,
-    _setSubscriberClient: (value) => (subscriberClient = value),
+    _getMainClient: () => __mainClientPromise,
+    _setMainClient: (value) => (__mainClientPromise = value),
+    _getSubscriberClient: () => __subscriberClientPromise,
+    _setSubscriberClient: (value) => (__subscriberClientPromise = value),
     _subscribedMessageHandler,
     _localReconnectStrategy,
     _createClientBase,

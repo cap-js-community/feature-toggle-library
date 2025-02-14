@@ -158,7 +158,6 @@ const _discoverFtsAutoConfig = async () => {
 
 const activate = async () => {
   const envFeatureToggles = cds.env.featureToggles;
-  const ftsAutoConfig = await _discoverFtsAutoConfig();
 
   _overwriteUniqueName(envFeatureToggles);
   _overwriteAccessRoles(envFeatureToggles);
@@ -169,11 +168,14 @@ const activate = async () => {
   if ((doLegacyBuildDetection && isBuild) || (!doLegacyBuildDetection && !isServe)) {
     return;
   }
+
+  const ftsAutoConfig = await _discoverFtsAutoConfig();
   await toggles.initializeFeatures({
     config: envFeatureToggles?.config,
     configFile: envFeatureToggles?.configFile,
     configFiles: envFeatureToggles?.configFiles,
     configAuto: ftsAutoConfig,
+    redisClientOptions: envFeatureToggles?.clientOptions,
   });
 
   _registerFeatureProvider(envFeatureToggles);
