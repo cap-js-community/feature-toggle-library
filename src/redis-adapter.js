@@ -92,10 +92,7 @@ const _localReconnectStrategy = () =>
  */
 const _createClientBase = (clientName) => {
   try {
-    // NOTE: redis behaves a bit odd if you don't make the socket family, aka. ip stack version explicit here. For the
-    //   default family value 0, it will be ipv4 in node v16, ipv6 in node v18 and ipv4+ipv6 in node v20...
     const localSocketOptions = {
-      // family: 4,
       host: "localhost",
       port: 6379,
     };
