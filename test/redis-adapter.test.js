@@ -67,15 +67,14 @@ describe("redis-adapter test", () => {
   });
 
   test("_createClientBase local", async () => {
-    envMock.isOnCf = false;
     const client = redisAdapter._._createClientBase();
 
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
       [
         {
+          "pingInterval": 300000,
           "socket": {
-            "family": 4,
             "host": "localhost",
             "port": 6379,
             "reconnectStrategy": [Function],
@@ -90,7 +89,6 @@ describe("redis-adapter test", () => {
   test.each(Object.entries(require("./__mocks__/mock-redis-credentials.json")))(
     "_createClientBase on CF | %s",
     async (_, credentials) => {
-      envMock.isOnCf = true;
       envMock.cfServiceCredentialsForLabel.mockReturnValueOnce(credentials);
 
       redisAdapter._._createClientBase();
@@ -429,10 +427,8 @@ describe("redis-adapter test", () => {
   });
 
   test("_subscribedMessageHandler error", async () => {
-    const mockUrl = "rediss://BAD_USERNAME:pwd@mockUrl";
-
+    // NOTE: this is needed so that the log is an error, not a warning
     envMock.isOnCf = true;
-    envMock.cfServiceCredentialsForLabel.mockReturnValueOnce({ uri: mockUrl });
 
     redisAdapter.registerMessageHandler(channel, mockMessageHandler);
     redisAdapter.registerMessageHandler(channel, mockMessageHandlerTwo);
