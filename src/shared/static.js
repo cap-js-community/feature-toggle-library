@@ -9,15 +9,6 @@ const isNull = (...args) => args.reduce((result, arg) => result || arg === undef
 
 const isObject = (input) => typeof input === "object" && input !== null;
 
-const shallowMerge = (...sources) => {
-  for (const source of sources.reverse()) {
-    if (source !== undefined && !isObject(source)) {
-      return source;
-    }
-  }
-  return Object.assign({}, ...sources);
-};
-
 const tryRequire = (module) => {
   try {
     return require(module);
@@ -43,7 +34,6 @@ const tryPathReadable = async (path) => {
 module.exports = {
   isNull,
   isObject,
-  shallowMerge,
   tryRequire,
   tryJsonParse,
   pathReadable,
