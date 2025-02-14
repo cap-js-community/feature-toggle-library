@@ -6,7 +6,7 @@
  */
 "use strict";
 
-const redis = require("redis");
+const redis = require("@redis/client");
 const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
