@@ -91,54 +91,70 @@ const _localReconnectStrategy = () =>
  * @private
  */
 const _createClientBase = (clientName) => {
-  if (cfEnv.isOnCf) {
-    try {
-      const {
-        cluster_mode: isCluster,
-        hostname: host,
-        port,
-        password,
-        tls,
-      } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-      const redisClientOptions = {
-        password,
-        pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-        ...__clientOptions,
-        socket: {
-          host,
-          port,
-          ...__clientOptions?.socket,
-          // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
-          //   with nonsensical values like:
-          //   - "ca": "null", a literal string spelling null, or
-          //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
-          //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
-          // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
-          tls: !!(__clientOptions?.socket?.tls ?? tls),
-        },
-      };
-
-      if (isCluster) {
-        return redis.createCluster({
-          rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
-          // https://github.com/redis/node-redis/issues/1782
-          defaults: redisClientOptions, // NOTE: assume this ignores socket/url
-        });
-      }
-      return redis.createClient(redisClientOptions);
-    } catch (err) {
-      throw new VError(
-        { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
-        "error during create client with redis service"
-      );
-    }
-  } else {
-    // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
+  try {
     // NOTE: redis behaves a bit odd if you don't make the socket family, aka. ip stack version explicit here. For the
     //   default family value 0, it will be ipv4 in node v16, ipv6 in node v18 and ipv4+ipv6 in node v20...
-    return redis.createClient({
-      socket: { family: 4, host: "localhost", port: 6379, reconnectStrategy: _localReconnectStrategy },
-    });
+    const localSocketOptions = {
+      // family: 4,
+      host: "localhost",
+      port: 6379,
+    };
+    const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const hasCredentials = Object.keys(credentials).length > 0;
+    const { cluster_mode: isCluster } = credentials;
+    const credentialClientOptions = hasCredentials
+      ? {
+          password: credentials.password,
+          socket: {
+            host: credentials.hostname,
+            port: credentials.port,
+            tls: credentials.tls,
+          },
+        }
+      : undefined;
+
+    // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
+    const redisClientOptions = {
+      ...credentialClientOptions,
+      pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+      ...__clientOptions,
+      socket: {
+        ...localSocketOptions,
+        ...credentialClientOptions?.socket,
+        ...__clientOptions?.socket,
+      },
+    };
+
+    // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
+    //   with nonsensical values like:
+    //   - "ca": "null", a literal string spelling null, or
+    //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
+    //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+    // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
+    if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
+      redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
+    }
+
+    if (
+      redisClientOptions.socket.host === "localhost" &&
+      !Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "reconnectStrategy")
+    ) {
+      redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
+    }
+
+    if (isCluster) {
+      return redis.createCluster({
+        rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
+        // https://github.com/redis/node-redis/issues/1782
+        defaults: redisClientOptions, // NOTE: assume this ignores socket/url
+      });
+    }
+    return redis.createClient(redisClientOptions);
+  } catch (err) {
+    throw new VError(
+      { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
+      "error during create client with redis service"
+    );
   }
 };
 
