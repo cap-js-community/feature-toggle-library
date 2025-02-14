@@ -12,7 +12,7 @@ const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
-const { tryJsonParse, isObject } = require("./shared/static");
+const { tryJsonParse } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
@@ -108,9 +108,13 @@ const _createClientBase = (clientName) => {
           host,
           port,
           ...__clientOptions?.socket,
+          // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
+          //   with nonsensical values like:
+          //   - "ca": "null", a literal string spelling null, or
+          //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
+          //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+          // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
           tls: !!(__clientOptions?.socket?.tls ?? tls),
-          ...(isObject(tls) && tls),
-          ...(isObject(__clientOptions?.socket?.tls) && __clientOptions?.socket?.tls),
         },
       };
 

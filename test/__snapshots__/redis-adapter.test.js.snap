@@ -33,7 +33,6 @@ exports[`redis-adapter test _createClientBase on CF | AZURE 1`] = `
     "password": "mock-password",
     "pingInterval": 300000,
     "socket": {
-      "ca": "null",
       "host": "redis-389395bc-9765-4d9a-ba6b-7252c136abab.redis.cache.windows.net",
       "port": 6380,
       "tls": true,
@@ -50,7 +49,6 @@ exports[`redis-adapter test _createClientBase on CF | GCP 1`] = `
     "socket": {
       "host": "10.160.68.75",
       "port": 6378,
-      "server_ca": "null",
       "tls": true,
     },
   },
