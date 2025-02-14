@@ -267,8 +267,10 @@ const closeSubscriberClient = async () => {
 };
 
 const _clientExec = async (functionName, argsObject) => {
+  const mainClient = await getMainClient();
+
   try {
-    return await (await getMainClient())[functionName](...Object.values(argsObject));
+    return await mainClient[functionName](...Object.values(argsObject));
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { functionName, ...argsObject } },
@@ -286,15 +288,16 @@ const _clientExec = async (functionName, argsObject) => {
  */
 const sendCommand = async (command) => {
   // NOTE: _clientExec would not work here, because its error logging does not allow for args with array fields
+  const mainClient = await getMainClient();
 
   try {
     const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
-      return await (await getMainClient()).sendCommand(undefined, undefined, command);
+      return await mainClient.sendCommand(undefined, undefined, command);
     }
-    return await (await getMainClient()).sendCommand(command);
+    return await mainClient.sendCommand(command);
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { command: JSON.stringify(command) } },
@@ -387,16 +390,15 @@ const del = async (key) => await _clientExec("DEL", { key });
 
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
+  const mainClient = await getMainClient();
 
   let lastAttemptError = null;
   let badReplyError = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await (await getMainClient()).WATCH(key);
+      await mainClient.WATCH(key);
 
-      const oldValueRaw = useHash
-        ? await (await getMainClient()).HGET(key, field)
-        : await (await getMainClient()).GET(key);
+      const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
       const oldValue =
         mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
@@ -408,7 +410,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
       let validFirstReplies;
       const doDelete = newValueRaw === null;
-      const clientMulti = (await getMainClient()).MULTI();
+      const clientMulti = mainClient.MULTI();
       if (doDelete) {
         useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
         validFirstReplies = [0, 1];
@@ -530,8 +532,9 @@ const publishMessage = async (channel, message) => await _clientExec("PUBLISH", 
  * @param channel whose messages should be processed
  */
 const subscribe = async (channel) => {
+  const subscriberClient = await getSubscriberClient();
   try {
-    await (await getSubscriberClient()).SUBSCRIBE(channel, _subscribedMessageHandler);
+    await subscriberClient.SUBSCRIBE(channel, _subscribedMessageHandler);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during subscribe");
   }
@@ -544,8 +547,9 @@ const subscribe = async (channel) => {
  * @param channel whose messages should no longer be processed
  */
 const unsubscribe = async (channel) => {
+  const subscriberClient = await getSubscriberClient();
   try {
-    await (await getSubscriberClient()).UNSUBSCRIBE(channel);
+    await subscriberClient.UNSUBSCRIBE(channel);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err }, "error during unsubscribe");
   }
