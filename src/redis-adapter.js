@@ -36,17 +36,17 @@ const MODE = Object.freeze({
 
 let __messageHandlers;
 let __clientOptions;
-let __canGetClient;
-let __mainClient;
-let __subscriberClient;
-let __integrationMode;
+let __canGetClientPromise;
+let __mainClientPromise;
+let __subscriberClientPromise;
+let __integrationModePromise;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
   __clientOptions = null;
-  __canGetClient = null;
-  __mainClient = null;
-  __subscriberClient = null;
-  __integrationMode = null;
+  __canGetClientPromise = null;
+  __mainClientPromise = null;
+  __subscriberClientPromise = null;
+  __integrationModePromise = null;
 };
 _reset();
 
@@ -181,8 +181,8 @@ const setClientOptions = (clientOptions) => {
 };
 
 const canGetClient = async () => {
-  if (__canGetClient === null) {
-    __canGetClient = (async () => {
+  if (__canGetClientPromise === null) {
+    __canGetClientPromise = (async () => {
       try {
         const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
         await _closeClientBase(silentClient);
@@ -191,11 +191,12 @@ const canGetClient = async () => {
       return false;
     })();
   }
-  return await __canGetClient;
+  return await __canGetClientPromise;
 };
 
 const _getIntegrationMode = async () => {
-  if (!(await canGetClient())) {
+  const canGetClient = await canGetClient();
+  if (!canGetClient) {
     return INTEGRATION_MODE.NO_REDIS;
   }
   if (cfEnv.isOnCf) {
@@ -206,10 +207,10 @@ const _getIntegrationMode = async () => {
 };
 
 const getIntegrationMode = async () => {
-  if (__integrationMode === null) {
-    __integrationMode = _getIntegrationMode();
+  if (__integrationModePromise === null) {
+    __integrationModePromise = _getIntegrationMode();
   }
-  return await __integrationMode;
+  return await __integrationModePromise;
 };
 
 /**
@@ -223,10 +224,10 @@ const getIntegrationMode = async () => {
  * @private
  */
 const getMainClient = async () => {
-  if (!__mainClient) {
-    __mainClient = _createClientAndConnect("main");
+  if (!__mainClientPromise) {
+    __mainClientPromise = _createClientAndConnect("main");
   }
-  return await __mainClient;
+  return await __mainClientPromise;
 };
 
 /**
@@ -235,8 +236,8 @@ const getMainClient = async () => {
  * @private
  */
 const closeMainClient = async () => {
-  await _closeClientBase(__mainClient);
-  __mainClient = null;
+  await _closeClientBase(await __mainClientPromise);
+  __mainClientPromise = null;
 };
 
 /**
@@ -249,10 +250,10 @@ const closeMainClient = async () => {
  * @private
  */
 const getSubscriberClient = async () => {
-  if (!__subscriberClient) {
-    __subscriberClient = _createClientAndConnect("subscriber");
+  if (!__subscriberClientPromise) {
+    __subscriberClientPromise = _createClientAndConnect("subscriber");
   }
-  return await __subscriberClient;
+  return await __subscriberClientPromise;
 };
 
 /**
@@ -261,8 +262,8 @@ const getSubscriberClient = async () => {
  * @private
  */
 const closeSubscriberClient = async () => {
-  await _closeClientBase(__subscriberClient);
-  __subscriberClient = null;
+  await _closeClientBase(await __subscriberClientPromise);
+  __subscriberClientPromise = null;
 };
 
 const _clientExec = async (functionName, argsObject) => {
@@ -606,10 +607,10 @@ module.exports = {
     _reset,
     _getMessageHandlers: () => __messageHandlers,
     _getLogger: () => logger,
-    _getMainClient: () => __mainClient,
-    _setMainClient: (value) => (__mainClient = value),
-    _getSubscriberClient: () => __subscriberClient,
-    _setSubscriberClient: (value) => (__subscriberClient = value),
+    _getMainClient: () => __mainClientPromise,
+    _setMainClient: (value) => (__mainClientPromise = value),
+    _getSubscriberClient: () => __subscriberClientPromise,
+    _setSubscriberClient: (value) => (__subscriberClientPromise = value),
     _subscribedMessageHandler,
     _localReconnectStrategy,
     _createClientBase,
