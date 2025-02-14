@@ -70,6 +70,7 @@ module.exports = {
   watchedHashGetSetObject,
   subscribe: jest.fn(),
   getIntegrationMode: jest.fn(() => REDIS_INTEGRATION_MODE.CF_REDIS),
+  setClientOptions: jest.fn(),
   _reset,
   _setValues,
   _setValue,

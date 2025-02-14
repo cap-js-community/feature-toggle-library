@@ -28,8 +28,8 @@ const mockClient = {
   MULTI: jest.fn(() => mockMultiClient),
 };
 
-const redis = require("redis");
-jest.mock("redis", () => ({
+const redis = require("@redis/client");
+jest.mock("@redis/client", () => ({
   createClient: jest.fn(() => mockClient),
 }));
 
@@ -75,9 +75,10 @@ describe("redis-adapter test", () => {
         {
           "socket": {
             "family": 4,
+            "host": "localhost",
+            "port": 6379,
             "reconnectStrategy": [Function],
           },
-          "url": "redis://localhost:6379",
         },
       ]
     `);
@@ -112,6 +113,7 @@ describe("redis-adapter test", () => {
             "host": "my-domain.com",
             "port": "1234",
             "tls": true,
+            "tlsOption": "tlsOption",
           },
         },
       ]
@@ -124,7 +126,7 @@ describe("redis-adapter test", () => {
     const client = await redisAdapter.getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(client.connect).toHaveBeenCalledTimes(1);
-    expect(redisAdapter._._getMainClient()).toBe(client);
+    await expect(redisAdapter._._getMainClient()).resolves.toBe(client);
     expect(mockClient.on).toHaveBeenCalledTimes(2);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
@@ -136,7 +138,7 @@ describe("redis-adapter test", () => {
   test("getSubscriberClient", async () => {
     const client = await redisAdapter.getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
-    expect(redisAdapter._._getSubscriberClient()).toBe(client);
+    await expect(redisAdapter._._getSubscriberClient()).resolves.toBe(client);
     expect(mockClient.on).toHaveBeenCalledTimes(2);
     expect(mockClient.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(mockClient.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
@@ -147,7 +149,7 @@ describe("redis-adapter test", () => {
 
   test("_clientExec", async () => {
     const result = await redisAdapter._._clientExec("SET", { key: "key", value: "value" });
-    const client = redisAdapter._._getMainClient();
+    const client = await redisAdapter._._getMainClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(client);
     expect(client.on).toHaveBeenCalledTimes(2);
@@ -469,7 +471,7 @@ describe("redis-adapter test", () => {
     redisAdapter.registerMessageHandler(channel, mockMessageHandler);
     await redisAdapter.subscribe(channel);
 
-    const subscriber = redisAdapter._._getSubscriberClient();
+    const subscriber = await redisAdapter._._getSubscriberClient();
     expect(redis.createClient).toHaveBeenCalledTimes(1);
     expect(redis.createClient).toHaveReturnedWith(subscriber);
     expect(subscriber.on).toHaveBeenCalledTimes(2);
@@ -498,7 +500,7 @@ describe("redis-adapter test", () => {
     redisAdapter.removeMessageHandler(channel, mockMessageHandler);
     redisAdapter.removeMessageHandler(channel, mockMessageHandlerTwo);
     await redisAdapter.unsubscribe(channel);
-    const subscriber = redisAdapter._._getSubscriberClient();
+    const subscriber = await redisAdapter._._getSubscriberClient();
     await redisAdapter._._subscribedMessageHandler(message, channel);
 
     expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledTimes(1);
@@ -517,7 +519,7 @@ describe("redis-adapter test", () => {
 
     redisAdapter.removeAllMessageHandlers(channel);
     await redisAdapter.unsubscribe(channel);
-    const subscriber = redisAdapter._._getSubscriberClient();
+    const subscriber = await redisAdapter._._getSubscriberClient();
     await redisAdapter._._subscribedMessageHandler(message, channel);
 
     expect(subscriber.UNSUBSCRIBE).toHaveBeenCalledTimes(1);
