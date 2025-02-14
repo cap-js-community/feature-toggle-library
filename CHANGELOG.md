@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - cds-plugin: change default service access role to `internal-user` (fixes #90).
+- redis: changed dependency from [redis](https://www.npmjs.com/package/redis) to [@redis/client](https://www.npmjs.com/package/@redis/client).
+
+### Added
+
+- core: [undocumented] plugin-config/initialize support multiple configuration files.
+- redis: [undocumented] plugin-config/initialize take redis client options for fine-tuning or as an alternative to
+  VCAP_SERVICES credentials (brought up by #92).
 
 ## v1.2.3 - 2025-02-05
 
