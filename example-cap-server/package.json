@@ -29,11 +29,7 @@
       "toggles": true
     },
     "featureToggles": {
-      "configFile": "./srv/feature/toggles.yaml",
-      "serviceAccessRoles": [
-        "internal-user",
-        "custom-role"
-      ]
+      "configFile": "./srv/feature/toggles.yaml"
     }
   }
 }
