@@ -12,7 +12,7 @@ const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
-const { tryJsonParse, shallowMerge } = require("./shared/static");
+const { tryJsonParse, shallowMerge, isObject } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
@@ -93,8 +93,6 @@ const _localReconnectStrategy = () =>
 const _createClientBase = (clientName) => {
   if (cfEnv.isOnCf) {
     try {
-      // NOTE: settings the user explicitly to empty resolves auth problems, see
-      // https://github.com/go-redis/redis/issues/1343
       const {
         cluster_mode: isCluster,
         hostname: host,
@@ -102,23 +100,20 @@ const _createClientBase = (clientName) => {
         password,
         tls,
       } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
-      const redisClientOptions = shallowMerge(
-        {
-          password,
-          pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+      const redisClientOptions = {
+        password,
+        pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+        ...__clientOptions,
+        socket: {
+          host,
+          port,
+          ...__clientOptions?.socket,
+          tls: !!(__clientOptions?.socket?.tls ?? tls),
+          ...(isObject(tls) && tls),
+          ...(isObject(__clientOptions?.socket?.tls) && __clientOptions?.socket?.tls),
         },
-        __clientOptions,
-        {
-          socket: shallowMerge(
-            {
-              host,
-              port,
-            },
-            __clientOptions?.socket,
-            { tls: shallowMerge(tls, __clientOptions?.socket?.tls) }
-          ),
-        }
-      );
+      };
+
       if (isCluster) {
         return redis.createCluster({
           rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
