@@ -180,7 +180,7 @@ const setClientOptions = (clientOptions) => {
   __clientOptions = clientOptions;
 };
 
-const canGetClient = async () => {
+const _canGetClient = async () => {
   if (__canGetClientPromise === null) {
     __canGetClientPromise = (async () => {
       try {
@@ -195,7 +195,7 @@ const canGetClient = async () => {
 };
 
 const _getIntegrationMode = async () => {
-  const canGetClient = await canGetClient();
+  const canGetClient = await _canGetClient();
   if (!canGetClient) {
     return INTEGRATION_MODE.NO_REDIS;
   }
@@ -582,7 +582,6 @@ const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandler
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
   setClientOptions,
-  canGetClient,
   getIntegrationMode,
   getMainClient,
   closeMainClient,
