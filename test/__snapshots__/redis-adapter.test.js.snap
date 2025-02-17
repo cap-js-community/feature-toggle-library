@@ -4,7 +4,6 @@ exports[`redis-adapter test _createClientBase on CF | AWS-cluster 1`] = `
 [
   {
     "defaults": {
-      "cluster": true,
       "password": "mock-password",
       "pingInterval": 300000,
       "socket": {
@@ -15,7 +14,6 @@ exports[`redis-adapter test _createClientBase on CF | AWS-cluster 1`] = `
     },
     "rootNodes": [
       {
-        "cluster": true,
         "password": "mock-password",
         "pingInterval": 300000,
         "socket": {
@@ -32,7 +30,6 @@ exports[`redis-adapter test _createClientBase on CF | AWS-cluster 1`] = `
 exports[`redis-adapter test _createClientBase on CF | AZURE 1`] = `
 [
   {
-    "cluster": false,
     "password": "mock-password",
     "pingInterval": 300000,
     "socket": {
@@ -47,7 +44,6 @@ exports[`redis-adapter test _createClientBase on CF | AZURE 1`] = `
 exports[`redis-adapter test _createClientBase on CF | GCP 1`] = `
 [
   {
-    "cluster": false,
     "password": "mock-password",
     "pingInterval": 300000,
     "socket": {
