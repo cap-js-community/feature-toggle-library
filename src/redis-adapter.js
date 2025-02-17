@@ -36,7 +36,7 @@ const MODE = Object.freeze({
 
 let __messageHandlers;
 let __clientOptions;
-let __activeClientOptions;
+let __activeClientOptionsPair;
 let __canGetClientPromise;
 let __mainClientPromise;
 let __subscriberClientPromise;
@@ -44,7 +44,7 @@ let __integrationModePromise;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
   __clientOptions = null;
-  __activeClientOptions = null;
+  __activeClientOptionsPair = null;
   __canGetClientPromise = null;
   __mainClientPromise = null;
   __subscriberClientPromise = null;
@@ -86,8 +86,8 @@ const _localReconnectStrategy = () =>
   new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
 
 //
-const _getRedisClientOptions = () => {
-  if (!__activeClientOptions) {
+const _getRedisClientOptionsPair = () => {
+  if (!__activeClientOptionsPair) {
     const defaultClientOptions = {
       pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
       socket: {
@@ -98,9 +98,9 @@ const _getRedisClientOptions = () => {
 
     const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     const hasCredentials = Object.keys(credentials).length > 0;
+    const isCluster = credentials.cluster_mode;
     const credentialClientOptions = hasCredentials
       ? {
-          cluster: credentials.cluster_mode,
           password: credentials.password,
           socket: {
             host: credentials.hostname,
@@ -142,10 +142,10 @@ const _getRedisClientOptions = () => {
       redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
     }
 
-    __activeClientOptions = redisClientOptions;
+    __activeClientOptionsPair = [isCluster, redisClientOptions];
   }
 
-  return __activeClientOptions;
+  return __activeClientOptionsPair;
 };
 
 /**
@@ -157,8 +157,8 @@ const _getRedisClientOptions = () => {
  */
 const _createClientBase = (clientName) => {
   try {
-    const redisClientOptions = _getRedisClientOptions();
-    if (redisClientOptions.cluster) {
+    const [isCluster, redisClientOptions] = _getRedisClientOptionsPair();
+    if (isCluster) {
       return redis.createCluster({
         rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
         // https://github.com/redis/node-redis/issues/1782
@@ -232,7 +232,7 @@ const _getIntegrationMode = async () => {
     return INTEGRATION_MODE.NO_REDIS;
   }
   if (cfEnv.isOnCf) {
-    const { cluster: isCluster } = _getRedisClientOptions();
+    const [isCluster] = _getRedisClientOptionsPair();
     return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   return INTEGRATION_MODE.LOCAL_REDIS;
@@ -323,7 +323,7 @@ const sendCommand = async (command) => {
   const mainClient = await getMainClient();
 
   try {
-    const { cluster: isCluster } = _getRedisClientOptions();
+    const [isCluster] = _getRedisClientOptionsPair();
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
