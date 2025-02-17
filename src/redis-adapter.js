@@ -83,6 +83,51 @@ const _subscribedMessageHandler = async (message, channel) => {
 const _localReconnectStrategy = () =>
   new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
 
+//
+const _determineRedisClientOptions = (credentialClientOptions) => {
+  const defaultClientOptions = {
+    pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+    socket: {
+      host: "localhost",
+      port: 6379,
+    },
+  };
+
+  // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
+  const redisClientOptions = {
+    ...defaultClientOptions,
+    ...credentialClientOptions,
+    ...__clientOptions,
+    // https://nodejs.org/docs/latest-v22.x/api/net.html#socketconnectoptions-connectlistener
+    // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlsconnectoptions-callback
+    // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+    socket: {
+      ...defaultClientOptions.socket,
+      ...credentialClientOptions?.socket,
+      ...__clientOptions?.socket,
+    },
+  };
+
+  // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
+  //   with nonsensical values like:
+  //   - "ca": "null", a literal string spelling null, or
+  //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
+  //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+  // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
+  if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
+    redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
+  }
+
+  if (
+    redisClientOptions.socket.host === "localhost" &&
+    !Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "reconnectStrategy")
+  ) {
+    redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
+  }
+
+  return redisClientOptions;
+};
+
 /**
  * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
  * (hyperscaler option) and a local redis-server.
@@ -92,10 +137,6 @@ const _localReconnectStrategy = () =>
  */
 const _createClientBase = (clientName) => {
   try {
-    const localSocketOptions = {
-      host: "localhost",
-      port: 6379,
-    };
     const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     const hasCredentials = Object.keys(credentials).length > 0;
     const { cluster_mode: isCluster } = credentials;
@@ -110,17 +151,7 @@ const _createClientBase = (clientName) => {
         }
       : undefined;
 
-    // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
-    const redisClientOptions = {
-      ...credentialClientOptions,
-      pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-      ...__clientOptions,
-      socket: {
-        ...localSocketOptions,
-        ...credentialClientOptions?.socket,
-        ...__clientOptions?.socket,
-      },
-    };
+    const redisClientOptions = _determineRedisClientOptions(credentialClientOptions);
 
     // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
     //   with nonsensical values like:
