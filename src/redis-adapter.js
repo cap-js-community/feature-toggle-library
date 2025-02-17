@@ -213,8 +213,9 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const setClientOptions = (clientOptions) => {
-  __customClusterOptions = clientOptions;
+const setCustomOptions = (clientOptions, clusterOptions) => {
+  __customClientOptions = clientOptions;
+  __customClusterOptions = clusterOptions;
 };
 
 const _canGetClient = async () => {
@@ -618,7 +619,7 @@ const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandler
 
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
-  setClientOptions,
+  setCustomOptions,
   getIntegrationMode,
   getMainClient,
   closeMainClient,

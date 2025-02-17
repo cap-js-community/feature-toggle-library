@@ -176,6 +176,7 @@ const activate = async () => {
     configFiles: envFeatureToggles?.configFiles,
     configAuto: ftsAutoConfig,
     redisClientOptions: envFeatureToggles?.clientOptions,
+    redisClusterOptions: envFeatureToggles?.clusterOptions,
   });
 
   _registerFeatureProvider(envFeatureToggles);
