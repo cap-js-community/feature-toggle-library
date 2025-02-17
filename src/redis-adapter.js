@@ -12,7 +12,7 @@ const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
-const { tryJsonParse } = require("./shared/static");
+const { tryJsonParse, isObject } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
@@ -35,16 +35,18 @@ const MODE = Object.freeze({
 });
 
 let __messageHandlers;
-let __clientOptions;
-let __activeClientOptionsPair;
+let __customClientOptions;
+let __customClusterOptions;
+let __activeOptionsPair;
 let __canGetClientPromise;
 let __mainClientPromise;
 let __subscriberClientPromise;
 let __integrationModePromise;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
-  __clientOptions = null;
-  __activeClientOptionsPair = null;
+  __customClientOptions = null;
+  __customClusterOptions = null;
+  __activeOptionsPair = null;
   __canGetClientPromise = null;
   __mainClientPromise = null;
   __subscriberClientPromise = null;
@@ -86,8 +88,8 @@ const _localReconnectStrategy = () =>
   new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
 
 //
-const _getRedisClientOptionsPair = () => {
-  if (!__activeClientOptionsPair) {
+const _getRedisOptionsPair = () => {
+  if (!__activeOptionsPair) {
     const defaultClientOptions = {
       pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
       socket: {
@@ -114,14 +116,14 @@ const _getRedisClientOptionsPair = () => {
     const redisClientOptions = {
       ...defaultClientOptions,
       ...credentialClientOptions,
-      ...__clientOptions,
+      ...__customClientOptions,
       // https://nodejs.org/docs/latest-v22.x/api/net.html#socketconnectoptions-connectlistener
       // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlsconnectoptions-callback
       // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
       socket: {
         ...defaultClientOptions.socket,
         ...credentialClientOptions?.socket,
-        ...__clientOptions?.socket,
+        ...__customClientOptions?.socket,
       },
     };
 
@@ -142,10 +144,10 @@ const _getRedisClientOptionsPair = () => {
       redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
     }
 
-    __activeClientOptionsPair = [isCluster, redisClientOptions];
+    __activeOptionsPair = [isCluster, redisClientOptions];
   }
 
-  return __activeClientOptionsPair;
+  return __activeOptionsPair;
 };
 
 /**
@@ -157,9 +159,10 @@ const _getRedisClientOptionsPair = () => {
  */
 const _createClientBase = (clientName) => {
   try {
-    const [isCluster, redisClientOptions] = _getRedisClientOptionsPair();
-    if (isCluster) {
+    const [redisClusterOptions, redisClientOptions] = _getRedisOptionsPair();
+    if (redisClusterOptions) {
       return redis.createCluster({
+        ...(isObject(redisClusterOptions) && redisClusterOptions),
         rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
         // https://github.com/redis/node-redis/issues/1782
         defaults: redisClientOptions, // NOTE: assume this ignores socket/url
@@ -209,7 +212,7 @@ const _closeClientBase = async (client) => {
 };
 
 const setClientOptions = (clientOptions) => {
-  __clientOptions = clientOptions;
+  __customClusterOptions = clientOptions;
 };
 
 const _canGetClient = async () => {
@@ -232,7 +235,7 @@ const _getIntegrationMode = async () => {
     return INTEGRATION_MODE.NO_REDIS;
   }
   if (cfEnv.isOnCf) {
-    const [isCluster] = _getRedisClientOptionsPair();
+    const [isCluster] = _getRedisOptionsPair();
     return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   return INTEGRATION_MODE.LOCAL_REDIS;
@@ -323,7 +326,7 @@ const sendCommand = async (command) => {
   const mainClient = await getMainClient();
 
   try {
-    const [isCluster] = _getRedisClientOptionsPair();
+    const [isCluster] = _getRedisOptionsPair();
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
