@@ -36,6 +36,7 @@ const MODE = Object.freeze({
 
 let __messageHandlers;
 let __clientOptions;
+let __activeClientOptions;
 let __canGetClientPromise;
 let __mainClientPromise;
 let __subscriberClientPromise;
@@ -43,6 +44,7 @@ let __integrationModePromise;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
   __clientOptions = null;
+  __activeClientOptions = null;
   __canGetClientPromise = null;
   __mainClientPromise = null;
   __subscriberClientPromise = null;
@@ -84,64 +86,21 @@ const _localReconnectStrategy = () =>
   new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
 
 //
-const _determineRedisClientOptions = (credentialClientOptions) => {
-  const defaultClientOptions = {
-    pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-    socket: {
-      host: "localhost",
-      port: 6379,
-    },
-  };
+const _getRedisClientOptions = () => {
+  if (!__activeClientOptions) {
+    const defaultClientOptions = {
+      pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+      socket: {
+        host: "localhost",
+        port: 6379,
+      },
+    };
 
-  // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
-  const redisClientOptions = {
-    ...defaultClientOptions,
-    ...credentialClientOptions,
-    ...__clientOptions,
-    // https://nodejs.org/docs/latest-v22.x/api/net.html#socketconnectoptions-connectlistener
-    // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlsconnectoptions-callback
-    // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
-    socket: {
-      ...defaultClientOptions.socket,
-      ...credentialClientOptions?.socket,
-      ...__clientOptions?.socket,
-    },
-  };
-
-  // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
-  //   with nonsensical values like:
-  //   - "ca": "null", a literal string spelling null, or
-  //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
-  //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
-  // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
-  if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
-    redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
-  }
-
-  if (
-    redisClientOptions.socket.host === "localhost" &&
-    !Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "reconnectStrategy")
-  ) {
-    redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
-  }
-
-  return redisClientOptions;
-};
-
-/**
- * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
- * (hyperscaler option) and a local redis-server.
- *
- * @returns {RedisClient|RedisCluster}
- * @private
- */
-const _createClientBase = (clientName) => {
-  try {
     const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     const hasCredentials = Object.keys(credentials).length > 0;
-    const { cluster_mode: isCluster } = credentials;
     const credentialClientOptions = hasCredentials
       ? {
+          cluster: credentials.cluster_mode,
           password: credentials.password,
           socket: {
             host: credentials.hostname,
@@ -151,7 +110,20 @@ const _createClientBase = (clientName) => {
         }
       : undefined;
 
-    const redisClientOptions = _determineRedisClientOptions(credentialClientOptions);
+    // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
+    const redisClientOptions = {
+      ...defaultClientOptions,
+      ...credentialClientOptions,
+      ...__clientOptions,
+      // https://nodejs.org/docs/latest-v22.x/api/net.html#socketconnectoptions-connectlistener
+      // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlsconnectoptions-callback
+      // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+      socket: {
+        ...defaultClientOptions.socket,
+        ...credentialClientOptions?.socket,
+        ...__clientOptions?.socket,
+      },
+    };
 
     // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
     //   with nonsensical values like:
@@ -170,7 +142,23 @@ const _createClientBase = (clientName) => {
       redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
     }
 
-    if (isCluster) {
+    __activeClientOptions = redisClientOptions;
+  }
+
+  return __activeClientOptions;
+};
+
+/**
+ * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
+ * (hyperscaler option) and a local redis-server.
+ *
+ * @returns {RedisClient|RedisCluster}
+ * @private
+ */
+const _createClientBase = (clientName) => {
+  try {
+    const redisClientOptions = _getRedisClientOptions();
+    if (redisClientOptions.cluster) {
       return redis.createCluster({
         rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
         // https://github.com/redis/node-redis/issues/1782
@@ -244,7 +232,7 @@ const _getIntegrationMode = async () => {
     return INTEGRATION_MODE.NO_REDIS;
   }
   if (cfEnv.isOnCf) {
-    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const { cluster: isCluster } = _getRedisClientOptions();
     return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   return INTEGRATION_MODE.LOCAL_REDIS;
@@ -335,7 +323,7 @@ const sendCommand = async (command) => {
   const mainClient = await getMainClient();
 
   try {
-    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const { cluster: isCluster } = _getRedisClientOptions();
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
