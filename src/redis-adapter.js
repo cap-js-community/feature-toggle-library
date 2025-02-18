@@ -152,14 +152,13 @@ const _getRedisOptionsTuple = () => {
 const _createClientBase = (clientName) => {
   try {
     const [isCluster, redisClientOptions] = _getRedisOptionsTuple();
-    if (isCluster) {
-      return redis.createCluster({
-        rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
-        // https://github.com/redis/node-redis/issues/1782
-        defaults: redisClientOptions, // NOTE: assume this ignores socket/url
-      });
-    }
-    return redis.createClient(redisClientOptions);
+    return isCluster
+      ? redis.createCluster({
+          rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
+          // https://github.com/redis/node-redis/issues/1782
+          defaults: redisClientOptions, // NOTE: assume this ignores socket/url
+        })
+      : redis.createClient(redisClientOptions);
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
