@@ -808,7 +808,8 @@ class FeatureToggles {
     configFile: configFilepath,
     configFiles: configFilepaths,
     configAuto,
-    redisClientOptions,
+    customRedisCredentials,
+    customRedisClientOptions,
   } = {}) {
     if (this.__isInitialized) {
       return;
@@ -867,7 +868,7 @@ class FeatureToggles {
       );
     }
 
-    redis.setClientOptions(redisClientOptions);
+    redis.setCustomOptions(customRedisCredentials, customRedisClientOptions);
     const redisIntegrationMode = await redis.getIntegrationMode();
     if (redisIntegrationMode !== REDIS_INTEGRATION_MODE.NO_REDIS) {
       try {
@@ -953,6 +954,8 @@ class FeatureToggles {
    * @property {Config}  [config]
    * @property {string}  [configFile]
    * @property {Config}  [configAuto]
+   * @property {object}  [customRedisCredentials]
+   * @property {object}  [customRedisClientOptions]
    */
   /**
    * Initialize needs to run and finish before other APIs are called. It processes the configuration, sets up

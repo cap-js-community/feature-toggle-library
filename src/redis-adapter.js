@@ -24,7 +24,7 @@ const INTEGRATION_MODE = Object.freeze({
   NO_REDIS: "NO_REDIS",
 });
 const CF_REDIS_SERVICE_LABEL = "redis-cache";
-const REDIS_CLIENT_DEFAULT_PING_INTERVAL = 5 * 60000;
+const REDIS_CLIENT_DEFAULT_PING_INTERVAL = 4 * 60000;
 
 const cfEnv = CfEnv.getInstance();
 const logger = new Logger(COMPONENT_NAME);
@@ -35,14 +35,18 @@ const MODE = Object.freeze({
 });
 
 let __messageHandlers;
-let __clientOptions;
+let __customCredentials;
+let __customClientOptions;
+let __activeOptionsTuple;
 let __canGetClientPromise;
 let __mainClientPromise;
 let __subscriberClientPromise;
 let __integrationModePromise;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
-  __clientOptions = null;
+  __customCredentials = null;
+  __customClientOptions = null;
+  __activeOptionsTuple = null;
   __canGetClientPromise = null;
   __mainClientPromise = null;
   __subscriberClientPromise = null;
@@ -80,25 +84,20 @@ const _subscribedMessageHandler = async (message, channel) => {
       );
 };
 
-const _localReconnectStrategy = () =>
-  new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
-
-/**
- * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
- * (hyperscaler option) and a local redis-server.
- *
- * @returns {RedisClient|RedisCluster}
- * @private
- */
-const _createClientBase = (clientName) => {
-  try {
-    const localSocketOptions = {
-      host: "localhost",
-      port: 6379,
+const _getRedisOptionsTuple = () => {
+  if (!__activeOptionsTuple) {
+    const defaultClientOptions = {
+      pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
+      socket: {
+        host: "localhost",
+        port: 6379,
+      },
     };
-    const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+
+    const credentials = __customCredentials || cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     const hasCredentials = Object.keys(credentials).length > 0;
-    const { cluster_mode: isCluster } = credentials;
+
+    const isCluster = !!credentials.cluster_mode;
     const credentialClientOptions = hasCredentials
       ? {
           password: credentials.password,
@@ -112,13 +111,16 @@ const _createClientBase = (clientName) => {
 
     // NOTE: documentation is buried here https://github.com/redis/node-redis/blob/master/docs/client-configuration.md
     const redisClientOptions = {
+      ...defaultClientOptions,
       ...credentialClientOptions,
-      pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-      ...__clientOptions,
+      ...__customClientOptions,
+      // https://nodejs.org/docs/latest-v22.x/api/net.html#socketconnectoptions-connectlistener
+      // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlsconnectoptions-callback
+      // https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
       socket: {
-        ...localSocketOptions,
+        ...defaultClientOptions.socket,
         ...credentialClientOptions?.socket,
-        ...__clientOptions?.socket,
+        ...__customClientOptions?.socket,
       },
     };
 
@@ -132,21 +134,31 @@ const _createClientBase = (clientName) => {
       redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
     }
 
-    if (
-      redisClientOptions.socket.host === "localhost" &&
-      !Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "reconnectStrategy")
-    ) {
-      redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
-    }
+    __activeOptionsTuple = [isCluster, redisClientOptions];
+  }
 
-    if (isCluster) {
-      return redis.createCluster({
-        rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
-        // https://github.com/redis/node-redis/issues/1782
-        defaults: redisClientOptions, // NOTE: assume this ignores socket/url
-      });
-    }
-    return redis.createClient(redisClientOptions);
+  return __activeOptionsTuple;
+};
+
+/**
+ * Lazily create a new redis client. Client creation transparently handles
+ * - custom credentials and client options passed in via {@link setCustomOptions},
+ * - Cloud Foundry service with label "redis-cache" (hyperscaler option), and
+ * - local redis-server.
+ *
+ * @returns {RedisClient|RedisCluster}
+ * @private
+ */
+const _createClientBase = (clientName) => {
+  try {
+    const [isCluster, redisClientOptions] = _getRedisOptionsTuple();
+    return isCluster
+      ? redis.createCluster({
+          rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
+          // https://github.com/redis/node-redis/issues/1782
+          defaults: redisClientOptions, // NOTE: assume this ignores socket/url
+        })
+      : redis.createClient(redisClientOptions);
   } catch (err) {
     throw new VError(
       { name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } },
@@ -189,8 +201,9 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const setClientOptions = (clientOptions) => {
-  __clientOptions = clientOptions;
+const setCustomOptions = (customCredentials, customClientOptions) => {
+  __customCredentials = customCredentials;
+  __customClientOptions = customClientOptions;
 };
 
 const _canGetClient = async () => {
@@ -213,7 +226,7 @@ const _getIntegrationMode = async () => {
     return INTEGRATION_MODE.NO_REDIS;
   }
   if (cfEnv.isOnCf) {
-    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const [isCluster] = _getRedisOptionsTuple();
     return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
   return INTEGRATION_MODE.LOCAL_REDIS;
@@ -304,7 +317,7 @@ const sendCommand = async (command) => {
   const mainClient = await getMainClient();
 
   try {
-    const { cluster_mode: isCluster } = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const [isCluster] = _getRedisOptionsTuple();
     if (isCluster) {
       // NOTE: the cluster sendCommand API has a different signature, where it takes two optional args: firstKey and
       //   isReadonly before the command
@@ -594,7 +607,7 @@ const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandler
 
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
-  setClientOptions,
+  setCustomOptions,
   getIntegrationMode,
   getMainClient,
   closeMainClient,
@@ -628,7 +641,6 @@ module.exports = {
     _getSubscriberClient: () => __subscriberClientPromise,
     _setSubscriberClient: (value) => (__subscriberClientPromise = value),
     _subscribedMessageHandler,
-    _localReconnectStrategy,
     _createClientBase,
     _createClientAndConnect,
     _clientExec,
