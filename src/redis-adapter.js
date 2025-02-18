@@ -211,9 +211,9 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const setCustomOptions = (credentials, clientOptions) => {
-  __customCredentials = credentials;
-  __customClientOptions = clientOptions;
+const setCustomOptions = (customCredentials, customClientOptions) => {
+  __customCredentials = customCredentials;
+  __customClientOptions = customClientOptions;
 };
 
 const _canGetClient = async () => {
