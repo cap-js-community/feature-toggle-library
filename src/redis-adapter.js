@@ -84,10 +84,6 @@ const _subscribedMessageHandler = async (message, channel) => {
       );
 };
 
-const _localReconnectStrategy = () =>
-  new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect, because we are not running on cloud foundry");
-
-//
 const _getRedisOptionsTuple = () => {
   if (!__activeOptionsTuple) {
     const defaultClientOptions = {
@@ -136,13 +132,6 @@ const _getRedisOptionsTuple = () => {
     // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
     if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
       redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
-    }
-
-    if (
-      redisClientOptions.socket.host === "localhost" &&
-      !Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "reconnectStrategy")
-    ) {
-      redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
     }
 
     __activeOptionsTuple = [isCluster, redisClientOptions];
@@ -651,7 +640,6 @@ module.exports = {
     _getSubscriberClient: () => __subscriberClientPromise,
     _setSubscriberClient: (value) => (__subscriberClientPromise = value),
     _subscribedMessageHandler,
-    _localReconnectStrategy,
     _createClientBase,
     _createClientAndConnect,
     _clientExec,
