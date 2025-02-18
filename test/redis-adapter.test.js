@@ -77,7 +77,6 @@ describe("redis-adapter test", () => {
           "socket": {
             "host": "localhost",
             "port": 6379,
-            "reconnectStrategy": [Function],
           },
         },
       ]
