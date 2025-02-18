@@ -35,8 +35,8 @@ const MODE = Object.freeze({
 });
 
 let __messageHandlers;
+let __customCredentials;
 let __customClientOptions;
-let __customClusterOptions;
 let __activeOptionsTuple;
 let __canGetClientPromise;
 let __mainClientPromise;
@@ -44,8 +44,8 @@ let __subscriberClientPromise;
 let __integrationModePromise;
 const _reset = () => {
   __messageHandlers = new HandlerCollection();
+  __customCredentials = null;
   __customClientOptions = null;
-  __customClusterOptions = null;
   __activeOptionsTuple = null;
   __canGetClientPromise = null;
   __mainClientPromise = null;
@@ -213,9 +213,9 @@ const _closeClientBase = async (client) => {
   }
 };
 
-const setCustomOptions = (clientOptions, clusterOptions) => {
+const setCustomOptions = (credentials, clientOptions) => {
+  __customCredentials = credentials;
   __customClientOptions = clientOptions;
-  __customClusterOptions = clusterOptions;
 };
 
 const _canGetClient = async () => {

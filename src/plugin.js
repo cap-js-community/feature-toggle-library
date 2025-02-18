@@ -178,8 +178,8 @@ const activate = async () => {
     configFile: envFeatureToggles?.configFile,
     configFiles: envFeatureToggles?.configFiles,
     configAuto,
-    redisClientOptions,
     redisCredentials,
+    redisClientOptions,
   });
 
   _registerFeatureProvider(envFeatureToggles);
