@@ -24,7 +24,7 @@ const INTEGRATION_MODE = Object.freeze({
   NO_REDIS: "NO_REDIS",
 });
 const CF_REDIS_SERVICE_LABEL = "redis-cache";
-const REDIS_CLIENT_DEFAULT_PING_INTERVAL = 5 * 60000;
+const REDIS_CLIENT_DEFAULT_PING_INTERVAL = 4 * 60000;
 
 const cfEnv = CfEnv.getInstance();
 const logger = new Logger(COMPONENT_NAME);

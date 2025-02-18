@@ -73,7 +73,7 @@ describe("redis-adapter test", () => {
     expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
       [
         {
-          "pingInterval": 300000,
+          "pingInterval": 240000,
           "socket": {
             "host": "localhost",
             "port": 6379,
