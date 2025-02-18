@@ -17,8 +17,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - core: [undocumented] plugin-config/initialize support multiple configuration files.
-- redis: [undocumented] plugin-config/initialize take redis client options for fine-tuning or as an alternative to
-  VCAP_SERVICES credentials (brought up by #92).
+- redis: [undocumented] cds-config/initialize take redis credentials and client options for fine-tuning or as an
+  alternative to VCAP_SERVICES (brought up by #92).
+
+  the cds-config approach is consistent with the redis integration of other cap-js-community projects, see
+  [event-queue](https://github.com/cap-js-community/event-queue/),
+  [websocket](https://github.com/cap-js-community/websocket/).
 
 ## v1.2.3 - 2025-02-05
 
