@@ -141,8 +141,10 @@ const _getRedisOptionsTuple = () => {
 };
 
 /**
- * Lazily create a new redis client. Client creation transparently handles both the Cloud Foundry "redis-cache" service
- * (hyperscaler option) and a local redis-server.
+ * Lazily create a new redis client. Client creation transparently handles
+ * - custom credentials and client options passed in via {@link setCustomOptions},
+ * - Cloud Foundry service with label "redis-cache" (hyperscaler option), and
+ * - local redis-server.
  *
  * @returns {RedisClient|RedisCluster}
  * @private
