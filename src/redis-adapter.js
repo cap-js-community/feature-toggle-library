@@ -12,7 +12,7 @@ const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
 const { Semaphore } = require("./shared/semaphore");
-const { tryJsonParse, isObject } = require("./shared/static");
+const { tryJsonParse } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
@@ -98,8 +98,10 @@ const _getRedisOptionsTuple = () => {
       },
     };
 
-    const credentials = cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
+    const credentials = __customCredentials || cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
     const hasCredentials = Object.keys(credentials).length > 0;
+
+    const isCluster = !!credentials.cluster_mode;
     const credentialClientOptions = hasCredentials
       ? {
           password: credentials.password,
@@ -126,9 +128,6 @@ const _getRedisOptionsTuple = () => {
       },
     };
 
-    const isCluster = !!(__customClusterOptions ?? credentials.cluster_mode);
-    const redisClusterOptions = isObject(__customClusterOptions) ? { ...__customClusterOptions } : undefined;
-
     // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
     //   with nonsensical values like:
     //   - "ca": "null", a literal string spelling null, or
@@ -146,7 +145,7 @@ const _getRedisOptionsTuple = () => {
       redisClientOptions.socket.reconnectStrategy = _localReconnectStrategy;
     }
 
-    __activeOptionsTuple = [isCluster, redisClientOptions, redisClusterOptions];
+    __activeOptionsTuple = [isCluster, redisClientOptions];
   }
 
   return __activeOptionsTuple;
@@ -161,10 +160,9 @@ const _getRedisOptionsTuple = () => {
  */
 const _createClientBase = (clientName) => {
   try {
-    const [isCluster, redisClientOptions, redisClusterOptions] = _getRedisOptionsTuple();
+    const [isCluster, redisClientOptions] = _getRedisOptionsTuple();
     if (isCluster) {
       return redis.createCluster({
-        ...redisClusterOptions,
         rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
         // https://github.com/redis/node-redis/issues/1782
         defaults: redisClientOptions, // NOTE: assume this ignores socket/url
