@@ -171,7 +171,7 @@ const activate = async () => {
 
   const configAuto = await _discoverFtsAutoConfig();
   const { credentials: customRedisCredentials, options: customRedisClientOptions } =
-    cds.requires["redis-featureToggles"] || cds.requires["redis"];
+    cds.requires["redis-featureToggles"] || cds.requires["redis"] || {};
 
   await toggles.initializeFeatures({
     config: envFeatureToggles?.config,
