@@ -67,7 +67,6 @@
         "model": "@cap-js-community/feature-toggle-library"
       },
       "redis-featureToggles": {
-        "options": {},
         "vcap": {
           "label": "redis-cache"
         }
