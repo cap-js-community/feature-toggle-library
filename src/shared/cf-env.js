@@ -24,11 +24,15 @@ class CfEnv {
   }
 
   constructor(env = process.env) {
-    if (env.NODE_ENV !== "production") {
+    if (env.NODE_ENV !== "production" && env.USE_DEFAULT_ENV) {
       try {
         const { VCAP_APPLICATION, VCAP_SERVICES } = require(process.cwd() + "/default-env.json");
-        env.VCAP_APPLICATION = JSON.stringify(VCAP_APPLICATION);
-        env.VCAP_SERVICES = JSON.stringify(VCAP_SERVICES);
+        if (VCAP_APPLICATION && !Object.prototype.hasOwnProperty.call(env, "VCAP_APPLICATION")) {
+          env.VCAP_APPLICATION = JSON.stringify(VCAP_APPLICATION);
+        }
+        if (VCAP_SERVICES && !Object.prototype.hasOwnProperty.call(env, "VCAP_SERVICES")) {
+          env.VCAP_SERVICES = JSON.stringify(VCAP_SERVICES);
+        }
       } catch (err) {} // eslint-disable-line no-empty
     }
 
