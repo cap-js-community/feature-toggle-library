@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.2.5 - tbd
 
+### Fixed
+
+- core: if a `./default-env.json` file was present and `NODE_ENV !== "production"`, we had assumed that cf env variables
+  `VCAP_APPLCATION` and `VCAP_SERVICES` are always present in the file. now this is more resilient.
+
+- core: [regression] initialize timing was noticeably slower, because the initial connection check was running with the
+  default reconnect strategy that takes 2000ms. now the reconnect strategy is disabled for the initial connection check.
+
 ## v1.2.4 - 2025-02-19
 
 ### Changed
