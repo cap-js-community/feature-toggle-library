@@ -181,8 +181,8 @@ const _createClientBase = (clientName, options = {}) => {
 /**
  * @typedef CreateOptions
  * @type object
- * @property {doLogEvents}  [boolean] log error events, defaults to true
- * @property {doReconnect}  [boolean] setting to false disables reconnect strategy, defaults to true
+ * @property {boolean}  [doLogEvents] log error events, defaults to true
+ * @property {boolean}  [doReconnect] setting to false disables reconnect strategy, defaults to true
  */
 /**
  * @param {string} clientName
