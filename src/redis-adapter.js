@@ -93,10 +93,6 @@ const _getRedisOptionsTuple = () => {
   if (!__activeOptionsTuple) {
     const defaultClientOptions = {
       pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-      socket: {
-        host: "localhost",
-        port: 6379,
-      },
     };
 
     const credentials = __customCredentials || cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
@@ -105,11 +101,11 @@ const _getRedisOptionsTuple = () => {
     const isCluster = !!credentials.cluster_mode;
     const credentialClientOptions = hasCredentials
       ? {
-          password: credentials.password,
+          ...(Object.prototype.hasOwnProperty.call(credentials, "password") && { password: credentials.password }),
           socket: {
-            host: credentials.hostname,
-            port: credentials.port,
-            tls: credentials.tls,
+            ...(Object.prototype.hasOwnProperty.call(credentials, "hostname") && { host: credentials.hostname }),
+            ...(Object.prototype.hasOwnProperty.call(credentials, "port") && { port: credentials.port }),
+            ...(Object.prototype.hasOwnProperty.call(credentials, "tls") && { tls: credentials.tls }),
           },
         }
       : undefined;
