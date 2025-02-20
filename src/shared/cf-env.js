@@ -39,10 +39,13 @@ class CfEnv {
   }
 
   constructor(inputEnv = process.env) {
-    const env = {
-      ...(inputEnv.NODE_ENV !== "production" && CfEnv.readDefaultEnv()),
-      ...inputEnv,
-    };
+    const env =
+      inputEnv.NODE_ENV === "production"
+        ? inputEnv
+        : {
+            ...CfEnv.readDefaultEnv(),
+            ...inputEnv,
+          };
 
     this.isOnCf = env[ENV.USER] === "vcap";
     this.cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
