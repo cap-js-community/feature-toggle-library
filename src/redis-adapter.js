@@ -23,6 +23,11 @@ const INTEGRATION_MODE = Object.freeze({
   LOCAL_REDIS: "LOCAL_REDIS",
   NO_REDIS: "NO_REDIS",
 });
+const CLIENT_NAME = Object.freeze({
+  SILENT: "SILENT",
+  MAIN: "MAIN",
+  SUBSCRIBER: "SUBSCRIBER",
+});
 const CF_REDIS_SERVICE_LABEL = "redis-cache";
 const REDIS_CLIENT_DEFAULT_PING_INTERVAL = 4 * 60000;
 
@@ -88,10 +93,6 @@ const _getRedisOptionsTuple = () => {
   if (!__activeOptionsTuple) {
     const defaultClientOptions = {
       pingInterval: REDIS_CLIENT_DEFAULT_PING_INTERVAL,
-      socket: {
-        host: "localhost",
-        port: 6379,
-      },
     };
 
     const credentials = __customCredentials || cfEnv.cfServiceCredentialsForLabel(CF_REDIS_SERVICE_LABEL);
@@ -100,11 +101,11 @@ const _getRedisOptionsTuple = () => {
     const isCluster = !!credentials.cluster_mode;
     const credentialClientOptions = hasCredentials
       ? {
-          password: credentials.password,
+          ...(Object.prototype.hasOwnProperty.call(credentials, "password") && { password: credentials.password }),
           socket: {
-            host: credentials.hostname,
-            port: credentials.port,
-            tls: credentials.tls,
+            ...(Object.prototype.hasOwnProperty.call(credentials, "hostname") && { host: credentials.hostname }),
+            ...(Object.prototype.hasOwnProperty.call(credentials, "port") && { port: credentials.port }),
+            ...(Object.prototype.hasOwnProperty.call(credentials, "tls") && { tls: credentials.tls }),
           },
         }
       : undefined;
@@ -140,18 +141,28 @@ const _getRedisOptionsTuple = () => {
   return __activeOptionsTuple;
 };
 
+const _noReconnectStrategy = () => new VError({ name: VERROR_CLUSTER_NAME }, "disabled reconnect");
+
 /**
  * Lazily create a new redis client. Client creation transparently handles
  * - custom credentials and client options passed in via {@link setCustomOptions},
  * - Cloud Foundry service with label "redis-cache" (hyperscaler option), and
  * - local redis-server.
  *
+ * @param {string} clientName
+ * @param {CreateOptions} [options]
  * @returns {RedisClient|RedisCluster}
  * @private
  */
-const _createClientBase = (clientName) => {
+const _createClientBase = (clientName, options = {}) => {
+  const { doReconnect = true } = options;
   try {
     const [isCluster, redisClientOptions] = _getRedisOptionsTuple();
+
+    if (!doReconnect) {
+      redisClientOptions.socket.reconnectStrategy = _noReconnectStrategy;
+    }
+
     return isCluster
       ? redis.createCluster({
           rootNodes: [redisClientOptions], // NOTE: assume this ignores everything but socket/url
@@ -167,10 +178,21 @@ const _createClientBase = (clientName) => {
   }
 };
 
-const _createClientAndConnect = async (clientName, { doLogEvents = true } = {}) => {
+/**
+ * @typedef CreateOptions
+ * @type object
+ * @property {boolean}  [doLogEvents] log error events, defaults to true
+ * @property {boolean}  [doReconnect] setting to false disables reconnect strategy, defaults to true
+ */
+/**
+ * @param {string} clientName
+ * @param {CreateOptions} [options]
+ */
+const _createClientAndConnect = async (clientName, options = {}) => {
+  const { doLogEvents = true } = options;
   let client = null;
   try {
-    client = _createClientBase(clientName);
+    client = _createClientBase(clientName, options);
   } catch (err) {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "error during create client");
   }
@@ -210,7 +232,10 @@ const _canGetClient = async () => {
   if (__canGetClientPromise === null) {
     __canGetClientPromise = (async () => {
       try {
-        const silentClient = await _createClientAndConnect("silent", { doLogEvents: false });
+        const silentClient = await _createClientAndConnect(CLIENT_NAME.SILENT, {
+          doLogEvents: false,
+          doReconnect: false,
+        });
         await _closeClientBase(silentClient);
         return true;
       } catch {} // eslint-disable-line no-empty
@@ -251,7 +276,7 @@ const getIntegrationMode = async () => {
  */
 const getMainClient = async () => {
   if (!__mainClientPromise) {
-    __mainClientPromise = _createClientAndConnect("main");
+    __mainClientPromise = _createClientAndConnect(CLIENT_NAME.MAIN);
   }
   return await __mainClientPromise;
 };
@@ -277,7 +302,7 @@ const closeMainClient = async () => {
  */
 const getSubscriberClient = async () => {
   if (!__subscriberClientPromise) {
-    __subscriberClientPromise = _createClientAndConnect("subscriber");
+    __subscriberClientPromise = _createClientAndConnect(CLIENT_NAME.SUBSCRIBER);
   }
   return await __subscriberClientPromise;
 };

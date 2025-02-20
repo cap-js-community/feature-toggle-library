@@ -1,5 +1,8 @@
 "use strict";
 
+const pathlib = require("path");
+const fs = require("fs");
+
 const ENV = Object.freeze({
   USER: "USER",
   CF_APP: "VCAP_APPLICATION",
@@ -23,18 +26,26 @@ class CfEnv {
     } catch (err) {} // eslint-disable-line no-empty
   }
 
-  constructor(env = process.env) {
-    if (env.NODE_ENV !== "production" && env.USE_DEFAULT_ENV) {
-      try {
-        const { VCAP_APPLICATION, VCAP_SERVICES } = require(process.cwd() + "/default-env.json");
-        if (VCAP_APPLICATION && !Object.prototype.hasOwnProperty.call(env, "VCAP_APPLICATION")) {
-          env.VCAP_APPLICATION = JSON.stringify(VCAP_APPLICATION);
+  static readDefaultEnv() {
+    try {
+      const defaultEnvRaw = fs.readFileSync(pathlib.resolve(process.cwd(), "default-env.json"), "utf8");
+      return Object.entries(JSON.parse(defaultEnvRaw)).reduce((acc, [key, value]) => {
+        if (value !== null) {
+          acc[key] = JSON.stringify(value);
         }
-        if (VCAP_SERVICES && !Object.prototype.hasOwnProperty.call(env, "VCAP_SERVICES")) {
-          env.VCAP_SERVICES = JSON.stringify(VCAP_SERVICES);
-        }
-      } catch (err) {} // eslint-disable-line no-empty
-    }
+        return acc;
+      }, {});
+    } catch (err) {} // eslint-disable-line no-empty
+  }
+
+  constructor(inputEnv = process.env) {
+    const env =
+      inputEnv.NODE_ENV === "production"
+        ? inputEnv
+        : {
+            ...CfEnv.readDefaultEnv(),
+            ...inputEnv,
+          };
 
     this.isOnCf = env[ENV.USER] === "vcap";
     this.cfApp = CfEnv.parseEnvVar(env, ENV.CF_APP) || {};
