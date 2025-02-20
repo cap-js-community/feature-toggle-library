@@ -36,6 +36,8 @@ jest.mock("@redis/client", () => ({
 
 const redisAdapter = require("../src/redis-adapter");
 
+const { REDIS_CLIENT_NAME: CLIENT_NAME } = redisAdapter;
+
 const channel = "channel";
 const channelTwo = "channelTwo";
 const message = "message";
@@ -79,6 +81,40 @@ describe("redis-adapter test", () => {
       ]
     `);
     expect(client).toBe(mockClient);
+    expect(loggerSpy.error).not.toHaveBeenCalled();
+  });
+
+  test("_createClientAndConnect silent and then main does not leak options", async () => {
+    await redisAdapter._._createClientAndConnect(CLIENT_NAME.SILENT, {
+      doLogEvents: false,
+      doReconnect: false,
+    });
+
+    expect(redis.createClient).toHaveBeenCalledTimes(1);
+    expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
+      [
+        {
+          "pingInterval": 240000,
+          "socket": {
+            "reconnectStrategy": [Function],
+          },
+        },
+      ]
+    `);
+
+    redis.createClient.mockClear();
+    await redisAdapter._._createClientAndConnect(CLIENT_NAME.MAIN);
+
+    expect(redis.createClient).toHaveBeenCalledTimes(1);
+    expect(redis.createClient.mock.calls[0]).toMatchInlineSnapshot(`
+      [
+        {
+          "pingInterval": 240000,
+          "socket": {},
+        },
+      ]
+    `);
+
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
