@@ -74,10 +74,7 @@ describe("redis-adapter test", () => {
       [
         {
           "pingInterval": 240000,
-          "socket": {
-            "host": "localhost",
-            "port": 6379,
-          },
+          "socket": {},
         },
       ]
     `);
