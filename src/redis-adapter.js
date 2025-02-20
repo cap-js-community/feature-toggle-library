@@ -157,11 +157,18 @@ const _noReconnectStrategy = () => new VError({ name: VERROR_CLUSTER_NAME }, "di
 const _createClientBase = (clientName, options = {}) => {
   const { doReconnect = true } = options;
   try {
-    const [isCluster, redisClientOptions] = _getRedisOptionsTuple();
+    const [isCluster, sharedRedisClientOptions] = _getRedisOptionsTuple();
 
-    if (!doReconnect) {
-      redisClientOptions.socket.reconnectStrategy = _noReconnectStrategy;
-    }
+    // NOTE: we need to take care not to pollute sharedRedisClientOptions for subsequent calls of other clients
+    const redisClientOptions = doReconnect
+      ? sharedRedisClientOptions
+      : {
+          ...sharedRedisClientOptions,
+          socket: {
+            ...sharedRedisClientOptions.socket,
+            reconnectStrategy: _noReconnectStrategy,
+          },
+        };
 
     return isCluster
       ? redis.createCluster({
@@ -632,6 +639,7 @@ const removeAllMessageHandlers = (channel) => __messageHandlers.removeAllHandler
 
 module.exports = {
   REDIS_INTEGRATION_MODE: INTEGRATION_MODE,
+  REDIS_CLIENT_NAME: CLIENT_NAME,
   setCustomOptions,
   getIntegrationMode,
   getMainClient,
