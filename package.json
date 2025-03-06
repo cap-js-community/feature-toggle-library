@@ -34,8 +34,8 @@
     "yaml": "^2.7.0"
   },
   "devDependencies": {
+    "@cap-js/cds-test": "^0.2.0",
     "@sap/cds": "^8.7.2",
-    "axios": "^1.7.9",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jest": "^28.11.0",
