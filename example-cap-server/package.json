@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
-    "@sap/cds": "^8.7.2",
-    "@sap/cds-mtxs": "^2.5.1",
+    "@sap/cds": "^8.9.0",
+    "@sap/cds-mtxs": "^2.7.0",
     "express": "^4.21.2"
   },
   "cds": {
