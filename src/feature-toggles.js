@@ -318,25 +318,25 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig({ configRuntime, configFromFilesEntries, configAuto } = {}) {
-    const configRuntimeCount = this._processConfigSource(
-      CONFIG_SOURCE.RUNTIME,
-      CONFIG_MERGE_CONFLICT.THROW,
-      configRuntime
-    );
+  _processConfig({ configAuto, configFromFilesEntries, configRuntime } = {}) {
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, CONFIG_MERGE_CONFLICT.OVERRIDE, configAuto);
     const configFromFileCount = configFromFilesEntries.reduce(
       (count, [configFilepath, configFromFile]) =>
         count +
-        this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.THROW, configFromFile, configFilepath),
+        this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.OVERRIDE, configFromFile, configFilepath),
       0
     );
-    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, CONFIG_MERGE_CONFLICT.PRESERVE, configAuto);
+    const configRuntimeCount = this._processConfigSource(
+      CONFIG_SOURCE.RUNTIME,
+      CONFIG_MERGE_CONFLICT.OVERRIDE,
+      configRuntime
+    );
 
     this.__isConfigProcessed = true;
     return {
+      [CONFIG_SOURCE.AUTO]: configAutoCount,
       [CONFIG_SOURCE.RUNTIME]: configRuntimeCount,
       [CONFIG_SOURCE.FILE]: configFromFileCount,
-      [CONFIG_SOURCE.AUTO]: configAutoCount,
     };
   }
 
@@ -804,10 +804,10 @@ class FeatureToggles {
    * @param {InitializeOptions}  [options]
    */
   async _initializeFeatures({
-    config: configRuntime,
+    configAuto,
     configFile: configFilepath,
     configFiles: configFilepaths,
-    configAuto,
+    config: configRuntime,
     customRedisCredentials,
     customRedisClientOptions,
   } = {}) {
@@ -841,9 +841,9 @@ class FeatureToggles {
     let toggleCounts;
     try {
       toggleCounts = this._processConfig({
-        configRuntime,
-        configFromFilesEntries,
         configAuto,
+        configFromFilesEntries,
+        configRuntime,
       });
     } catch (err) {
       throw new VError(
@@ -924,17 +924,17 @@ class FeatureToggles {
     }
 
     const totalCount =
-      toggleCounts[CONFIG_SOURCE.RUNTIME] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.AUTO];
+      toggleCounts[CONFIG_SOURCE.AUTO] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.RUNTIME];
     logger.info(
       [
         "finished initialization",
         ...(this.__uniqueName ? [`of "${this.__uniqueName}"`] : []),
         util.format(
-          "with %i feature toggles (%i runtime, %i file, %i auto)",
+          "with %i feature toggles (%i auto, %i file, %i runtime)",
           totalCount,
-          toggleCounts[CONFIG_SOURCE.RUNTIME],
+          toggleCounts[CONFIG_SOURCE.AUTO],
           toggleCounts[CONFIG_SOURCE.FILE],
-          toggleCounts[CONFIG_SOURCE.AUTO]
+          toggleCounts[CONFIG_SOURCE.RUNTIME]
         ),
         `using ${redisIntegrationMode}`,
       ].join(" ")
