@@ -237,6 +237,10 @@ class FeatureToggles {
     for (const [featureKey, value] of entries) {
       if (this.__config[featureKey]) {
         switch (mergeConflictBehavior) {
+          case CONFIG_MERGE_CONFLICT.OVERRIDE: {
+            this.removeAllFeatureValueValidation(featureKey);
+            break;
+          }
           case CONFIG_MERGE_CONFLICT.PRESERVE: {
             continue;
           }
@@ -280,7 +284,6 @@ class FeatureToggles {
 
       const { type, active, appUrl, fallbackValue, validations } = value;
 
-      this.__featureKeys.push(featureKey);
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
 
@@ -331,6 +334,8 @@ class FeatureToggles {
       CONFIG_MERGE_CONFLICT.OVERRIDE,
       configRuntime
     );
+
+    this.__featureKeys = Object.keys(this.__fallbackValues);
 
     this.__isConfigProcessed = true;
     return {
