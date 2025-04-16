@@ -238,6 +238,8 @@ class FeatureToggles {
       if (this.__config[featureKey]) {
         switch (mergeConflictBehavior) {
           case CONFIG_MERGE_CONFLICT.OVERRIDE: {
+            // TODO: you cannot just remove all validations, because registering validations before init is recommended
+            //   for programmatic validation
             this.removeAllFeatureValueValidation(featureKey);
             break;
           }
