@@ -153,6 +153,7 @@ exports[`local integration test init init config works for runtime file auto sim
   "test/feature_c": {
     "config": {
       "SOURCE": "FILE",
+      "SOURCE_FILEPATH": "toggles.json",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackFileC",
@@ -160,6 +161,7 @@ exports[`local integration test init init config works for runtime file auto sim
   "test/feature_d": {
     "config": {
       "SOURCE": "FILE",
+      "SOURCE_FILEPATH": "toggles.json",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackFileD",

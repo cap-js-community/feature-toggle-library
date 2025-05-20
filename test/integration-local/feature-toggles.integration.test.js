@@ -11,8 +11,6 @@ jest.mock("fs", () => ({
   access: mockAccess,
 }));
 
-const VError = require("verror");
-
 const { stateFromInfo } = require("../__common__/from-info");
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
@@ -94,51 +92,49 @@ describe("local integration test", () => {
       );
     });
 
-    test("init config conflict between runtime and file throws", async () => {
+    test("init config conflict between file and runtime overrides in favor of runtime", async () => {
       const configForConflict = {
         ...configForRuntime,
         ...configForFile,
       };
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForConflict))));
+      const checkKey = Object.keys(configForRuntime)[0];
 
-      const caught = await toggles
-        .initializeFeatures({ config: configForRuntime, configFile: "toggles.json" })
-        .catch((err) => err);
-      expect(caught).toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: feature is configured twice]`
-      );
-      expect(VError.info(caught)).toMatchInlineSnapshot(`
+      await expect(
+        toggles.initializeFeatures({ config: configForRuntime, configFile: "toggles.json" })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
         {
-          "featureKey": "test/feature_a",
-          "sourceConflicting": "FILE",
-          "sourceExisting": "RUNTIME",
-          "sourceFilepathConflicting": "toggles.json",
+          "config": {
+            "SOURCE": "RUNTIME",
+            "TYPE": "string",
+          },
+          "fallbackValue": "fallbackRuntimeA",
         }
       `);
     });
 
-    test("init config conflict between file A and file B throws", async () => {
+    test("init config conflict between file A and file B overrides in favor of file B", async () => {
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+      const checkKey = Object.keys(configForFile)[0];
 
-      const caught = await toggles
-        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
-        .catch((err) => err);
-      expect(caught).toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: feature is configured twice]`
-      );
-      expect(VError.info(caught)).toMatchInlineSnapshot(`
+      await expect(
+        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
         {
-          "featureKey": "test/feature_c",
-          "sourceConflicting": "FILE",
-          "sourceExisting": "FILE",
-          "sourceFilepathConflicting": "toggles-2.json",
-          "sourceFilepathExisting": "toggles-1.json",
+          "config": {
+            "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles-2.json",
+            "TYPE": "string",
+          },
+          "fallbackValue": "fallbackFileC",
         }
       `);
     });
 
-    test("init config conflict between file and auto preserves", async () => {
+    test("init config conflict between auto and file overrides in favor of file", async () => {
       const firstEntry = Object.entries(configForFile)[0];
       const configForConflict = Object.fromEntries(
         [firstEntry].map(([key]) => [key, { type: "number", fallbackValue: 0 }])
@@ -146,13 +142,16 @@ describe("local integration test", () => {
       mockReadFile.mockImplementationOnce((filepath, callback) =>
         callback(null, Buffer.from(JSON.stringify(configForFile)))
       );
+      const checkKey = firstEntry[0];
+
       await expect(
         toggles.initializeFeatures({ configFile: "toggles.json", configAuto: configForConflict })
       ).resolves.toBeDefined();
-      expect(toggles.getFeatureInfo(firstEntry[0])).toMatchInlineSnapshot(`
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
         {
           "config": {
             "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles.json",
             "TYPE": "string",
           },
           "fallbackValue": "fallbackFileC",
@@ -173,7 +172,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info).toHaveBeenCalledTimes(1);
       expect(featureTogglesLoggerSpy.info.mock.calls[0]).toMatchInlineSnapshot(`
         [
-          "finished initialization of "unicorn" with 5 feature toggles (2 runtime, 2 file, 1 auto) using NO_REDIS",
+          "finished initialization of "unicorn" with 5 feature toggles (1 auto, 2 file, 2 runtime) using NO_REDIS",
         ]
       `);
     });
@@ -369,7 +368,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
@@ -399,7 +398,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
@@ -536,7 +535,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
@@ -633,7 +632,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
