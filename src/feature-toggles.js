@@ -1002,9 +1002,10 @@ class FeatureToggles {
    * @param {InitializeOptions}  [options]
    */
   async initializeFeatures(options) {
-    if (!this.__initializePromise) {
-      this.__initializePromise = this._initializeFeatures(options);
+    if (this.__initializePromise) {
+      throw new VError({ name: VERROR_CLUSTER_NAME }, "already initialized");
     }
+    this.__initializePromise = this._initializeFeatures(options);
     return await this.__initializePromise;
   }
 

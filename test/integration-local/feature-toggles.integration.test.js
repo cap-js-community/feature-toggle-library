@@ -73,6 +73,13 @@ describe("local integration test", () => {
       },
     };
 
+    test("init throws for double invocation", async () => {
+      await toggles.initializeFeatures();
+      await expect(toggles.initializeFeatures()).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: already initialized]`
+      );
+    });
+
     test("init throws for non-existing filepaths", async () => {
       mockReadFile.mockImplementationOnce(fsActual.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
