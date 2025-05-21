@@ -11,6 +11,8 @@ jest.mock("fs", () => ({
   access: mockAccess,
 }));
 
+const VError = require("verror");
+
 const { stateFromInfo } = require("../__common__/from-info");
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
@@ -88,8 +90,80 @@ describe("local integration test", () => {
     test("init fails processing for bad formats", async () => {
       const badConfig = { ...configForRuntime, bla: undefined };
       await expect(toggles.initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: feature configuration is not an object]`
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration is not an object]`
       );
+    });
+
+    test("init throws for missing config type", async () => {
+      const partialConfig = { [FEATURE.A]: { fallbackValue: 1 } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`
+      );
+    });
+
+    test("init throws for invalid config type", async () => {
+      const partialConfig = { [FEATURE.A]: { type: "integer", fallbackValue: 1 } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`
+      );
+    });
+
+    test("init throws for missing config fallback value", async () => {
+      const partialConfig = { [FEATURE.A]: { type: "number" } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+    });
+
+    test("init throws for invalid config fallback value", async () => {
+      const partialConfig = { [FEATURE.A]: { type: "number", fallbackValue: null } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+    });
+
+    test("init config conflict with for first partial configs throws", async () => {
+      const partialFileConfig = { [FEATURE.C]: { type: "number" } };
+
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(partialFileConfig))));
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+
+      let caught;
+      await toggles
+        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+        .catch((err) => (caught = err));
+      expect(caught).toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+      expect(VError.info(caught)).toMatchInlineSnapshot(`
+        {
+          "featureKey": "test/feature_c",
+          "source": "FILE",
+          "sourceFilepath": "toggles-1.json",
+        }
+      `);
+    });
+
+    test("init config conflict with for second partial configs throws", async () => {
+      const partialFileConfig = { [FEATURE.C]: { type: "number" } };
+
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(partialFileConfig))));
+
+      let caught;
+      await toggles
+        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+        .catch((err) => (caught = err));
+      expect(caught).toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+      expect(VError.info(caught)).toMatchInlineSnapshot(`
+        {
+          "featureKey": "test/feature_c",
+          "source": "FILE",
+          "sourceFilepath": "toggles-2.json",
+        }
+      `);
     });
 
     test("init config conflict between file and runtime overrides in favor of runtime", async () => {

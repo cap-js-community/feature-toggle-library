@@ -278,23 +278,49 @@ class FeatureToggles {
               ...(sourceFilepath && { sourceFilepath }),
             },
           },
-          "feature configuration is not an object"
+          "configuration is not an object"
         );
       }
 
       const { type, active, appUrl, fallbackValue, validations } = value;
 
+      if ([undefined, null].includes(fallbackValue)) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+              ...(sourceFilepath && { sourceFilepath }),
+            },
+          },
+          "configuration has no or invalid fallback value"
+        );
+      }
+
+      if (!FEATURE_VALID_TYPES.includes(type)) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+              ...(sourceFilepath && { sourceFilepath }),
+            },
+          },
+          "configuration has no or invalid type"
+        );
+      }
+
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
+
+      this.__config[featureKey][CONFIG_KEY.TYPE] = type;
 
       this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
 
       if (sourceFilepath) {
         this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH] = sourceFilepath;
-      }
-
-      if (type) {
-        this.__config[featureKey][CONFIG_KEY.TYPE] = type;
       }
 
       if (active === false) {
@@ -334,7 +360,7 @@ class FeatureToggles {
       configRuntime
     );
 
-    // NOTE: this post-processing is easier to do after the config is merged
+    // NOTE: this post-processing is easier to do after the configuration is merged
     this.__featureKeys = Object.keys(this.__fallbackValues);
     for (const featureKey of this.__featureKeys) {
       const validations = this.__config[featureKey][CONFIG_KEY.VALIDATIONS];
