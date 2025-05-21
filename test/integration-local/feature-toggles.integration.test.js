@@ -74,10 +74,14 @@ describe("local integration test", () => {
     };
 
     test("init throws for double invocation", async () => {
-      await toggles.initializeFeatures();
+      let initPromise;
+      expect(toggles.canInitialize).toBe(true);
+      initPromise = toggles.initializeFeatures();
+      expect(toggles.canInitialize).toBe(false);
       await expect(toggles.initializeFeatures()).rejects.toMatchInlineSnapshot(
         `[FeatureTogglesError: already initialized]`
       );
+      await initPromise;
     });
 
     test("init throws for non-existing filepaths", async () => {

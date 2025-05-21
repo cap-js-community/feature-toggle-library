@@ -1009,6 +1009,10 @@ class FeatureToggles {
     return await this.__initializePromise;
   }
 
+  get canInitialize() {
+    return !this.__initializePromise;
+  }
+
   // ========================================
   // END OF INITIALIZE SECTION
   // ========================================
