@@ -224,9 +224,7 @@ describe("local integration test", () => {
       const configForConflict = Object.fromEntries(
         [firstEntry].map(([key]) => [key, { type: "number", fallbackValue: 0 }])
       );
-      mockReadFile.mockImplementationOnce((filepath, callback) =>
-        callback(null, Buffer.from(JSON.stringify(configForFile)))
-      );
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
       const checkKey = firstEntry[0];
 
       await expect(
@@ -245,9 +243,7 @@ describe("local integration test", () => {
     });
 
     test("init config works for runtime file auto simultaneously", async () => {
-      mockReadFile.mockImplementationOnce((filepath, callback) =>
-        callback(null, Buffer.from(JSON.stringify(configForFile)))
-      );
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
 
       await expect(
         toggles.initializeFeatures({ config: configForRuntime, configFile: "toggles.json", configAuto: configForAuto })
