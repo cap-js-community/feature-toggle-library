@@ -257,6 +257,46 @@ describe("local integration test", () => {
         ]
       `);
     });
+
+    test("init config works for runtime file auto simultaneously with overrides", async () => {
+      const localConfigForAuto = {
+        ...configForAuto, // E
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-Auto" },
+        [FEATURE.C]: { type: "string", fallbackValue: "C-from-Auto" },
+        [FEATURE.D]: { type: "string", fallbackValue: "D-from-Auto" },
+      };
+      const localConfigForFile1 = {
+        ...configForFile, // C, D
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-File1" },
+        [FEATURE.C]: { type: "string", fallbackValue: "C-from-File1" },
+      };
+      const localConfigForFile2 = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-File2" },
+        [FEATURE.C]: { type: "string", fallbackValue: "C-from-File2" },
+      };
+      const localConfigForRuntime = {
+        ...configForRuntime, // A, B
+      };
+
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(localConfigForFile1))));
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(localConfigForFile2))));
+
+      await expect(
+        toggles.initializeFeatures({
+          configAuto: localConfigForAuto,
+          configFiles: ["toggles-1.json", "toggles-2.json"],
+          config: localConfigForRuntime,
+        })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeaturesInfos()).toMatchSnapshot();
+
+      expect(featureTogglesLoggerSpy.info).toHaveBeenCalledTimes(1);
+      expect(featureTogglesLoggerSpy.info.mock.calls[0]).toMatchInlineSnapshot(`
+        [
+          "finished initialization of "unicorn" with 11 feature toggles (4 auto, 5 file, 2 runtime) using NO_REDIS",
+        ]
+      `);
+    });
   });
 
   describe("validations", () => {
