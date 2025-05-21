@@ -255,6 +255,14 @@ exports[`feature toggles test basic apis initializeFeatureToggles warns for inva
   "test/feature_b": {
     "SOURCE": "RUNTIME",
     "TYPE": "string",
+    "VALIDATIONS": [
+      {
+        "regex": ".+",
+      },
+    ],
+    "VALIDATIONS_REGEX": [
+      /\\.\\+/,
+    ],
   },
   "test/feature_c": {
     "SOURCE": "RUNTIME",

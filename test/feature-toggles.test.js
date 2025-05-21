@@ -321,8 +321,9 @@ describe("feature toggles test", () => {
           type: "boolean",
         },
         [FEATURE.B]: {
-          fallbackValue: null, // null not allowed
+          fallbackValue: "", // empty string not valid
           type: "string",
+          validations: [{ regex: ".+" }],
         },
         [FEATURE.C]: {
           fallbackValue: "1", // type mismatch
@@ -357,7 +358,7 @@ describe("feature toggles test", () => {
       expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
         "FeatureTogglesError: found invalid fallback values during initialization
         {
-          validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"value null is not allowed"},{"featureKey":"test/feature_c","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":["1","string","number"]}]'
+          validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"value \\\\"{0}\\\\" does not match validation regular expression {1}","errorMessageValues":["","/.+/"]},{"featureKey":"test/feature_c","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":["1","string","number"]}]'
         }"
       `);
       expect(loggerSpy.error).not.toHaveBeenCalled();
