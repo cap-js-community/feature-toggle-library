@@ -268,7 +268,6 @@ describe("local integration test", () => {
       const localConfigForFile1 = {
         ...configForFile, // C, D
         [FEATURE.A]: { type: "string", fallbackValue: "A-from-File1" },
-        [FEATURE.C]: { type: "string", fallbackValue: "C-from-File1" },
       };
       const localConfigForFile2 = {
         [FEATURE.A]: { type: "string", fallbackValue: "A-from-File2" },
