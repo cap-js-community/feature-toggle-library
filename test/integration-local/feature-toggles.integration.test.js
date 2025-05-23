@@ -219,6 +219,74 @@ describe("local integration test", () => {
       `);
     });
 
+    test("init config overrides can change validation", async () => {
+      const checkKey = FEATURE.A;
+      const configForFileValidationA = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-A", validations: [{ regex: "^A-" }, { regex: "-A$" }] },
+      };
+      const configForFileValidationB = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-B", validations: [{ regex: "^A-" }, { regex: "-B$" }] },
+      };
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationA)))
+      );
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationB)))
+      );
+
+      await expect(
+        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles-2.json",
+            "TYPE": "string",
+            "VALIDATIONS": [
+              {
+                "regex": "^A-",
+              },
+              {
+                "regex": "-B$",
+              },
+            ],
+          },
+          "fallbackValue": "A-from-B",
+        }
+      `);
+    });
+
+    test("init config overrides can remove validation", async () => {
+      const checkKey = FEATURE.A;
+      const configForFileValidationA = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-A", validations: [{ regex: "^A-" }, { regex: "-A$" }] },
+      };
+      const configForFileValidationB = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-B" },
+      };
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationA)))
+      );
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationB)))
+      );
+
+      await expect(
+        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles-2.json",
+            "TYPE": "string",
+          },
+          "fallbackValue": "A-from-B",
+        }
+      `);
+    });
+
     test("init config conflict between auto and file overrides in favor of file", async () => {
       const firstEntry = Object.entries(configForFile)[0];
       const configForConflict = Object.fromEntries(
