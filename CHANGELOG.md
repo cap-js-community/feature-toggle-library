@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - core: initialization throws if mandatory configuration `fallbackValue` is `undefined` (missing) or `null` (always
   invalid).
 
-- core: initialization throws if mandatory configuration `type` is not in `["number", "string", "boolean"]` (invalid).
+- core: initialization throws if mandatory configuration `type` is not in `["boolean", "number", "string"]` (invalid).
 
 - core: initialization throws if its invoked more than once. the reason is that the options passed in subsequent calls
   were always ignored.
