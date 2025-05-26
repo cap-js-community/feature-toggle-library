@@ -34,14 +34,14 @@ if possible, validated values from Redis.
 
 ## Configuration
 
-We define three layers for configurations: auto, files, runtime. You can think of each layer as a
+We define three layers for toggle configurations: auto, files, runtime. You can think of each layer as a
 JS object that maps feature toggle keys to their respective configurations.
 
 - _auto_: are configurations recognized automatically _before initialization_. This layer is meant to be used for the
   CDS modelling feature toggles of the form `/fts/<feature-name>`. For details see
   [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
 - _files_: are configuration files read _during initialization_. Files can be either in JSON or YAML format. For
-  details see [Configuration Syntax]({{ site.baseurl }}/usage/#configuration). This layer takes precedence over auto
+  details see [Configuration Usage]({{ site.baseurl }}/usage/#configuration). This layer takes precedence over auto
   and the order of the files determines their precedence, with the last occurrence of a configuration overriding
   previous occurrences.
 - _runtime_: are configurations passed just-in-time for initialization. This layer takes precedence over auto and
