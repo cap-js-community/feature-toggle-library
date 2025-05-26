@@ -54,6 +54,10 @@ JS object that maps feature toggle keys to their respective configurations.
 |         | `featureToggles.configFiles`            | `options.configFiles`                 |
 | runtime | `featureToggles.config`                 | `options.config`                      |
 
+This approach allows you to override configurations at various levels. To make the actual runtime configuration clear,
+you can use the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or their underlying library counterpart
+`toggles.getFeaturesInfos()`.
+
 ## Single Key Approach
 
 | ![](concepts-single-key.png) |
