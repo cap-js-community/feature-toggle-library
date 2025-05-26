@@ -73,6 +73,17 @@ describe("local integration test", () => {
       },
     };
 
+    test("init throws for double invocation", async () => {
+      let initPromise;
+      expect(toggles.canInitialize).toBe(true);
+      initPromise = toggles.initializeFeatures();
+      expect(toggles.canInitialize).toBe(false);
+      await expect(toggles.initializeFeatures()).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: already initialized]`
+      );
+      await initPromise;
+    });
+
     test("init throws for non-existing filepaths", async () => {
       mockReadFile.mockImplementationOnce(fsActual.readFile);
       await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
@@ -90,69 +101,208 @@ describe("local integration test", () => {
     test("init fails processing for bad formats", async () => {
       const badConfig = { ...configForRuntime, bla: undefined };
       await expect(toggles.initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: feature configuration is not an object]`
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration is not an object]`
       );
     });
 
-    test("init config conflict between runtime and file throws", async () => {
+    test("init throws for missing config type", async () => {
+      const partialConfig = { [FEATURE.A]: { fallbackValue: 1 } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`
+      );
+    });
+
+    test("init throws for invalid config type", async () => {
+      const partialConfig = { [FEATURE.A]: { type: "integer", fallbackValue: 1 } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`
+      );
+    });
+
+    test("init throws for missing config fallback value", async () => {
+      const partialConfig = { [FEATURE.A]: { type: "number" } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+    });
+
+    test("init throws for invalid config fallback value", async () => {
+      const partialConfig = { [FEATURE.A]: { type: "number", fallbackValue: null } };
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+    });
+
+    test("init config conflict with for first partial configs throws", async () => {
+      const partialFileConfig = { [FEATURE.C]: { type: "number" } };
+
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(partialFileConfig))));
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+
+      let caught;
+      await toggles
+        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+        .catch((err) => (caught = err));
+      expect(caught).toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+      expect(VError.info(caught)).toMatchInlineSnapshot(`
+        {
+          "featureKey": "test/feature_c",
+          "source": "FILE",
+          "sourceFilepath": "toggles-1.json",
+        }
+      `);
+    });
+
+    test("init config conflict with for second partial configs throws", async () => {
+      const partialFileConfig = { [FEATURE.C]: { type: "number" } };
+
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(partialFileConfig))));
+
+      let caught;
+      await toggles
+        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+        .catch((err) => (caught = err));
+      expect(caught).toMatchInlineSnapshot(
+        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
+      );
+      expect(VError.info(caught)).toMatchInlineSnapshot(`
+        {
+          "featureKey": "test/feature_c",
+          "source": "FILE",
+          "sourceFilepath": "toggles-2.json",
+        }
+      `);
+    });
+
+    test("init config conflict between file and runtime overrides in favor of runtime", async () => {
       const configForConflict = {
         ...configForRuntime,
         ...configForFile,
       };
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForConflict))));
+      const checkKey = Object.keys(configForRuntime)[0];
 
-      const caught = await toggles
-        .initializeFeatures({ config: configForRuntime, configFile: "toggles.json" })
-        .catch((err) => err);
-      expect(caught).toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: feature is configured twice]`
-      );
-      expect(VError.info(caught)).toMatchInlineSnapshot(`
+      await expect(
+        toggles.initializeFeatures({ config: configForRuntime, configFile: "toggles.json" })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
         {
-          "featureKey": "test/feature_a",
-          "sourceConflicting": "FILE",
-          "sourceExisting": "RUNTIME",
-          "sourceFilepathConflicting": "toggles.json",
+          "config": {
+            "SOURCE": "RUNTIME",
+            "TYPE": "string",
+          },
+          "fallbackValue": "fallbackRuntimeA",
         }
       `);
     });
 
-    test("init config conflict between file A and file B throws", async () => {
+    test("init config conflict between file A and file B overrides in favor of file B", async () => {
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
       mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+      const checkKey = Object.keys(configForFile)[0];
 
-      const caught = await toggles
-        .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
-        .catch((err) => err);
-      expect(caught).toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: feature is configured twice]`
-      );
-      expect(VError.info(caught)).toMatchInlineSnapshot(`
+      await expect(
+        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
         {
-          "featureKey": "test/feature_c",
-          "sourceConflicting": "FILE",
-          "sourceExisting": "FILE",
-          "sourceFilepathConflicting": "toggles-2.json",
-          "sourceFilepathExisting": "toggles-1.json",
+          "config": {
+            "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles-2.json",
+            "TYPE": "string",
+          },
+          "fallbackValue": "fallbackFileC",
         }
       `);
     });
 
-    test("init config conflict between file and auto preserves", async () => {
+    test("init config overrides can change validation", async () => {
+      const checkKey = FEATURE.A;
+      const configForFileValidationA = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-A", validations: [{ regex: "^A-" }, { regex: "-A$" }] },
+      };
+      const configForFileValidationB = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-B", validations: [{ regex: "^A-" }, { regex: "-B$" }] },
+      };
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationA)))
+      );
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationB)))
+      );
+
+      await expect(
+        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles-2.json",
+            "TYPE": "string",
+            "VALIDATIONS": [
+              {
+                "regex": "^A-",
+              },
+              {
+                "regex": "-B$",
+              },
+            ],
+          },
+          "fallbackValue": "A-from-B",
+        }
+      `);
+    });
+
+    test("init config overrides can remove validation", async () => {
+      const checkKey = FEATURE.A;
+      const configForFileValidationA = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-A", validations: [{ regex: "^A-" }, { regex: "-A$" }] },
+      };
+      const configForFileValidationB = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-B" },
+      };
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationA)))
+      );
+      mockReadFile.mockImplementationOnce((path, cb) =>
+        cb(null, Buffer.from(JSON.stringify(configForFileValidationB)))
+      );
+
+      await expect(
+        toggles.initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
+        {
+          "config": {
+            "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles-2.json",
+            "TYPE": "string",
+          },
+          "fallbackValue": "A-from-B",
+        }
+      `);
+    });
+
+    test("init config conflict between auto and file overrides in favor of file", async () => {
       const firstEntry = Object.entries(configForFile)[0];
       const configForConflict = Object.fromEntries(
         [firstEntry].map(([key]) => [key, { type: "number", fallbackValue: 0 }])
       );
-      mockReadFile.mockImplementationOnce((filepath, callback) =>
-        callback(null, Buffer.from(JSON.stringify(configForFile)))
-      );
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
+      const checkKey = firstEntry[0];
+
       await expect(
         toggles.initializeFeatures({ configFile: "toggles.json", configAuto: configForConflict })
       ).resolves.toBeDefined();
-      expect(toggles.getFeatureInfo(firstEntry[0])).toMatchInlineSnapshot(`
+      expect(toggles.getFeatureInfo(checkKey)).toMatchInlineSnapshot(`
         {
           "config": {
             "SOURCE": "FILE",
+            "SOURCE_FILEPATH": "toggles.json",
             "TYPE": "string",
           },
           "fallbackValue": "fallbackFileC",
@@ -161,9 +311,7 @@ describe("local integration test", () => {
     });
 
     test("init config works for runtime file auto simultaneously", async () => {
-      mockReadFile.mockImplementationOnce((filepath, callback) =>
-        callback(null, Buffer.from(JSON.stringify(configForFile)))
-      );
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(configForFile))));
 
       await expect(
         toggles.initializeFeatures({ config: configForRuntime, configFile: "toggles.json", configAuto: configForAuto })
@@ -173,7 +321,46 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info).toHaveBeenCalledTimes(1);
       expect(featureTogglesLoggerSpy.info.mock.calls[0]).toMatchInlineSnapshot(`
         [
-          "finished initialization of "unicorn" with 5 feature toggles (2 runtime, 2 file, 1 auto) using NO_REDIS",
+          "finished initialization of "unicorn" with 5 feature toggles (1 auto, 2 file, 2 runtime) using NO_REDIS",
+        ]
+      `);
+    });
+
+    test("init config works for runtime file auto simultaneously with overrides", async () => {
+      const localConfigForAuto = {
+        ...configForAuto, // E
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-Auto" },
+        [FEATURE.C]: { type: "string", fallbackValue: "C-from-Auto" },
+        [FEATURE.D]: { type: "string", fallbackValue: "D-from-Auto" },
+      };
+      const localConfigForFile1 = {
+        ...configForFile, // C, D
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-File1" },
+      };
+      const localConfigForFile2 = {
+        [FEATURE.A]: { type: "string", fallbackValue: "A-from-File2" },
+        [FEATURE.C]: { type: "string", fallbackValue: "C-from-File2" },
+      };
+      const localConfigForRuntime = {
+        ...configForRuntime, // A, B
+      };
+
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(localConfigForFile1))));
+      mockReadFile.mockImplementationOnce((path, cb) => cb(null, Buffer.from(JSON.stringify(localConfigForFile2))));
+
+      await expect(
+        toggles.initializeFeatures({
+          configAuto: localConfigForAuto,
+          configFiles: ["toggles-1.json", "toggles-2.json"],
+          config: localConfigForRuntime,
+        })
+      ).resolves.toBeDefined();
+      expect(toggles.getFeaturesInfos()).toMatchSnapshot();
+
+      expect(featureTogglesLoggerSpy.info).toHaveBeenCalledTimes(1);
+      expect(featureTogglesLoggerSpy.info.mock.calls[0]).toMatchInlineSnapshot(`
+        [
+          "finished initialization of "unicorn" with 11 feature toggles (4 auto, 5 file, 2 runtime) using NO_REDIS",
         ]
       `);
     });
@@ -369,7 +556,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
@@ -399,7 +586,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
@@ -536,7 +723,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);
@@ -633,7 +820,7 @@ describe("local integration test", () => {
       expect(featureTogglesLoggerSpy.info.mock.calls).toMatchInlineSnapshot(`
         [
           [
-            "finished initialization of "unicorn" with 9 feature toggles (9 runtime, 0 file, 0 auto) using NO_REDIS",
+            "finished initialization of "unicorn" with 9 feature toggles (0 auto, 0 file, 9 runtime) using NO_REDIS",
           ],
         ]
       `);

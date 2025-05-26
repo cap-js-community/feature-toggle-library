@@ -153,6 +153,7 @@ exports[`local integration test init init config works for runtime file auto sim
   "test/feature_c": {
     "config": {
       "SOURCE": "FILE",
+      "SOURCE_FILEPATH": "toggles.json",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackFileC",
@@ -160,6 +161,49 @@ exports[`local integration test init init config works for runtime file auto sim
   "test/feature_d": {
     "config": {
       "SOURCE": "FILE",
+      "SOURCE_FILEPATH": "toggles.json",
+      "TYPE": "string",
+    },
+    "fallbackValue": "fallbackFileD",
+  },
+  "test/feature_e": {
+    "config": {
+      "SOURCE": "AUTO",
+      "TYPE": "string",
+    },
+    "fallbackValue": "fallbackAutoE",
+  },
+}
+`;
+
+exports[`local integration test init init config works for runtime file auto simultaneously with overrides 1`] = `
+{
+  "test/feature_a": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "string",
+    },
+    "fallbackValue": "fallbackRuntimeA",
+  },
+  "test/feature_b": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "string",
+    },
+    "fallbackValue": "fallbackRuntimeB",
+  },
+  "test/feature_c": {
+    "config": {
+      "SOURCE": "FILE",
+      "SOURCE_FILEPATH": "toggles-2.json",
+      "TYPE": "string",
+    },
+    "fallbackValue": "C-from-File2",
+  },
+  "test/feature_d": {
+    "config": {
+      "SOURCE": "FILE",
+      "SOURCE_FILEPATH": "toggles-1.json",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackFileD",

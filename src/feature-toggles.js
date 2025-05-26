@@ -71,6 +71,7 @@ const CONFIG_INFO_KEY = {
   [CONFIG_KEY.TYPE]: true,
   [CONFIG_KEY.ACTIVE]: true,
   [CONFIG_KEY.SOURCE]: true,
+  [CONFIG_KEY.SOURCE_FILEPATH]: true,
   [CONFIG_KEY.APP_URL]: true,
   [CONFIG_KEY.APP_URL_ACTIVE]: true,
   [CONFIG_KEY.VALIDATIONS]: true,
@@ -237,6 +238,9 @@ class FeatureToggles {
     for (const [featureKey, value] of entries) {
       if (this.__config[featureKey]) {
         switch (mergeConflictBehavior) {
+          case CONFIG_MERGE_CONFLICT.OVERRIDE: {
+            break;
+          }
           case CONFIG_MERGE_CONFLICT.PRESERVE: {
             continue;
           }
@@ -274,24 +278,49 @@ class FeatureToggles {
               ...(sourceFilepath && { sourceFilepath }),
             },
           },
-          "feature configuration is not an object"
+          "configuration is not an object"
         );
       }
 
       const { type, active, appUrl, fallbackValue, validations } = value;
 
-      this.__featureKeys.push(featureKey);
+      if ([undefined, null].includes(fallbackValue)) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+              ...(sourceFilepath && { sourceFilepath }),
+            },
+          },
+          "configuration has no or invalid fallback value"
+        );
+      }
+
+      if (!FEATURE_VALID_TYPES.includes(type)) {
+        throw new VError(
+          {
+            name: VERROR_CLUSTER_NAME,
+            info: {
+              featureKey,
+              source,
+              ...(sourceFilepath && { sourceFilepath }),
+            },
+          },
+          "configuration has no or invalid type"
+        );
+      }
+
       this.__fallbackValues[featureKey] = fallbackValue;
       this.__config[featureKey] = {};
+
+      this.__config[featureKey][CONFIG_KEY.TYPE] = type;
 
       this.__config[featureKey][CONFIG_KEY.SOURCE] = source;
 
       if (sourceFilepath) {
         this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH] = sourceFilepath;
-      }
-
-      if (type) {
-        this.__config[featureKey][CONFIG_KEY.TYPE] = type;
       }
 
       if (active === false) {
@@ -308,7 +337,6 @@ class FeatureToggles {
 
       if (validations) {
         this.__config[featureKey][CONFIG_KEY.VALIDATIONS] = validations;
-        this._processValidations(featureKey, validations, sourceFilepath);
       }
     }
 
@@ -318,25 +346,35 @@ class FeatureToggles {
   /**
    * Populate this.__config.
    */
-  _processConfig({ configRuntime, configFromFilesEntries, configAuto } = {}) {
-    const configRuntimeCount = this._processConfigSource(
-      CONFIG_SOURCE.RUNTIME,
-      CONFIG_MERGE_CONFLICT.THROW,
-      configRuntime
-    );
+  _processConfig({ configAuto, configFromFilesEntries, configRuntime } = {}) {
+    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, CONFIG_MERGE_CONFLICT.OVERRIDE, configAuto);
     const configFromFileCount = configFromFilesEntries.reduce(
       (count, [configFilepath, configFromFile]) =>
         count +
-        this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.THROW, configFromFile, configFilepath),
+        this._processConfigSource(CONFIG_SOURCE.FILE, CONFIG_MERGE_CONFLICT.OVERRIDE, configFromFile, configFilepath),
       0
     );
-    const configAutoCount = this._processConfigSource(CONFIG_SOURCE.AUTO, CONFIG_MERGE_CONFLICT.PRESERVE, configAuto);
+    const configRuntimeCount = this._processConfigSource(
+      CONFIG_SOURCE.RUNTIME,
+      CONFIG_MERGE_CONFLICT.OVERRIDE,
+      configRuntime
+    );
+
+    // NOTE: this post-processing is easier to do after the configuration is merged
+    this.__featureKeys = Object.keys(this.__fallbackValues);
+    for (const featureKey of this.__featureKeys) {
+      const validations = this.__config[featureKey][CONFIG_KEY.VALIDATIONS];
+      if (validations) {
+        const sourceFilepath = this.__config[featureKey][CONFIG_KEY.SOURCE_FILEPATH];
+        this._processValidations(featureKey, validations, sourceFilepath);
+      }
+    }
 
     this.__isConfigProcessed = true;
     return {
+      [CONFIG_SOURCE.AUTO]: configAutoCount,
       [CONFIG_SOURCE.RUNTIME]: configRuntimeCount,
       [CONFIG_SOURCE.FILE]: configFromFileCount,
-      [CONFIG_SOURCE.AUTO]: configAutoCount,
     };
   }
 
@@ -804,10 +842,10 @@ class FeatureToggles {
    * @param {InitializeOptions}  [options]
    */
   async _initializeFeatures({
-    config: configRuntime,
+    configAuto,
     configFile: configFilepath,
     configFiles: configFilepaths,
-    configAuto,
+    config: configRuntime,
     customRedisCredentials,
     customRedisClientOptions,
   } = {}) {
@@ -841,9 +879,9 @@ class FeatureToggles {
     let toggleCounts;
     try {
       toggleCounts = this._processConfig({
-        configRuntime,
-        configFromFilesEntries,
         configAuto,
+        configFromFilesEntries,
+        configRuntime,
       });
     } catch (err) {
       throw new VError(
@@ -924,17 +962,17 @@ class FeatureToggles {
     }
 
     const totalCount =
-      toggleCounts[CONFIG_SOURCE.RUNTIME] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.AUTO];
+      toggleCounts[CONFIG_SOURCE.AUTO] + toggleCounts[CONFIG_SOURCE.FILE] + toggleCounts[CONFIG_SOURCE.RUNTIME];
     logger.info(
       [
         "finished initialization",
         ...(this.__uniqueName ? [`of "${this.__uniqueName}"`] : []),
         util.format(
-          "with %i feature toggles (%i runtime, %i file, %i auto)",
+          "with %i feature toggles (%i auto, %i file, %i runtime)",
           totalCount,
-          toggleCounts[CONFIG_SOURCE.RUNTIME],
+          toggleCounts[CONFIG_SOURCE.AUTO],
           toggleCounts[CONFIG_SOURCE.FILE],
-          toggleCounts[CONFIG_SOURCE.AUTO]
+          toggleCounts[CONFIG_SOURCE.RUNTIME]
         ),
         `using ${redisIntegrationMode}`,
       ].join(" ")
@@ -964,10 +1002,15 @@ class FeatureToggles {
    * @param {InitializeOptions}  [options]
    */
   async initializeFeatures(options) {
-    if (!this.__initializePromise) {
-      this.__initializePromise = this._initializeFeatures(options);
+    if (this.__initializePromise) {
+      throw new VError({ name: VERROR_CLUSTER_NAME }, "already initialized");
     }
+    this.__initializePromise = this._initializeFeatures(options);
     return await this.__initializePromise;
+  }
+
+  get canInitialize() {
+    return !this.__initializePromise;
   }
 
   // ========================================
