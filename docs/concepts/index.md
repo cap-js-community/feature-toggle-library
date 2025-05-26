@@ -34,8 +34,8 @@ if possible, validated values from Redis.
 
 ## Configuration
 
-We define three layers for toggle configurations: auto, files, runtime. You can think of each layer as a
-JS object that maps feature toggle keys to their respective configurations.
+We define three layers for toggle configurations: auto, files, and runtime. You can think of each layer as one or more
+Javascript objects that map feature toggle keys to their respective configurations.
 
 - _auto_: are configurations recognized automatically _before initialization_. This layer is meant to be used for the
   CDS modelling feature toggles of the form `/fts/<feature-name>`. For details see
@@ -54,9 +54,16 @@ JS object that maps feature toggle keys to their respective configurations.
 |         | `featureToggles.configFiles`            | `options.configFiles`                 |
 | runtime | `featureToggles.config`                 | `options.config`                      |
 
-This approach allows you to override configurations at various levels. To make the actual runtime configuration clear,
-you can use the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or their underlying library counterpart
+This approach allows you to override toggle configurations at each level. For a given toggle, the _last occurrence_ of
+its configuration will override all previous occurrences. To make the actual configuration clear, you can use
+the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or their underlying library counterpart
 `toggles.getFeaturesInfos()`.
+
+{: .info }
+// TODO
+The toggle configurations in different layers can will be mixed together  
+The override of a toggle configuration is never partial. In other words, you need to define all intended properties,
+for example _validations_, for each occurrence.
 
 ## Single Key Approach
 
