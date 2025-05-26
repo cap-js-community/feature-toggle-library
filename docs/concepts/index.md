@@ -42,7 +42,7 @@ JS object that maps feature toggle keys to their respective configurations.
   [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
 - _files_: are configuration files read _during initialization_. Files can be either in JSON or YAML format. For
   details see [Configuration Usage]({{ site.baseurl }}/usage/#configuration). This layer takes precedence over auto
-  and the order of the files determines their precedence, with the last occurrence of a configuration overriding
+  and the order of the files determines their precedence, with the _last occurrence_ for each toggle overriding
   previous occurrences.
 - _runtime_: are configurations passed just-in-time for initialization. This layer takes precedence over auto and
   files.
