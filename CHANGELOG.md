@@ -22,8 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - core: the configuration reading and aggregation has changed:
   - up to `v1.2.5`, the order was `runtime`, `files`, `auto`, where the _first occurrence_ is used for each toggle
   - from `v1.3.0`, the order is `auto`, `files`, `runtime`, where the _last occurrence_ is used for each toggle
-  - this enables overriding the configuration based on environmental factors, by mixing in certain specific config
-    files when appropriate
+  - this enables overriding the configuration based on environmental factors, by mixing in dedicated config files
 
 ## v1.2.5 - 2025-02-20
 
