@@ -65,9 +65,10 @@ can use the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or th
 | :-----------------------------: |
 |     _Layered Configuration_     |
 
-{: .info }
+{: .warn }
 The override of a specific toggle configuration is never partial. In other words, you need to define all intended
-properties, for example _validations_, for each occurrence.
+properties, for example _validations_, for each occurrence. This makes all individual toggle configurations
+_self-contained_.
 
 ## Single Key Approach
 
