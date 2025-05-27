@@ -41,7 +41,10 @@ back all toggles to their fallback values.
 ## Configuration
 
 We recommend maintaining the configuration in a _version-tracked_, YAML- or JSON-file, which only changes during
-deployments. The configuration is a key-value map describing each individual feature toggle. Here is an example in YAML.
+deployments. For complex projects, you can also make use of a
+[layered configuration]({{ site.baseurl }}/concepts/#layered-configuration).
+
+The configuration is a key-value map describing each individual feature toggle. Here is an example in YAML.
 
 ```yaml
 /srv/util/logger/logLevel:

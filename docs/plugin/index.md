@@ -18,16 +18,17 @@ nav_order: 4
 Here is a list of all plugin settings that can be used in `package.json` under this library's node
 `cds.featureToggles`. All settings are optional.
 
-| setting            | type   | meaning                                                                   |
-| :----------------- | :----- | :------------------------------------------------------------------------ |
-| configFile         | string | path of the [configuration]({{ site.baseurl }}/usage/#configuration) file |
-| config             | object | inline configuration (only recommended for small projects)                |
-| uniqueName         | string | key name on redis, see below                                              |
-| serviceAccessRoles | array  | read and write access roles, see below                                    |
-| readAccessRoles    | array  | see below                                                                 |
-| writeAccessRoles   | array  | see below                                                                 |
-| adminAccessRoles   | array  | see below                                                                 |
-| ftsScopeCallback   | string | custom scopes for cap feature toggles, see below                          |
+| setting            | type            | meaning                                                                                    |
+| :----------------- | :-------------- | :----------------------------------------------------------------------------------------- |
+| configFile         | string          | path of the [configuration]({{ site.baseurl }}/usage/#configuration) file                  |
+| configFiles        | array or object | paths of [layered configuration]({{ site.baseurl }}/concepts/#layered-configuration) files |
+| config             | object          | inline configuration (only recommended for small projects)                                 |
+| uniqueName         | string          | key name on redis, see below                                                               |
+| serviceAccessRoles | array           | read and write access roles, see below                                                     |
+| readAccessRoles    | array           | see below                                                                                  |
+| writeAccessRoles   | array           | see below                                                                                  |
+| adminAccessRoles   | array           | see below                                                                                  |
+| ftsScopeCallback   | string          | custom scopes for cap feature toggles, see below                                           |
 
 _uniqueName_<br>
 The unique name is an identifier for the state data in redis. This defaults to the cloud foundry application name and
