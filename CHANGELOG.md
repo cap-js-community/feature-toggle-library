@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.2.6 - tbd
+## v1.3.0 - tbd
+
+### Changed
+
+- core: initialization throws if mandatory configuration `fallbackValue` is `undefined` (missing) or `null` (always
+  invalid).
+
+- core: initialization throws if mandatory configuration `type` is not in `["boolean", "number", "string"]` (invalid).
+
+- core: initialization throws if its invoked more than once. the reason is that the options passed in subsequent calls
+  were always ignored.
+
+- core: the configuration reading and aggregation has changed:
+  - up to `v1.2.5`, the order was `runtime`, `files`, `auto`, where the _first occurrence_ is used for each toggle
+  - from `v1.3.0`, the order is `auto`, `files`, `runtime`, where the _last occurrence_ is used for each toggle
+  - this enables overriding the configuration based on environmental factors, by mixing in dedicated config files
 
 ## v1.2.5 - 2025-02-20
 

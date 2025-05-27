@@ -991,6 +991,7 @@ class FeatureToggles {
    * @type object
    * @property {Config}  [config]
    * @property {string}  [configFile]
+   * @property {string}  [configFiles]
    * @property {Config}  [configAuto]
    * @property {object}  [customRedisCredentials]
    * @property {object}  [customRedisClientOptions]

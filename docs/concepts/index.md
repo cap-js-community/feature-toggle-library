@@ -32,6 +32,44 @@ Initialization broadly has this workflow:
 After initialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
 if possible, validated values from Redis.
 
+## Layered Configuration
+
+We define three layers for toggle configurations: auto, files, and runtime. You can think of each layer as one or more
+Javascript objects that map feature toggle keys to their respective configurations.
+
+- _auto_: are configurations recognized automatically _before initialization_. This layer is meant to be used for the
+  CDS modelling feature toggles of the form `/fts/<feature-name>`. For details see
+  [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
+- _files_: are configuration files read _during initialization_. Files can be either in YAML or JSON format. For
+  details see [Configuration Usage]({{ site.baseurl }}/usage/#configuration). This layer takes precedence over auto
+  and the order of the files determines their precedence, with the _last occurrence_ for each toggle overriding
+  previous occurrences.
+- _runtime_: are configurations passed just-in-time for initialization. This layer takes precedence over auto and
+  files.
+
+The relevant configuration setting for each level is listed here:
+
+| layer   | cds-plugin mode: cds.env.featureToggles | library mode: initialization(options) |
+| ------- | --------------------------------------- | ------------------------------------- |
+| auto    | happens automatically                   | `options.configAuto`                  |
+| files   | `featureToggles.configFile` or          | `options.configFile` or               |
+|         | `featureToggles.configFiles`            | `options.configFiles`                 |
+| runtime | `featureToggles.config`                 | `options.config`                      |
+
+This layered approach allows you to override toggle configurations at each level. For a given toggle, the _last
+occurrence_ of its configuration will override all previous occurrences. To make the actual configuration clear, you
+can use the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or their underlying library counterpart
+`toggles.getFeaturesInfos()`.
+
+| ![](concepts-configuration.png) |
+| :-----------------------------: |
+|     _Layered Configuration_     |
+
+{: .warn }
+The override of a specific toggle configuration is never partial. In other words, you need to define all intended
+properties, for example _validations_, for each occurrence. This makes all individual toggle configurations
+_self-contained_.
+
 ## Single Key Approach
 
 | ![](concepts-single-key.png) |
