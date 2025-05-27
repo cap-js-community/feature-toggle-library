@@ -40,7 +40,7 @@ Javascript objects that map feature toggle keys to their respective configuratio
 - _auto_: are configurations recognized automatically _before initialization_. This layer is meant to be used for the
   CDS modelling feature toggles of the form `/fts/<feature-name>`. For details see
   [Feature Vector Provider]({{ site.baseurl }}/plugin/#feature-vector-provider).
-- _files_: are configuration files read _during initialization_. Files can be either in JSON or YAML format. For
+- _files_: are configuration files read _during initialization_. Files can be either in YAML or JSON format. For
   details see [Configuration Usage]({{ site.baseurl }}/usage/#configuration). This layer takes precedence over auto
   and the order of the files determines their precedence, with the _last occurrence_ for each toggle overriding
   previous occurrences.
