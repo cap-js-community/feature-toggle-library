@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.3.0 - tbd
+## v1.3.0 - 2025-05-27
+
+⚠️ This release is potentially disruptive. Initialize will throw for previously ignored problems with configuration
+correctness. The coalesce logic for using multiple configuration sources has changed. For details see
+[Layered Configuration](https://cap-js-community.github.io/feature-toggle-library/concepts/#layered-configuration).
 
 ### Changed
 
@@ -16,10 +20,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - core: initialization throws if mandatory configuration `type` is not in `["boolean", "number", "string"]` (invalid).
 
-- core: initialization throws if its invoked more than once. the reason is that the options passed in subsequent calls
-  were always ignored.
+- core: initialization throws if its invoked more than once. previously subsequent calls and their options were
+  ignored.
 
-- core: the configuration reading and aggregation has changed:
+- core: configuration reading and coalescing has changed:
   - up to `v1.2.5`, the order was `runtime`, `files`, `auto`, where the _first occurrence_ is used for each toggle
   - from `v1.3.0`, the order is `auto`, `files`, `runtime`, where the _last occurrence_ is used for each toggle
   - this enables overriding the configuration based on environmental factors, by mixing in dedicated config files
