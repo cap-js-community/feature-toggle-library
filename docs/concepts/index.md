@@ -32,7 +32,7 @@ Initialization broadly has this workflow:
 After initialization, usage code can rely on always getting at least the fallback values (including invalid values) or,
 if possible, validated values from Redis.
 
-## Configuration
+## Layered Configuration
 
 We define three layers for toggle configurations: auto, files, and runtime. You can think of each layer as one or more
 Javascript objects that map feature toggle keys to their respective configurations.
@@ -47,6 +47,8 @@ Javascript objects that map feature toggle keys to their respective configuratio
 - _runtime_: are configurations passed just-in-time for initialization. This layer takes precedence over auto and
   files.
 
+The relevant configuration setting for each level is listed here:
+
 | layer   | cds-plugin mode: cds.env.featureToggles | library mode: initialization(options) |
 | ------- | --------------------------------------- | ------------------------------------- |
 | auto    | happens automatically                   | `options.configAuto`                  |
@@ -54,16 +56,18 @@ Javascript objects that map feature toggle keys to their respective configuratio
 |         | `featureToggles.configFiles`            | `options.configFiles`                 |
 | runtime | `featureToggles.config`                 | `options.config`                      |
 
-This approach allows you to override toggle configurations at each level. For a given toggle, the _last occurrence_ of
-its configuration will override all previous occurrences. To make the actual configuration clear, you can use
-the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or their underlying library counterpart
+This layered approach allows you to override toggle configurations at each level. For a given toggle, the _last
+occurrence_ of its configuration will override all previous occurrences. To make the actual configuration clear, you
+can use the `/rest/feature/state`, or `/rest/feature/redisRead` endpoints, or their underlying library counterpart
 `toggles.getFeaturesInfos()`.
 
+| ![](concepts-configuration.png) |
+| :-----------------------------: |
+|     _Layered Configuration_     |
+
 {: .info }
-// TODO
-The toggle configurations in different layers can will be mixed together  
-The override of a toggle configuration is never partial. In other words, you need to define all intended properties,
-for example _validations_, for each occurrence.
+The override of a specific toggle configuration is never partial. In other words, you need to define all intended
+properties, for example _validations_, for each occurrence.
 
 ## Single Key Approach
 
