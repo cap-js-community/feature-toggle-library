@@ -1,6 +1,5 @@
 "use strict";
 
-const cds = require("@sap/cds");
 const toggles = require("@cap-js-community/feature-toggle-library");
 
 const { CHECK_API_PRIORITY } = require("../feature");
@@ -13,8 +12,8 @@ const MEDIUM_BOUNDARY = 10;
 const HIGH_VALUE_RESPONSES = ["well done", "full success", "huzzah", "celebrations"];
 const HIGH_BOUNDARY = 100;
 
-const priorityHandler = async (context) => {
-  const { "CheckService.priority": priority } = (cds.context.model ?? cds.model).definitions;
+const priorityHandler = (srv) => async (context) => {
+  const { "CheckService.priority": priority } = (context.model ?? srv.model).definitions;
   const isFtsToggled = Boolean(priority["@marked"]);
   const value = toggles.getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
@@ -31,5 +30,5 @@ const priorityHandler = async (context) => {
 
 module.exports = async (srv) => {
   const { priority } = srv.operations;
-  srv.on(priority, priorityHandler);
+  srv.on(priority, priorityHandler(srv));
 };
