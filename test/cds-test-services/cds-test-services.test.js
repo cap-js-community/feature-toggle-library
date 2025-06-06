@@ -2,6 +2,7 @@
 
 const cds = require("@sap/cds");
 const toggles = require("../../src");
+const { pluginExport } = require("../../src/plugin");
 
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
@@ -9,15 +10,16 @@ const server = cds.test("test/cds-test-services");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
 describe("cds-test", () => {
-  beforeEach(async () => {
-    toggles._reset();
-    await toggles.initializeFeatures({ config });
-  });
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   describe("feature-service", () => {
+    beforeEach(async () => {
+      toggles._reset();
+      await toggles.initializeFeatures({ config });
+    });
+
     const featureBChanges = [
       {
         key: FEATURE.B,
@@ -121,15 +123,27 @@ describe("cds-test", () => {
   });
 
   describe("check-service", () => {
+    beforeAll(async () => {
+      toggles._reset();
+      jest.spyOn(process, "cwd").mockReturnValue(__dirname);
+      await pluginExport();
+    });
+
     test("priority endpoint with no feature is false", async () => {
+      const i = toggles.getFeaturesInfos();
+      expect(toggles.getFeatureValue("/fts/check-service-extension")).toBe(false);
       const response = await server.get("/rest/check/priority", systemCall);
       expect(response.status).toBe(200);
       expect(response.data).toBe(false);
     });
 
-    // TODO cds.test does not load the plugin, so the middleware that acts as a feature vector provider is not active...
-    // test("priority endpoint with feature is true", async () => {
-    //   const response = await server.get("/rest/check/priority", systemCall);
-    // });
+    test("priority endpoint with feature is true", async () => {
+      await toggles.changeFeatureValue("/fts/check-service-extension", true);
+      expect(toggles.getFeatureValue("/fts/check-service-extension")).toBe(true);
+      // TODO this does not use cds.middlewares, so it will not work...
+      const response = await server.get("/rest/check/priority", systemCall);
+      expect(response.status).toBe(200);
+      expect(response.data).toBe(true);
+    });
   });
 });
