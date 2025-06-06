@@ -111,7 +111,6 @@ describe("cds-test-service", () => {
       expect(response.data).toMatchInlineSnapshot(`
         {
           "error": {
-            "@Common.numericSeverity": 4,
             "code": "422",
             "message": "value "100" has invalid type number, must be boolean",
             "target": "test/feature_a",
