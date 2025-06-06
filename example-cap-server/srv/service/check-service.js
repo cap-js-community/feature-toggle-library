@@ -1,5 +1,6 @@
 "use strict";
 
+const cds = require("@sap/cds");
 const toggles = require("@cap-js-community/feature-toggle-library");
 
 const { CHECK_API_PRIORITY } = require("../feature");
@@ -13,7 +14,7 @@ const HIGH_VALUE_RESPONSES = ["well done", "full success", "huzzah", "celebratio
 const HIGH_BOUNDARY = 100;
 
 const priorityHandler = async (context) => {
-  const { "CheckService.priority": priority } = context.model.definitions; // TODO doesn't work
+  const { "CheckService.priority": priority } = (cds.context.model ?? cds.model).definitions;
   const isFtsToggled = Boolean(priority["@marked"]);
   const value = toggles.getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
   const messages =
