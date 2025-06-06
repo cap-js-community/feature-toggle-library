@@ -19,7 +19,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@cap-js-community/feature-toggle-library": "^1.3.0",
+    "@cap-js-community/feature-toggle-library": "*",
     "@sap/cds": "^9.0.3",
     "@sap/cds-mtxs": "^3.0.1",
     "express": "^4.21.2"
