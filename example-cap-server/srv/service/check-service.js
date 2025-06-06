@@ -13,6 +13,8 @@ const HIGH_VALUE_RESPONSES = ["well done", "full success", "huzzah", "celebratio
 const HIGH_BOUNDARY = 100;
 
 const priorityHandler = (srv) => async (context) => {
+  // NOTE: srv.model is the base service model without extensions, context.model is the extended service model if
+  //   features are active otherwise undefined.
   const { "CheckService.priority": priority } = (context.model ?? srv.model).definitions;
   const isFtsToggled = Boolean(priority["@marked"]);
   const value = toggles.getFeatureValue(CHECK_API_PRIORITY, { user: context.user.id, tenant: context.tenant });
