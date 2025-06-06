@@ -5,31 +5,10 @@ const toggles = require("../../src");
 
 const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
 
-const server = cds.test("test/cds-test-service");
+const server = cds.test("test/cds-test-services");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
-describe("cds-test-service", () => {
-  const featureBChanges = [
-    {
-      key: FEATURE.B,
-      value: 2,
-    },
-    {
-      key: FEATURE.B,
-      value: 20,
-      scope: {
-        tenant: "a",
-      },
-    },
-    {
-      key: FEATURE.B,
-      value: 30,
-      scope: {
-        tenant: "b",
-      },
-    },
-  ];
-
+describe("cds-test", () => {
   beforeEach(async () => {
     toggles._reset();
     await toggles.initializeFeatures({ config });
@@ -38,7 +17,28 @@ describe("cds-test-service", () => {
     jest.clearAllMocks();
   });
 
-  describe("endpoints", () => {
+  describe("feature-service", () => {
+    const featureBChanges = [
+      {
+        key: FEATURE.B,
+        value: 2,
+      },
+      {
+        key: FEATURE.B,
+        value: 20,
+        scope: {
+          tenant: "a",
+        },
+      },
+      {
+        key: FEATURE.B,
+        value: 30,
+        scope: {
+          tenant: "b",
+        },
+      },
+    ];
+
     test.each(["/rest/feature/redisSendCommand"])("%s is forbidden for system", async (endpoint) => {
       const response = await server.post(endpoint, {}, systemCall);
       expect(response.status).toBe(403);
@@ -118,5 +118,18 @@ describe("cds-test-service", () => {
         }
       `);
     });
+  });
+
+  describe("check-service", () => {
+    test("priority endpoint with no feature is false", async () => {
+      const response = await server.get("/rest/check/priority", systemCall);
+      expect(response.status).toBe(200);
+      expect(response.data).toBe(false);
+    });
+
+    // TODO cds.test does not load the plugin, so the middleware that acts as a feature vector provider is not active...
+    // test("priority endpoint with feature is true", async () => {
+    //   const response = await server.get("/rest/check/priority", systemCall);
+    // });
   });
 });
