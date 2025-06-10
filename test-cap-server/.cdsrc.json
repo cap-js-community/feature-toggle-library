@@ -9,6 +9,7 @@
           "roles": ["internal-user"]
         }
       }
-    }
+    },
+    "toggles": true
   }
 }

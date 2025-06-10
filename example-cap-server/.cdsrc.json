@@ -35,6 +35,10 @@
           "features": ["*"]
         }
       }
-    }
+    },
+    "toggles": true
+  },
+  "featureToggles": {
+    "configFile": "./srv/feature/toggles.yaml"
   }
 }

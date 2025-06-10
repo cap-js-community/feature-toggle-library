@@ -141,7 +141,7 @@ const _registerClientCloseOnShutdown = () => {
 };
 
 const _discoverFtsAutoConfig = async () => {
-  const root = process.env.ROOT ?? process.cwd();
+  const root = process.env.ROOT ?? cds.root ?? process.cwd();
   const ftsRoot = pathlib.join(root, "fts");
   let result;
   try {

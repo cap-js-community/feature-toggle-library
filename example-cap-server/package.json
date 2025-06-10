@@ -20,16 +20,8 @@
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "*",
-    "@sap/cds": "^8.9.4",
-    "@sap/cds-mtxs": "^2.7.2",
+    "@sap/cds": "^9.0.3",
+    "@sap/cds-mtxs": "^3.0.1",
     "express": "^4.21.2"
-  },
-  "cds": {
-    "requires": {
-      "toggles": true
-    },
-    "featureToggles": {
-      "configFile": "./srv/feature/toggles.yaml"
-    }
   }
 }
