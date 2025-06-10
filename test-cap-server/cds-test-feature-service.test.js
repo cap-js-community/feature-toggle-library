@@ -3,10 +3,7 @@
 const cds = require("@sap/cds");
 const toggles = require("../src");
 
-const FEATURE = {
-  A: "/test/feature_a",
-  B: "/test/feature_b",
-};
+const FEATURE = require("./srv/feature");
 
 const server = cds.test("test-cap-server");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };

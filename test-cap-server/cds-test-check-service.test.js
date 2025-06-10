@@ -3,10 +3,15 @@
 const cds = require("@sap/cds");
 const toggles = require("../src");
 
+const FEATURE = require("./srv/feature");
+
 const server = cds.test("test-cap-server");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
 describe("test-cap-server check-service", () => {
+  beforeEach(async () => {
+    await Promise.all(Object.values(FEATURE).map((key) => toggles.resetFeatureValue(key)));
+  });
   afterEach(() => {
     jest.clearAllMocks();
   });
