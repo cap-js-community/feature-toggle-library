@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`cds-test-feature-service state response no change 1`] = `
+exports[`test-cap-server feature-service state response no change 1`] = `
 {
   "test/feature_a": {
     "config": {
@@ -100,7 +100,7 @@ exports[`cds-test-feature-service state response no change 1`] = `
 }
 `;
 
-exports[`cds-test-feature-service state response with changes 1`] = `
+exports[`test-cap-server feature-service state response with changes 1`] = `
 {
   "test/feature_a": {
     "config": {

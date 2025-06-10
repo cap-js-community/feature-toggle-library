@@ -10,8 +10,9 @@
   ],
   "scripts": {
     "patch": "npx patch-package",
-    "test": "CDS_STRICT_NODE_VERSION=false jest",
-    "test:coverage": "jest --runInBand --coverageReporters=html --coverageReporters=text-summary",
+    "test:prepare": "npx shx test -e test-cap-server/node_modules || npm ci --prefix test-cap-server",
+    "test": "npm run test:prepare && CDS_STRICT_NODE_VERSION=false jest",
+    "test:coverage": "npm run test:prepare && CDS_STRICT_NODE_VERSION=false jest --runInBand --coverageReporters=html --coverageReporters=text-summary",
     "test:remove-inline-snapshots": "npx replace '\\.toMatchInlineSnapshot\\(\\s*`[\\s\\S]*?`\\s*\\);' '.toMatchInlineSnapshot();' test -r --include='*.test.js'",
     "lint": "npm run prettier && npm run eslint && npm run jsdoc",
     "lint:fix": "npm run prettier:fix && npm run eslint:fix",

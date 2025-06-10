@@ -1,14 +1,14 @@
 "use strict";
 
 const cds = require("@sap/cds");
-const toggles = require("../../src");
+const toggles = require("../src");
 
-const { FEATURE, mockConfig: config } = require("../__common__/mockdata");
+const { FEATURE, mockConfig: config } = require("../test/__common__/mockdata");
 
-const server = cds.test("test/cds-test-services");
+const server = cds.test("test-cap-server");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
-describe("cds-test-feature-service", () => {
+describe("test-cap-server feature-service", () => {
   beforeEach(async () => {
     toggles._reset();
     await toggles.initializeFeatures({ config });

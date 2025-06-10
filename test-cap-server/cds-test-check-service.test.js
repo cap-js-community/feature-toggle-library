@@ -1,16 +1,16 @@
 "use strict";
 
 const cds = require("@sap/cds");
-const toggles = require("../../src");
+const toggles = require("../src");
 
 // TODO how do we get our plugin and @sap/cds-mtxs loaded as part of the plugin startup here
-// NOTE: the cds.test server naturally loads the plugins of the passed in directory test/cds-test-services, which
+// NOTE: the cds.test server naturally loads the plugins of the passed in directory test-cap-server, which
 //   in turn defaults to the plugins of the project root, i.e., our cap dev dependencies. Unfortunately, this does
 //   not include our own plugin. So, we patch it in here...
-const server = cds.test("test/cds-test-services");
+const server = cds.test("test-cap-server");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
-describe("cds-test-check-service", () => {
+describe("test-cap-server check-service", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
