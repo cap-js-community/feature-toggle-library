@@ -3,15 +3,17 @@
 const cds = require("@sap/cds");
 const toggles = require("../src");
 
-const { FEATURE, mockConfig: config } = require("../test/__common__/mockdata");
+const FEATURE = {
+  A: "/test/feature_a",
+  B: "/test/feature_b",
+};
 
 const server = cds.test("test-cap-server");
 const systemCall = { validateStatus: () => true, auth: { username: "system", password: "system" } };
 
 describe("test-cap-server feature-service", () => {
   beforeEach(async () => {
-    toggles._reset();
-    await toggles.initializeFeatures({ config });
+    await toggles.resetFeatureValue(FEATURE.B);
   });
   afterEach(() => {
     jest.clearAllMocks();
@@ -67,21 +69,21 @@ describe("test-cap-server feature-service", () => {
     const response = await server.post("/rest/feature/redisRead", {}, systemCall);
     expect(response.status).toBe(200);
     expect(response.data).toMatchInlineSnapshot(`
-        {
-          "test/feature_b": {
-            "config": {
-              "SOURCE": "RUNTIME",
-              "TYPE": "number",
-            },
-            "fallbackValue": 1,
-            "rootValue": 2,
-            "scopedValues": {
-              "tenant::a": 20,
-              "tenant::b": 30,
-            },
-          },
-        }
-      `);
+{
+  "/test/feature_b": {
+    "config": {
+      "SOURCE": "RUNTIME",
+      "TYPE": "number",
+    },
+    "fallbackValue": 1,
+    "rootValue": 2,
+    "scopedValues": {
+      "tenant::a": 20,
+      "tenant::b": 30,
+    },
+  },
+}
+`);
   });
 
   test("redisUpdate response success", async () => {
@@ -108,13 +110,13 @@ describe("test-cap-server feature-service", () => {
     );
     expect(response.status).toBe(422);
     expect(response.data).toMatchInlineSnapshot(`
-        {
-          "error": {
-            "code": "422",
-            "message": "value "100" has invalid type number, must be boolean",
-            "target": "test/feature_a",
-          },
-        }
-      `);
+{
+  "error": {
+    "code": "422",
+    "message": "value "100" has invalid type number, must be boolean",
+    "target": "/test/feature_a",
+  },
+}
+`);
   });
 });
