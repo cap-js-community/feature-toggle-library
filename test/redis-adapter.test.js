@@ -349,7 +349,9 @@ describe("redis-adapter test", () => {
     mockClient.GET.mockImplementation(async () => JSON.stringify(oldValue1));
     mockMultiClient.EXEC.mockImplementation(async () => null);
     const newValueCallback = jest.fn(() => newValue1);
-    await expect(redisAdapter.watchedGetSetObject("key", newValueCallback)).rejects.toMatchInlineSnapshot(`[RedisAdapterError: exceeded watched get set attempt limit]`);
+    await expect(redisAdapter.watchedGetSetObject("key", newValueCallback)).rejects.toMatchInlineSnapshot(
+      `[RedisAdapterError: exceeded watched get set attempt limit]`
+    );
 
     expect(mockClient.WATCH).toHaveBeenCalledTimes(10);
     expect(mockClient.WATCH).toHaveBeenNthCalledWith(10, "key");
@@ -407,7 +409,9 @@ describe("redis-adapter test", () => {
     mockClient.GET.mockImplementation(async () => JSON.stringify(oldValue1));
     mockMultiClient.EXEC.mockRejectedValue(new Error("fail"));
     const newValueCallback = jest.fn(() => newValue1);
-    await expect(redisAdapter.watchedGetSetObject("key", newValueCallback)).rejects.toMatchInlineSnapshot(`[RedisAdapterError: error during watched get set: fail]`);
+    await expect(redisAdapter.watchedGetSetObject("key", newValueCallback)).rejects.toMatchInlineSnapshot(
+      `[RedisAdapterError: error during watched get set: fail]`
+    );
 
     expect(mockClient.WATCH).toHaveBeenCalledTimes(10);
     expect(mockClient.WATCH).toHaveBeenNthCalledWith(10, "key");
