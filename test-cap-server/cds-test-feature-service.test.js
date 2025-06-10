@@ -110,13 +110,13 @@ describe("test-cap-server feature-service", () => {
     );
     expect(response.status).toBe(422);
     expect(response.data).toMatchInlineSnapshot(`
-{
-  "error": {
-    "code": "422",
-    "message": "value "100" has invalid type number, must be boolean",
-    "target": "/test/feature_a",
-  },
-}
-`);
+      {
+        "error": {
+          "code": "422",
+          "message": "value "100" has invalid type number, must be boolean",
+          "target": "/test/feature_a",
+        },
+      }
+    `);
   });
 });
