@@ -13,7 +13,7 @@ const systemCall = { validateStatus: () => true, auth: { username: "system", pas
 
 describe("test-cap-server feature-service", () => {
   beforeEach(async () => {
-    await Promise.all(Object.keys(FEATURE).map((key) => toggles.resetFeatureValue(key)));
+    await Promise.all(Object.values(FEATURE).map((key) => toggles.resetFeatureValue(key)));
   });
   afterEach(() => {
     jest.clearAllMocks();
@@ -61,6 +61,13 @@ describe("test-cap-server feature-service", () => {
   test("redisRead response no change", async () => {
     const response = await server.post("/rest/feature/redisRead", {}, systemCall);
     expect(response.status).toBe(200);
+    expect(response.data).toMatchInlineSnapshot(`{}`);
+  });
+
+  test("redisRead response with changes", async () => {
+    await server.post("/rest/feature/redisUpdate", featureBChanges, systemCall);
+    const response = await server.post("/rest/feature/redisRead", {}, systemCall);
+    expect(response.status).toBe(200);
     expect(response.data).toMatchInlineSnapshot(`
       {
         "/test/feature_b": {
@@ -77,28 +84,6 @@ describe("test-cap-server feature-service", () => {
         },
       }
     `);
-  });
-
-  test("redisRead response with changes", async () => {
-    await server.post("/rest/feature/redisUpdate", featureBChanges, systemCall);
-    const response = await server.post("/rest/feature/redisRead", {}, systemCall);
-    expect(response.status).toBe(200);
-    expect(response.data).toMatchInlineSnapshot(`
-{
-  "/test/feature_b": {
-    "config": {
-      "SOURCE": "RUNTIME",
-      "TYPE": "number",
-    },
-    "fallbackValue": 1,
-    "rootValue": 2,
-    "scopedValues": {
-      "tenant::a": 20,
-      "tenant::b": 30,
-    },
-  },
-}
-`);
   });
 
   test("redisUpdate response success", async () => {
