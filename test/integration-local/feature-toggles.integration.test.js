@@ -78,59 +78,43 @@ describe("local integration test", () => {
       expect(toggles.canInitialize).toBe(true);
       initPromise = toggles.initializeFeatures();
       expect(toggles.canInitialize).toBe(false);
-      await expect(toggles.initializeFeatures()).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: already initialized]`
-      );
+      await expect(toggles.initializeFeatures()).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: already initialized]`);
       await initPromise;
     });
 
     test("init throws for non-existing filepaths", async () => {
       mockReadFile.mockImplementationOnce(fsActual.readFile);
-      await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not read config file: ENOENT: no such file or directory, open 'fantasy_name']`
-      );
+      await expect(toggles.initializeFeatures({ configFile: "fantasy_name" })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not read config file: ENOENT: no such file or directory, open 'fantasy_name']`);
     });
 
     test("init throws for existing filepaths with no supported extension", async () => {
       mockReadFile.mockImplementationOnce((path, cb) => cb());
-      await expect(toggles.initializeFeatures({ configFile: "real_name.bad" })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not read config file: config filepath with unsupported extension, allowed extensions are .yaml and .json]`
-      );
+      await expect(toggles.initializeFeatures({ configFile: "real_name.bad" })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not read config file: config filepath with unsupported extension, allowed extensions are .yaml and .json]`);
     });
 
     test("init fails processing for bad formats", async () => {
       const badConfig = { ...configForRuntime, bla: undefined };
-      await expect(toggles.initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration is not an object]`
-      );
+      await expect(toggles.initializeFeatures({ config: badConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration is not an object]`);
     });
 
     test("init throws for missing config type", async () => {
       const partialConfig = { [FEATURE.A]: { fallbackValue: 1 } };
-      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`
-      );
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`);
     });
 
     test("init throws for invalid config type", async () => {
       const partialConfig = { [FEATURE.A]: { type: "integer", fallbackValue: 1 } };
-      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`
-      );
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid type]`);
     });
 
     test("init throws for missing config fallback value", async () => {
       const partialConfig = { [FEATURE.A]: { type: "number" } };
-      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
-      );
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`);
     });
 
     test("init throws for invalid config fallback value", async () => {
       const partialConfig = { [FEATURE.A]: { type: "number", fallbackValue: null } };
-      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
-      );
+      await expect(toggles.initializeFeatures({ config: partialConfig })).rejects.toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`);
     });
 
     test("init config conflict with for first partial configs throws", async () => {
@@ -143,9 +127,7 @@ describe("local integration test", () => {
       await toggles
         .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
         .catch((err) => (caught = err));
-      expect(caught).toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
-      );
+      expect(caught).toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`);
       expect(VError.info(caught)).toMatchInlineSnapshot(`
         {
           "featureKey": "/test/feature_c",
@@ -165,9 +147,7 @@ describe("local integration test", () => {
       await toggles
         .initializeFeatures({ configFiles: ["toggles-1.json", "toggles-2.json"] })
         .catch((err) => (caught = err));
-      expect(caught).toMatchInlineSnapshot(
-        `[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`
-      );
+      expect(caught).toMatchInlineSnapshot(`[FeatureTogglesError: initialization aborted, could not process configuration: configuration has no or invalid fallback value]`);
       expect(VError.info(caught)).toMatchInlineSnapshot(`
         {
           "featureKey": "/test/feature_c",
@@ -845,19 +825,19 @@ describe("local integration test", () => {
         ]
       `);
 
-      expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } }))
-        .toMatchInlineSnapshot(`
-        [
-          {
-            "errorMessage": "scope "{0}" has invalid type {1}, must be string",
-            "errorMessageValues": [
-              "tenant",
-              "object",
-            ],
-            "featureKey": "/test/feature_c",
-          },
-        ]
-      `);
+      expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } })).
+toMatchInlineSnapshot(`
+[
+  {
+    "errorMessage": "scope "{0}" has invalid type {1}, must be string",
+    "errorMessageValues": [
+      "tenant",
+      "object",
+    ],
+    "featureKey": "/test/feature_c",
+  },
+]
+`);
       expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: ["a", "b", "c"] })).toMatchInlineSnapshot(`
         [
           {
