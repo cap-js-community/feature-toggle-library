@@ -41,8 +41,8 @@
     "@sap/cds-mtxs": "^3.0.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-jest": "^28.12.0",
-    "jest": "^29.7.0",
+    "eslint-plugin-jest": "^28.13.0",
+    "jest": "^30.0.0",
     "jsdoc": "^4.0.4",
     "prettier": "^3.5.3"
   },
