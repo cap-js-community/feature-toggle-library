@@ -47,7 +47,7 @@ const configToActiveKeys = (config) =>
 
 const mockFallbackValues = configToFallbackValues(mockConfig);
 const mockActiveKeys = configToActiveKeys(mockConfig);
-const legacyKey = "legacy-key";
+const legacyKey = "/test/legacy-key";
 
 let toggles;
 const loggerSpy = {
@@ -899,7 +899,7 @@ describe("feature toggles test", () => {
               "tenant::b": 1000,
             },
           },
-          "legacy-key": {
+          "/test/legacy-key": {
             "config": {
               "SOURCE": "NONE",
             },
