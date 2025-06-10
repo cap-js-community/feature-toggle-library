@@ -847,17 +847,17 @@ describe("local integration test", () => {
 
       expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } }))
         .toMatchInlineSnapshot(`
-[
-  {
-    "errorMessage": "scope "{0}" has invalid type {1}, must be string",
-    "errorMessageValues": [
-      "tenant",
-      "object",
-    ],
-    "featureKey": "/test/feature_c",
-  },
-]
-`);
+        [
+          {
+            "errorMessage": "scope "{0}" has invalid type {1}, must be string",
+            "errorMessageValues": [
+              "tenant",
+              "object",
+            ],
+            "featureKey": "/test/feature_c",
+          },
+        ]
+      `);
       expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: ["a", "b", "c"] })).toMatchInlineSnapshot(`
         [
           {
