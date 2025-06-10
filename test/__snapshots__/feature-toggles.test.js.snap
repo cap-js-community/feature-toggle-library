@@ -2,44 +2,44 @@
 
 exports[`feature toggles test basic apis _changeRemoteFeatureValues 2`] = `
 {
-  "test/feature_a": {},
-  "test/feature_aa": {},
-  "test/feature_b": {},
-  "test/feature_c": {},
-  "test/feature_d": {},
-  "test/feature_e": {},
-  "test/feature_f": {},
-  "test/feature_g": {},
-  "test/feature_h": {},
+  "/test/feature_a": {},
+  "/test/feature_aa": {},
+  "/test/feature_b": {},
+  "/test/feature_c": {},
+  "/test/feature_d": {},
+  "/test/feature_e": {},
+  "/test/feature_f": {},
+  "/test/feature_g": {},
+  "/test/feature_h": {},
 }
 `;
 
 exports[`feature toggles test basic apis _changeRemoteFeatureValues 3`] = `
 {
-  "test/feature_a": {},
-  "test/feature_aa": {},
-  "test/feature_b": {},
-  "test/feature_c": {
+  "/test/feature_a": {},
+  "/test/feature_aa": {},
+  "/test/feature_b": {},
+  "/test/feature_c": {
     "rootValue": "new_a",
   },
-  "test/feature_d": {},
-  "test/feature_e": {},
-  "test/feature_f": {},
-  "test/feature_g": {},
-  "test/feature_h": {},
+  "/test/feature_d": {},
+  "/test/feature_e": {},
+  "/test/feature_f": {},
+  "/test/feature_g": {},
+  "/test/feature_h": {},
 }
 `;
 
 exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 {
-  "test/feature_a": {
+  "/test/feature_a": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "boolean",
     },
     "fallbackValue": false,
   },
-  "test/feature_aa": {
+  "/test/feature_aa": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "boolean",
@@ -54,21 +54,21 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
     },
     "fallbackValue": false,
   },
-  "test/feature_b": {
+  "/test/feature_b": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "number",
     },
     "fallbackValue": 1,
   },
-  "test/feature_c": {
+  "/test/feature_c": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "best",
   },
-  "test/feature_d": {
+  "/test/feature_d": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "boolean",
@@ -80,7 +80,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
     },
     "fallbackValue": true,
   },
-  "test/feature_e": {
+  "/test/feature_e": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "number",
@@ -99,7 +99,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
     },
     "fallbackValue": 5,
   },
-  "test/feature_f": {
+  "/test/feature_f": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
@@ -111,7 +111,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
     },
     "fallbackValue": "best",
   },
-  "test/feature_g": {
+  "/test/feature_g": {
     "config": {
       "ACTIVE": false,
       "SOURCE": "RUNTIME",
@@ -119,7 +119,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
     },
     "fallbackValue": "activeTest",
   },
-  "test/feature_h": {
+  "/test/feature_h": {
     "config": {
       "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
       "SOURCE": "RUNTIME",
@@ -132,16 +132,7 @@ exports[`feature toggles test basic apis getFeaturesInfos 1`] = `
 
 exports[`feature toggles test basic apis getRemoteFeaturesInfos 1`] = `
 {
-  "legacy-key": {
-    "config": {
-      "SOURCE": "NONE",
-    },
-    "rootValue": "legacy-root",
-    "scopedValues": {
-      "tenant::a": "legacy-scoped-value",
-    },
-  },
-  "test/feature_b": {
+  "/test/feature_b": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "number",
@@ -152,16 +143,25 @@ exports[`feature toggles test basic apis getRemoteFeaturesInfos 1`] = `
       "tenant::a": 10,
     },
   },
+  "/test/legacy-key": {
+    "config": {
+      "SOURCE": "NONE",
+    },
+    "rootValue": "legacy-root",
+    "scopedValues": {
+      "tenant::a": "legacy-scoped-value",
+    },
+  },
 }
 `;
 
 exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
 {
-  "test/feature_a": {
+  "/test/feature_a": {
     "SOURCE": "RUNTIME",
     "TYPE": "boolean",
   },
-  "test/feature_aa": {
+  "/test/feature_aa": {
     "SOURCE": "RUNTIME",
     "TYPE": "boolean",
     "VALIDATIONS": [
@@ -177,15 +177,15 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
       "user": true,
     },
   },
-  "test/feature_b": {
+  "/test/feature_b": {
     "SOURCE": "RUNTIME",
     "TYPE": "number",
   },
-  "test/feature_c": {
+  "/test/feature_c": {
     "SOURCE": "RUNTIME",
     "TYPE": "string",
   },
-  "test/feature_d": {
+  "/test/feature_d": {
     "SOURCE": "RUNTIME",
     "TYPE": "boolean",
     "VALIDATIONS": [
@@ -197,7 +197,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
       /\\^\\(\\?:true\\)\\$/,
     ],
   },
-  "test/feature_e": {
+  "/test/feature_e": {
     "SOURCE": "RUNTIME",
     "TYPE": "number",
     "VALIDATIONS": [
@@ -221,7 +221,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
       "tenant": true,
     },
   },
-  "test/feature_f": {
+  "/test/feature_f": {
     "SOURCE": "RUNTIME",
     "TYPE": "string",
     "VALIDATIONS": [
@@ -233,12 +233,12 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
       /\\^\\(\\?:best\\|worst\\)\\$/,
     ],
   },
-  "test/feature_g": {
+  "/test/feature_g": {
     "ACTIVE": false,
     "SOURCE": "RUNTIME",
     "TYPE": "string",
   },
-  "test/feature_h": {
+  "/test/feature_h": {
     "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
     "SOURCE": "RUNTIME",
     "TYPE": "string",
@@ -248,11 +248,11 @@ exports[`feature toggles test basic apis initializeFeatureToggles 1`] = `
 
 exports[`feature toggles test basic apis initializeFeatureToggles warns for invalid values 1`] = `
 {
-  "test/feature_a": {
+  "/test/feature_a": {
     "SOURCE": "RUNTIME",
     "TYPE": "boolean",
   },
-  "test/feature_b": {
+  "/test/feature_b": {
     "SOURCE": "RUNTIME",
     "TYPE": "string",
     "VALIDATIONS": [
@@ -264,7 +264,7 @@ exports[`feature toggles test basic apis initializeFeatureToggles warns for inva
       /\\.\\+/,
     ],
   },
-  "test/feature_c": {
+  "/test/feature_c": {
     "SOURCE": "RUNTIME",
     "TYPE": "number",
   },

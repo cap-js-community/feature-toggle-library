@@ -11,5 +11,17 @@
       }
     },
     "toggles": true
+  },
+  "featureToggles": {
+    "config": {
+      "/test/feature_a": {
+        "type": "boolean",
+        "fallbackValue": false
+      },
+      "/test/feature_b": {
+        "type": "number",
+        "fallbackValue": 1
+      }
+    }
   }
 }
