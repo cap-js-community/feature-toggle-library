@@ -845,8 +845,8 @@ describe("local integration test", () => {
         ]
       `);
 
-      expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } })).
-        toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } }))
+        .toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "scope "{0}" has invalid type {1}, must be string",
