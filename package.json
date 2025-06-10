@@ -37,6 +37,7 @@
     "@cap-js/cds-test": "^0.3.0",
     "@cap-js/sqlite": "^2.0.1",
     "@sap/cds": "^9.0.3",
+    "@sap/cds-mtxs": "^3.0.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-jest": "^28.12.0",
