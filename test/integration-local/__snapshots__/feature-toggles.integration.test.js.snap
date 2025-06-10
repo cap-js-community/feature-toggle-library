@@ -8,7 +8,7 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
       10,
       "/^\\d{1}$/",
     ],
-    "featureKey": "test/feature_e",
+    "featureKey": "/test/feature_e",
     "scopeKey": "component::c1##tenant::t1",
   },
 ]
@@ -26,7 +26,7 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
       10,
       "/^\\d{1}$/",
     ],
-    "featureKey": "test/feature_e",
+    "featureKey": "/test/feature_e",
     "scopeKey": "//",
   },
 ]
@@ -36,14 +36,14 @@ exports[`local integration test common config init getFeatureValue, changeFeatur
 
 exports[`local integration test common config init getFeaturesKeys, getFeatureValues, getFeaturesInfos 1`] = `
 {
-  "test/feature_a": {
+  "/test/feature_a": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "boolean",
     },
     "fallbackValue": false,
   },
-  "test/feature_aa": {
+  "/test/feature_aa": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "boolean",
@@ -58,21 +58,21 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
     },
     "fallbackValue": false,
   },
-  "test/feature_b": {
+  "/test/feature_b": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "number",
     },
     "fallbackValue": 1,
   },
-  "test/feature_c": {
+  "/test/feature_c": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "best",
   },
-  "test/feature_d": {
+  "/test/feature_d": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "boolean",
@@ -84,7 +84,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
     },
     "fallbackValue": true,
   },
-  "test/feature_e": {
+  "/test/feature_e": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "number",
@@ -103,7 +103,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
     },
     "fallbackValue": 5,
   },
-  "test/feature_f": {
+  "/test/feature_f": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
@@ -115,7 +115,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
     },
     "fallbackValue": "best",
   },
-  "test/feature_g": {
+  "/test/feature_g": {
     "config": {
       "ACTIVE": false,
       "SOURCE": "RUNTIME",
@@ -123,7 +123,7 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
     },
     "fallbackValue": "activeTest",
   },
-  "test/feature_h": {
+  "/test/feature_h": {
     "config": {
       "APP_URL": "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
       "SOURCE": "RUNTIME",
@@ -136,21 +136,21 @@ exports[`local integration test common config init getFeaturesKeys, getFeatureVa
 
 exports[`local integration test init init config works for runtime file auto simultaneously 1`] = `
 {
-  "test/feature_a": {
+  "/test/feature_a": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackRuntimeA",
   },
-  "test/feature_b": {
+  "/test/feature_b": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackRuntimeB",
   },
-  "test/feature_c": {
+  "/test/feature_c": {
     "config": {
       "SOURCE": "FILE",
       "SOURCE_FILEPATH": "toggles.json",
@@ -158,7 +158,7 @@ exports[`local integration test init init config works for runtime file auto sim
     },
     "fallbackValue": "fallbackFileC",
   },
-  "test/feature_d": {
+  "/test/feature_d": {
     "config": {
       "SOURCE": "FILE",
       "SOURCE_FILEPATH": "toggles.json",
@@ -166,7 +166,7 @@ exports[`local integration test init init config works for runtime file auto sim
     },
     "fallbackValue": "fallbackFileD",
   },
-  "test/feature_e": {
+  "/test/feature_e": {
     "config": {
       "SOURCE": "AUTO",
       "TYPE": "string",
@@ -178,21 +178,21 @@ exports[`local integration test init init config works for runtime file auto sim
 
 exports[`local integration test init init config works for runtime file auto simultaneously with overrides 1`] = `
 {
-  "test/feature_a": {
+  "/test/feature_a": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackRuntimeA",
   },
-  "test/feature_b": {
+  "/test/feature_b": {
     "config": {
       "SOURCE": "RUNTIME",
       "TYPE": "string",
     },
     "fallbackValue": "fallbackRuntimeB",
   },
-  "test/feature_c": {
+  "/test/feature_c": {
     "config": {
       "SOURCE": "FILE",
       "SOURCE_FILEPATH": "toggles-2.json",
@@ -200,7 +200,7 @@ exports[`local integration test init init config works for runtime file auto sim
     },
     "fallbackValue": "C-from-File2",
   },
-  "test/feature_d": {
+  "/test/feature_d": {
     "config": {
       "SOURCE": "FILE",
       "SOURCE_FILEPATH": "toggles-1.json",
@@ -208,7 +208,7 @@ exports[`local integration test init init config works for runtime file auto sim
     },
     "fallbackValue": "fallbackFileD",
   },
-  "test/feature_e": {
+  "/test/feature_e": {
     "config": {
       "SOURCE": "AUTO",
       "TYPE": "string",

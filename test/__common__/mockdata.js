@@ -4,15 +4,15 @@ const redisKey = "feature-key";
 const redisChannel = "feature-channel";
 
 const FEATURE = {
-  A: "test/feature_a",
-  AA: "test/feature_aa",
-  B: "test/feature_b",
-  C: "test/feature_c",
-  D: "test/feature_d",
-  E: "test/feature_e",
-  F: "test/feature_f",
-  G: "test/feature_g",
-  H: "test/feature_h",
+  A: "/test/feature_a",
+  AA: "/test/feature_aa",
+  B: "/test/feature_b",
+  C: "/test/feature_c",
+  D: "/test/feature_d",
+  E: "/test/feature_e",
+  F: "/test/feature_f",
+  G: "/test/feature_g",
+  H: "/test/feature_h",
 };
 
 const mockConfig = {

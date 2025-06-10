@@ -358,7 +358,7 @@ describe("feature toggles test", () => {
       expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
         "FeatureTogglesError: found invalid fallback values during initialization
         {
-          validationErrors: '[{"featureKey":"test/feature_b","errorMessage":"value \\\\"{0}\\\\" does not match validation regular expression {1}","errorMessageValues":["","/.+/"]},{"featureKey":"test/feature_c","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":["1","string","number"]}]'
+          validationErrors: '[{"featureKey":"/test/feature_b","errorMessage":"value \\\\"{0}\\\\" does not match validation regular expression {1}","errorMessageValues":["","/.+/"]},{"featureKey":"/test/feature_c","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":["1","string","number"]}]'
         }"
       `);
       expect(loggerSpy.error).not.toHaveBeenCalled();
@@ -392,11 +392,11 @@ describe("feature toggles test", () => {
         [
           [
             "feature-channel",
-            "[{"featureKey":"test/feature_b","newValue":null}]",
+            "[{"featureKey":"/test/feature_b","newValue":null}]",
           ],
           [
             "feature-channel",
-            "[{"featureKey":"test/feature_c","newValue":"new_a"}]",
+            "[{"featureKey":"/test/feature_c","newValue":"new_a"}]",
           ],
         ]
       `);
@@ -443,7 +443,7 @@ describe("feature toggles test", () => {
                 "boolean",
               ],
             ],
-            "featureKey": "test/feature_b",
+            "featureKey": "/test/feature_b",
           },
         ]
       `);
@@ -456,7 +456,7 @@ describe("feature toggles test", () => {
               "boolean",
               "number",
             ],
-            "featureKey": "test/feature_b",
+            "featureKey": "/test/feature_b",
           },
         ]
       `);
@@ -468,7 +468,7 @@ describe("feature toggles test", () => {
               10,
               "/^\\d{1}$/",
             ],
-            "featureKey": "test/feature_e",
+            "featureKey": "/test/feature_e",
           },
         ]
       `);
@@ -503,7 +503,7 @@ describe("feature toggles test", () => {
               "number",
               "boolean",
             ],
-            "featureKey": "test/feature_a",
+            "featureKey": "/test/feature_a",
             "scopeKey": "a::1",
           },
         ]
@@ -512,7 +512,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "scopeMap must be undefined or an object",
-            "featureKey": "test/feature_a",
+            "featureKey": "/test/feature_a",
           },
         ]
       `);
@@ -527,7 +527,7 @@ describe("feature toggles test", () => {
             "errorMessageValues": [
               "usr",
             ],
-            "featureKey": "test/feature_aa",
+            "featureKey": "/test/feature_aa",
           },
         ]
       `);
@@ -538,7 +538,7 @@ describe("feature toggles test", () => {
             "errorMessageValues": [
               "Tenant",
             ],
-            "featureKey": "test/feature_aa",
+            "featureKey": "/test/feature_aa",
           },
         ]
       `);
@@ -728,7 +728,7 @@ describe("feature toggles test", () => {
         [
           [
             "feature-channel",
-            "[{"featureKey":"test/feature_c","newValue":"newer"}]",
+            "[{"featureKey":"/test/feature_c","newValue":"newer"}]",
           ],
         ]
       `);
@@ -799,7 +799,7 @@ describe("feature toggles test", () => {
         [
           [
             "feature-channel",
-            "[{"featureKey":"test/feature_b","newValue":11,"scopeMap":{},"options":{"clearSubScopes":true}}]",
+            "[{"featureKey":"/test/feature_b","newValue":11,"scopeMap":{},"options":{"clearSubScopes":true}}]",
           ],
         ]
       `);
@@ -831,7 +831,7 @@ describe("feature toggles test", () => {
       ).toBeUndefined();
       expect(await toggles.getRemoteFeaturesInfos()).toMatchInlineSnapshot(`
         {
-          "test/feature_b": {
+          "/test/feature_b": {
             "config": {
               "SOURCE": "RUNTIME",
               "TYPE": "number",
@@ -881,23 +881,13 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "remoteOnly is not allowed for configured toggles",
-            "featureKey": "test/feature_b",
+            "featureKey": "/test/feature_b",
           },
         ]
       `);
       expect(await toggles.getRemoteFeaturesInfos()).toMatchInlineSnapshot(`
         {
-          "legacy-key": {
-            "config": {
-              "SOURCE": "NONE",
-            },
-            "rootValue": 20,
-            "scopedValues": {
-              "tenant::a": 200,
-              "tenant::b": 2000,
-            },
-          },
-          "test/feature_b": {
+          "/test/feature_b": {
             "config": {
               "SOURCE": "RUNTIME",
               "TYPE": "number",
@@ -907,6 +897,16 @@ describe("feature toggles test", () => {
             "scopedValues": {
               "tenant::a": 100,
               "tenant::b": 1000,
+            },
+          },
+          "legacy-key": {
+            "config": {
+              "SOURCE": "NONE",
+            },
+            "rootValue": 20,
+            "scopedValues": {
+              "tenant::a": 200,
+              "tenant::b": 2000,
             },
           },
         }
@@ -1056,7 +1056,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "wrong input",
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
             "scopeKey": "//",
           },
         ]
@@ -1081,7 +1081,7 @@ describe("feature toggles test", () => {
               "value1",
               2,
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
             "scopeKey": "//",
           },
         ]
@@ -1109,7 +1109,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "wrong input",
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
             "scopeKey": "//",
           },
           {
@@ -1118,7 +1118,7 @@ describe("feature toggles test", () => {
               "value1",
               2,
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
             "scopeKey": "//",
           },
         ]
@@ -1143,7 +1143,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "feature key is not active",
-            "featureKey": "test/feature_g",
+            "featureKey": "/test/feature_g",
           },
         ]
       `);
@@ -1181,7 +1181,7 @@ describe("feature toggles test", () => {
             "errorMessageValues": [
               "\\.cfapps\\.sap\\.hana\\.ondemand\\.com$",
             ],
-            "featureKey": "test/feature_h",
+            "featureKey": "/test/feature_h",
           },
         ]
       `);
@@ -1206,7 +1206,7 @@ describe("feature toggles test", () => {
               100,
               "bad validator",
             ],
-            "featureKey": "test/feature_b",
+            "featureKey": "/test/feature_b",
             "scopeKey": "//",
           },
         ]
@@ -1286,7 +1286,7 @@ describe("feature toggles test", () => {
       expect(await toggles.changeFeatureValue(FEATURE.A, "fallout")).toBeUndefined();
       expect(toggles.__stateScopedValues).toMatchInlineSnapshot(`
         {
-          "test/feature_a": {
+          "/test/feature_a": {
             "//": "fallout",
           },
         }
@@ -1312,7 +1312,7 @@ describe("feature toggles test", () => {
               "fallout",
               "/^xxx/",
             ],
-            "featureKey": "test/feature_b",
+            "featureKey": "/test/feature_b",
             "scopeKey": "//",
           },
         ]
@@ -1370,7 +1370,7 @@ describe("feature toggles test", () => {
         [
           {
             "errorMessage": "feature key is not active",
-            "featureKey": "test/feature_b",
+            "featureKey": "/test/feature_b",
           },
         ]
       `);
@@ -1439,7 +1439,7 @@ describe("feature toggles test", () => {
       expect(outputFromErrorLogger(loggerSpy.warning.mock.calls)).toMatchInlineSnapshot(`
         "FeatureTogglesError: received and ignored invalid value from message
         {
-          validationErrors: '[{"featureKey":"test/feature_c","scopeKey":"//","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":[10,"number","string"]}]'
+          validationErrors: '[{"featureKey":"/test/feature_c","scopeKey":"//","errorMessage":"value \\\\"{0}\\\\" has invalid type {1}, must be {2}","errorMessageValues":[10,"number","string"]}]'
         }"
       `);
 

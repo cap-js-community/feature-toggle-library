@@ -148,7 +148,7 @@ describe("local integration test", () => {
       );
       expect(VError.info(caught)).toMatchInlineSnapshot(`
         {
-          "featureKey": "test/feature_c",
+          "featureKey": "/test/feature_c",
           "source": "FILE",
           "sourceFilepath": "toggles-1.json",
         }
@@ -170,7 +170,7 @@ describe("local integration test", () => {
       );
       expect(VError.info(caught)).toMatchInlineSnapshot(`
         {
-          "featureKey": "test/feature_c",
+          "featureKey": "/test/feature_c",
           "source": "FILE",
           "sourceFilepath": "toggles-2.json",
         }
@@ -385,7 +385,7 @@ describe("local integration test", () => {
               "foo",
               "/bar$/",
             ],
-            "featureKey": "test/feature_a",
+            "featureKey": "/test/feature_a",
             "scopeKey": "//",
           },
         ]
@@ -398,7 +398,7 @@ describe("local integration test", () => {
               "bar",
               "/^foo/",
             ],
-            "featureKey": "test/feature_a",
+            "featureKey": "/test/feature_a",
             "scopeKey": "//",
           },
         ]
@@ -609,7 +609,7 @@ describe("local integration test", () => {
         [
           {
             "errorMessage": "scopeMap must be undefined or an object",
-            "featureKey": "test/feature_e",
+            "featureKey": "/test/feature_e",
           },
         ]
       `);
@@ -620,7 +620,7 @@ describe("local integration test", () => {
             "errorMessageValues": [
               "tanent",
             ],
-            "featureKey": "test/feature_e",
+            "featureKey": "/test/feature_e",
           },
         ]
       `);
@@ -632,7 +632,7 @@ describe("local integration test", () => {
               "tenant",
               "undefined",
             ],
-            "featureKey": "test/feature_e",
+            "featureKey": "/test/feature_e",
           },
         ]
       `);
@@ -840,13 +840,13 @@ describe("local integration test", () => {
         [
           {
             "errorMessage": "scopeMap must be undefined or an object",
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
         ]
       `);
 
-      expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } }))
-        .toMatchInlineSnapshot(`
+      expect(await toggles.validateFeatureValue(FEATURE.C, "", { tenant: { subTenant: "bla" } })).
+        toMatchInlineSnapshot(`
         [
           {
             "errorMessage": "scope "{0}" has invalid type {1}, must be string",
@@ -854,7 +854,7 @@ describe("local integration test", () => {
               "tenant",
               "object",
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
         ]
       `);
@@ -866,7 +866,7 @@ describe("local integration test", () => {
               "tenant",
               "object",
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
         ]
       `);
@@ -878,7 +878,7 @@ describe("local integration test", () => {
               "tenant",
               "function",
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
         ]
       `);
@@ -905,7 +905,7 @@ describe("local integration test", () => {
               "",
               "bla1",
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
         ]
       `);
@@ -919,7 +919,7 @@ describe("local integration test", () => {
               "",
               "bla1",
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
           {
             "errorMessage": "registered validator "{0}" failed for value "{1}" with error {2}",
@@ -928,7 +928,7 @@ describe("local integration test", () => {
               "",
               "bla2",
             ],
-            "featureKey": "test/feature_c",
+            "featureKey": "/test/feature_c",
           },
         ]
       `);
