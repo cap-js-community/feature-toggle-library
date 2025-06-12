@@ -1,27 +1,22 @@
 {
   "private": true,
   "name": "example-cap-server",
-  "version": "1.0.0",
+  "description": "server is a hands on example to try out feature toggle capabilities",
   "scripts": {
     "start": "npm run serve",
     "serve": "cds-serve",
-    "copy-library": "npx shx rm -rf node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src node_modules/@cap-js-community/feature-toggle-library",
-    "build": "npm run build:cds && npm run build:deps && npm run build:copy-library",
-    "build:cds": "npx --package=@sap/cds-dk@7.4.0 -- cds build --production",
-    "build:deps": "npm i --omit=dev --prefix=gen/srv",
-    "build:copy-library": "npx shx rm -rf gen/srv/node_modules/@cap-js-community/feature-toggle-library && npx shx mkdir -p gen/srv/node_modules/@cap-js-community/feature-toggle-library && npx shx cp -R ../package.json ../index.cds ../cds-plugin.js ../src gen/srv/node_modules/@cap-js-community/feature-toggle-library",
+    "build": "npx --package=@sap/cds-dk -- cds build --production",
     "deploy": "npm run build && cf push",
     "cloc": "npx cloc --vcs=git --read-lang-def=../cloc.def .",
-    "reset-library-dependency": "sed -i '' 's/\"@cap-js-community\\/feature-toggle-library\": \".*\"/\"@cap-js-community\\/feature-toggle-library\": \"*\"/' package.json",
-    "upgrade": "npm up --save && npx shx rm -rf node_modules && npm i && npm run reset-library-dependency"
+    "upgrade": "npm up --save"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@cap-js-community/feature-toggle-library": "*",
-    "@sap/cds": "^9.0.3",
-    "@sap/cds-mtxs": "^3.0.1",
+    "@cap-js-community/feature-toggle-library": "file://../",
+    "@sap/cds": "file://../node_modules/@sap/cds",
+    "@sap/cds-mtxs": "file://../node_modules/@sap/cds-mtxs",
     "express": "^4.21.2"
   }
 }
