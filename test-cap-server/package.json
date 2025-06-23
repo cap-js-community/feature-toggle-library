@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "@sap/cds-mtxs": "file://../node_modules/@sap/cds-mtxs",
-    "@cap-js/sqlite": "file://../node_modules/@cap-js/sqlite",
     "@cap-js-community/feature-toggle-library": "file://../"
   }
 }
