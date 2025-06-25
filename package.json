@@ -37,15 +37,15 @@
     "yaml": "^2.8.0"
   },
   "devDependencies": {
-    "@cap-js/cds-test": "^0.3.0",
+    "@cap-js/cds-test": "^0.4.0",
     "@sap/cds": "^9.0.4",
     "@sap/cds-mtxs": "^3.0.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-jest": "^29.0.1",
-    "jest": "^30.0.2",
+    "jest": "^30.0.3",
     "jsdoc": "^4.0.4",
-    "prettier": "^3.6.0"
+    "prettier": "^3.6.1"
   },
   "homepage": "https://cap-js-community.github.io/feature-toggle-library/",
   "repository": {

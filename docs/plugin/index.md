@@ -67,8 +67,8 @@ module.exports = (context, key) => {
     user: context?.user?.id,
     tenant: context?.tenant,
     companyId,
-  }
-}
+  };
+};
 ```
 
 - Configure this file in `package.json`:
