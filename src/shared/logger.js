@@ -5,6 +5,13 @@ const VError = require("verror");
 const { CfEnv } = require("./cf-env");
 const { tryRequire } = require("./static");
 const cds = tryRequire("@sap/cds");
+const cdsPackage = tryRequire("@sap/cds/package.json");
+
+// NOTE: for sap/cds < 7.7.0 it was expected get the subdomain from express request
+const doReqSubdomain = cdsPackage.version.localeCompare("7.7.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
+// NOTE: for 7.7.0 <= sap/cds < 9.3.0 it was expected to get the subdomain from cds request .user.tokenInfo
+const doTokenInfoSubdomain =
+  !doReqSubdomain && cdsPackage.version.localeCompare("9.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 
 const ENV = Object.freeze({
   LOG_LEVEL: "BTP_FEATURES_LOG_LEVEL",
@@ -171,17 +178,23 @@ class Logger {
     }
 
     const cdsContext = cds?.context;
-    const cdsData = cdsContext
-      ? {
-          [FIELD.CORRELATION_ID]: cdsContext.id,
-          [FIELD.REMOTE_USER]: cdsContext.user?.id,
-          [FIELD.TENANT_ID]: cdsContext.tenant,
-          [FIELD.TENANT_SUBDOMAIN]:
-            cdsContext.user?.authInfo?.getSubdomain?.() ??
-            cdsContext.user?.tokenInfo?.getSubdomain?.() ??
-            cdsContext?.http?.req?.authInfo?.getSubdomain?.(),
-        }
-      : undefined;
+    let cdsData;
+    if (cdsContext) {
+      cdsData = {
+        [FIELD.CORRELATION_ID]: cdsContext.id,
+        [FIELD.REMOTE_USER]: cdsContext.user?.id,
+        [FIELD.TENANT_ID]: cdsContext.tenant,
+      };
+
+      if (doReqSubdomain) {
+        cdsData[FIELD.TENANT_SUBDOMAIN] = cdsContext?.http?.req?.authInfo?.getSubdomain?.();
+      } else if (doTokenInfoSubdomain) {
+        cdsData[FIELD.TENANT_SUBDOMAIN] = cdsContext.user?.tokenInfo?.getSubdomain?.();
+      } else {
+        cdsData[FIELD.TENANT_SUBDOMAIN] = cdsContext.user?.authInfo?.getSubdomain?.();
+      }
+    }
+
     // NOTE: the start time of Date's milliseconds is the epoch and the start time for hrtime is an arbitrary time
     //   close to the process startup, so it may look odd to add them here. however, we can use the sub-millisecond
     //   offset of hrtime to keep logs with the same Date-millisecond in chronological order.
