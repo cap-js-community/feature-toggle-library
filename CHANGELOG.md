@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
+## v1.3.1 - 2025-09-15
+
+### Changed
+
+- core: compatability changes for cds v9
+
+### Added
+
+- more testing for usage with cds
+
 ## v1.3.0 - 2025-05-27
 
 ⚠️ This release is potentially disruptive. Initialize will throw for previously ignored problems with configuration
