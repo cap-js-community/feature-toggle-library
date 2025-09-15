@@ -8,10 +8,11 @@ const cds = tryRequire("@sap/cds");
 const cdsPackage = tryRequire("@sap/cds/package.json");
 
 // NOTE: for sap/cds < 7.7.0 it was expected get the subdomain from express request
-const doReqSubdomain = cdsPackage.version.localeCompare("7.7.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
+const doReqSubdomain =
+  cdsPackage?.version.localeCompare("7.7.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 // NOTE: for 7.7.0 <= sap/cds < 9.3.0 it was expected to get the subdomain from cds request .user.tokenInfo
 const doTokenInfoSubdomain =
-  !doReqSubdomain && cdsPackage.version.localeCompare("9.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
+  !doReqSubdomain && cdsPackage?.version.localeCompare("9.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 
 const ENV = Object.freeze({
   LOG_LEVEL: "BTP_FEATURES_LOG_LEVEL",
