@@ -171,13 +171,15 @@ class Logger {
     }
 
     const cdsContext = cds?.context;
-    const req = cdsContext?.http?.req;
     const cdsData = cdsContext
       ? {
           [FIELD.CORRELATION_ID]: cdsContext.id,
           [FIELD.REMOTE_USER]: cdsContext.user?.id,
           [FIELD.TENANT_ID]: cdsContext.tenant,
-          [FIELD.TENANT_SUBDOMAIN]: req?.authInfo?.getSubdomain?.(),
+          [FIELD.TENANT_SUBDOMAIN]:
+            cdsContext.user?.authInfo?.getSubdomain?.() ??
+            cdsContext.user?.tokenInfo?.getSubdomain?.() ??
+            cdsContext?.http?.req?.authInfo?.getSubdomain?.(),
         }
       : undefined;
     // NOTE: the start time of Date's milliseconds is the epoch and the start time for hrtime is an arbitrary time
