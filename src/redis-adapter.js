@@ -204,15 +204,25 @@ const _createClientAndConnect = async (clientName, options = {}) => {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "error during create client");
   }
 
-  // NOTE: documentation about events is here https://github.com/redis/node-redis?tab=readme-ov-file#events
+  // NOTE: documentation about events is here
+  //  https://github.com/redis/node-redis?tab=readme-ov-file#events
+  //  https://github.com/redis/node-redis/blob/master/docs/clustering.md#events
   if (doLogEvents) {
     client.on("error", (err) => {
       _logErrorOnEvent(
         new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event")
       );
     });
+    client.on("node-error", (err) => {
+      _logErrorOnEvent(
+        new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught node-error event")
+      );
+    });
     client.on("reconnecting", () => {
       logger.warning("client '%s' is reconnecting", clientName);
+    });
+    client.on("node-reconnecting", () => {
+      logger.warning("client '%s' is node-reconnecting", clientName);
     });
   }
 
