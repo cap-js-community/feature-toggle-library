@@ -13,6 +13,10 @@ updates:
       timezone: Europe/Berlin
     allow:
       - dependency-type: production
+    ignore:
+      # redis v5 has serious API changes, will need work to adopt
+      - dependency-name: @redis/client
+        versions: ["5.x"]
     groups:
       all-npm-dependencies:
         patterns:
