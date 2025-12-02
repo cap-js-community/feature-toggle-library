@@ -11,12 +11,12 @@
     "upgrade": "npm up --save"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "file:..",
     "@sap/cds": "file:../node_modules/@sap/cds",
     "@sap/cds-mtxs": "file:../node_modules/@sap/cds-mtxs",
-    "express": "^4.21.2"
+    "express": "^4.22.1"
   }
 }
