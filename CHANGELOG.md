@@ -9,15 +9,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.3.2 - tbd
 
+### Removed
+
+- restrict to at least node v20.
+
+### Added
+
+- enable voters for node v24.
+
 ## v1.3.1 - 2025-09-15
 
 ### Changed
 
-- core: compatability changes for cds v9
+- core: compatability changes for cds v9.
 
 ### Added
 
-- more testing for usage with cds
+- more testing for usage with cds.
 
 ## v1.3.0 - 2025-05-27
 
