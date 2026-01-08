@@ -12,7 +12,7 @@
       "enabled": false
     },
     {
-      "description": "limit redis/client, this is a serious migration effort",
+      "description": "limit redis/client until api migration effort",
       "matchPackageNames": ["@redis/client"],
       "allowedVersions": "< 5.0.0"
     },
@@ -20,6 +20,11 @@
       "description": "limit eslint until flat config is in place",
       "matchPackageNames": ["eslint"],
       "allowedVersions": "< 9.0.0"
+    },
+    {
+      "description": "limit express until @sap/cds support",
+      "matchPackageNames": ["express"],
+      "allowedVersions": "< 5.0.0"
     }
   ]
 }
