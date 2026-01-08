@@ -8,19 +8,15 @@
   },
   "packageRules": [
     {
-      "matchDepTypes": ["engines"],
+      "description": "manage node upgrades manually",
+      "matchPackageNames": ["node"],
       "enabled": false
     },
     {
-      "description": "limit use-with node to v22",
-      "matchDepTypes": ["uses-with"],
-      "matchPackageNames": ["node"],
-      "allowedVersions": "< 23.0.0"
-    },
-    {
-      "description": "limit ruby to v3",
+      "description": "limit ruby to minor upgrades",
       "matchPackageNames": ["ruby"],
-      "allowedVersions": "< 4.0.0"
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     },
     {
       "description": "limit redis/client until api migration effort",
