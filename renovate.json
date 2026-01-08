@@ -13,9 +13,8 @@
       "enabled": false
     },
     {
-      "description": "limit ruby to minor upgrades",
+      "description": "manage ruby upgrades manually",
       "matchPackageNames": ["ruby"],
-      "matchUpdateTypes": ["major"],
       "enabled": false
     },
     {
