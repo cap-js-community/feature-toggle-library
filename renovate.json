@@ -9,7 +9,7 @@
   "packageRules": [
     {
       "description": "manage node upgrades manually",
-      "matchPackageNames": ["node"],
+      "matchPackageNames": ["node", "actions/node-versions"],
       "enabled": false
     },
     {
