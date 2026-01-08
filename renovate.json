@@ -12,6 +12,17 @@
       "enabled": false
     },
     {
+      "description": "limit use-with node to v22",
+      "matchDepTypes": ["uses-with"],
+      "matchPackageNames": ["node"],
+      "allowedVersions": "< 23.0.0"
+    },
+    {
+      "description": "limit ruby to v3",
+      "matchPackageNames": ["ruby"],
+      "allowedVersions": "< 4.0.0"
+    },
+    {
       "description": "limit redis/client until api migration effort",
       "matchPackageNames": ["@redis/client"],
       "allowedVersions": "< 5.0.0"
