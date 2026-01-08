@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:weekly"],
+  "ignorePresets": ["group:recommended", "group:monorepos"],
+  "groupName": "all",
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchDepTypes": ["engines"],
+      "enabled": false
+    },
+    {
+      "description": "limit redis/client, this is a serious migration effort",
+      "matchPackageNames": ["@redis/client"],
+      "allowedVersions": "< 5.0.0"
+    },
+    {
+      "description": "limit eslint until flat config is in place",
+      "matchPackageNames": ["eslint"],
+      "allowedVersions": "< 9.0.0"
+    }
+  ]
+}
