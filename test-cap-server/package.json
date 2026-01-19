@@ -2,9 +2,6 @@
   "private": true,
   "name": "test-cap-server",
   "description": "server is only used for cds.test testing",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "file:..",
     "@sap/cds-mtxs": "file:../node_modules/@sap/cds-mtxs"

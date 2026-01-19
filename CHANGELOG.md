@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.3.2 - tbd
+## v1.3.3 - tbd
+
+## v1.3.2 - 2026-01-19
+
+### Changed
+
+- cds-plugin: rely on file neighborhood for service implementation resolution. This helps for scenarios where the
+  server's model is shared with mtx/sidecar and a local implementation is not present.
 
 ### Removed
 

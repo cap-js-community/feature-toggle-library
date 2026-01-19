@@ -10,9 +10,6 @@
     "cloc": "npx cloc --vcs=git --read-lang-def=../cloc.def .",
     "upgrade": "npm up --save"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "dependencies": {
     "@cap-js-community/feature-toggle-library": "file:..",
     "@sap/cds": "file:../node_modules/@sap/cds",
