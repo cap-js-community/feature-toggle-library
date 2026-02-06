@@ -14,6 +14,6 @@
     "@cap-js-community/feature-toggle-library": "file:..",
     "@sap/cds": "file:../node_modules/@sap/cds",
     "@sap/cds-mtxs": "file:../node_modules/@sap/cds-mtxs",
-    "express": "^4.22.1"
+    "express": "^5.2.1"
   }
 }

@@ -22,11 +22,6 @@
       "description": "limit redis/client until api migration effort",
       "matchPackageNames": ["@redis/client"],
       "allowedVersions": "< 5.0.0"
-    },
-    {
-      "description": "limit express until @sap/cds support",
-      "matchPackageNames": ["express"],
-      "allowedVersions": "< 5.0.0"
     }
   ]
 }
