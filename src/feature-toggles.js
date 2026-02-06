@@ -142,7 +142,8 @@ class FeatureToggles {
     try {
       cfApp = cfEnv.cfApp;
       if (cfApp.application_name) {
-        return cfApp.application_name;
+        // NOTE: mta blue-green deployments can give application names temporary suffixes -live or -idle that should be ignored.
+        return cfApp.application_name.replace(/(?:-live|-idle)$/, "");
       }
     } catch (err) {
       throw new VError(
