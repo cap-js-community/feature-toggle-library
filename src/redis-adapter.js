@@ -197,7 +197,7 @@ const _createClientBase = (clientName, options = {}) => {
  */
 const _createClientAndConnect = async (clientName, options = {}) => {
   const { doLogEvents = true } = options;
-  let client = null;
+  let client;
   try {
     client = _createClientBase(clientName, options);
   } catch (err) {
