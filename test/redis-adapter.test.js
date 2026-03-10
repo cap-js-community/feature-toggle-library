@@ -548,7 +548,6 @@ describe("redis-adapter test", () => {
     expect(loggerSpy.error).not.toHaveBeenCalled();
   });
 
-
   test("publishMessage", async () => {
     const result = await redisAdapter.publishMessage(channel, message);
     expect(mockClient.PUBLISH).toHaveBeenCalledTimes(1);
