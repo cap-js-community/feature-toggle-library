@@ -482,8 +482,6 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
       const clientMulti = mainClient.MULTI();
 
       // NOTE: Build command as array for .addCommand() which works for both regular and cluster clients
-      // Cluster requires: .addCommand(key, isReadonly, args)
-      // Regular requires: .addCommand(args)
       let command;
       if (doDelete) {
         command = useHash ? ["HDEL", key, field] : ["DEL", key];
