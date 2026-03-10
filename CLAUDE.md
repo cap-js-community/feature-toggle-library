@@ -72,6 +72,7 @@ npm run jsdoc
 ```
 
 ESLint rules enforce:
+
 - No console.log (use logger from `src/shared/logger.js`)
 - No eval/implied-eval
 - Strict mode
@@ -107,7 +108,7 @@ npm run upgrade-lock
 - `index.cds`: CDS model import
 - `src/service/feature-service.cds`: FeatureService definition
 - `src/shared/`: Utilities (cache, logger, cf-env, handler-collection, etc.)
-- `test/`: Unit tests with __mocks__ for Redis and cf-env
+- `test/`: Unit tests with **mocks** for Redis and cf-env
 - `test-cap-server/`: CAP integration tests using @cap-js/cds-test
 - `example-cap-server/`: Example CAP application demonstrating usage
 
