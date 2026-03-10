@@ -17,11 +17,6 @@
       "description": "manage ruby upgrades manually",
       "matchPackageNames": ["ruby"],
       "enabled": false
-    },
-    {
-      "description": "limit redis/client until api migration effort",
-      "matchPackageNames": ["@redis/client"],
-      "allowedVersions": "< 5.0.0"
     }
   ]
 }
