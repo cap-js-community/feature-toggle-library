@@ -459,6 +459,7 @@ const del = async (key) => await _clientExec("DEL", { key });
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
   const mainClient = await getMainClient();
+  const [isCluster] = _getRedisOptionsTuple();
 
   let lastAttemptError = null;
   let badReplyError = null;
@@ -479,13 +480,25 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
       let validFirstReplies;
       const doDelete = newValueRaw === null;
       const clientMulti = mainClient.MULTI();
+
+      // NOTE: Build command as array for .addCommand() which works for both regular and cluster clients
+      // Cluster requires: .addCommand(key, isReadonly, args)
+      // Regular requires: .addCommand(args)
+      let command;
       if (doDelete) {
-        useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
+        command = useHash ? ["HDEL", key, field] : ["DEL", key];
         validFirstReplies = [0, 1];
       } else {
-        useHash ? clientMulti.HSET(key, field, newValueRaw) : clientMulti.SET(key, newValueRaw);
+        command = useHash ? ["HSET", key, field, newValueRaw] : ["SET", key, newValueRaw];
         validFirstReplies = useHash ? [0, 1] : ["OK"];
       }
+
+      if (isCluster) {
+        clientMulti.addCommand(key, false, command);
+      } else {
+        clientMulti.addCommand(command);
+      }
+
       const replies = await clientMulti.EXEC();
       if (replies === null) {
         // NOTE: EXEC can return null, if the operations was aborted, i.e., should be retried.
@@ -687,5 +700,6 @@ module.exports = {
     _createClientBase,
     _createClientAndConnect,
     _clientExec,
+    _getRedisOptionsTuple,
   },
 };
