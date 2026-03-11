@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.3.3 - tbd
+## v1.3.4 - tbd
+
+## v1.3.3 - 2026-03-11
+
+### Changed
+
+- redis: migrate to @redis/client v5 with updated WATCH/MULTI/EXEC logic (fixes #114).
 
 ### Fixed
 
