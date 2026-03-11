@@ -7,6 +7,7 @@
 "use strict";
 
 const redis = require("@redis/client");
+const calculateSlot = require("cluster-key-slot");
 const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
@@ -204,15 +205,25 @@ const _createClientAndConnect = async (clientName, options = {}) => {
     throw new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "error during create client");
   }
 
-  // NOTE: documentation about events is here https://github.com/redis/node-redis?tab=readme-ov-file#events
+  // NOTE: documentation about events is here
+  //  https://github.com/redis/node-redis?tab=readme-ov-file#events
+  //  https://github.com/redis/node-redis/blob/master/docs/clustering.md#events
   if (doLogEvents) {
     client.on("error", (err) => {
       _logErrorOnEvent(
         new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught error event")
       );
     });
+    client.on("node-error", (err) => {
+      _logErrorOnEvent(
+        new VError({ name: VERROR_CLUSTER_NAME, cause: err, info: { clientName } }, "caught node-error event")
+      );
+    });
     client.on("reconnecting", () => {
       logger.warning("client '%s' is reconnecting", clientName);
+    });
+    client.on("node-reconnecting", () => {
+      logger.warning("client '%s' is node-reconnecting", clientName);
     });
   }
 
@@ -446,17 +457,32 @@ const setObject = async (key, value, options) => {
  */
 const del = async (key) => await _clientExec("DEL", { key });
 
+// NOTE: This function performs atomic read-modify-write operations using Redis optimistic locking.
+//   WATCH monitors a key for changes. If another client modifies the key after WATCH but before EXEC,
+//   EXEC returns null and we retry. The newValueCallback calculation happens in our code between GET and MULTI,
+//   not in Redis, so WATCH is necessary to prevent lost updates.
+//   MULTI/EXEC is used even for single commands because it's the only way to make a command conditional on WATCH.
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
   const mainClient = await getMainClient();
+  const [isCluster] = _getRedisOptionsTuple();
+
+  // NOTE: For cluster mode, we need to get the specific node client that owns this key's slot
+  // because WATCH requires connection-level state. The nodeClient is a regular Redis client.
+  let nodeClient = mainClient;
+  if (isCluster) {
+    const slot = calculateSlot(key);
+    const shard = mainClient.slots[slot];
+    nodeClient = await mainClient.nodeClient(shard.master);
+  }
 
   let lastAttemptError = null;
   let badReplyError = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await mainClient.WATCH(key);
+      await nodeClient.WATCH(key);
 
-      const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
+      const oldValueRaw = useHash ? await nodeClient.HGET(key, field) : await nodeClient.GET(key);
       const oldValue =
         mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
@@ -468,14 +494,19 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
       let validFirstReplies;
       const doDelete = newValueRaw === null;
-      const clientMulti = mainClient.MULTI();
+      const clientMulti = nodeClient.MULTI();
+
+      let command;
       if (doDelete) {
-        useHash ? clientMulti.HDEL(key, field) : clientMulti.DEL(key);
+        command = useHash ? ["HDEL", key, field] : ["DEL", key];
         validFirstReplies = [0, 1];
       } else {
-        useHash ? clientMulti.HSET(key, field, newValueRaw) : clientMulti.SET(key, newValueRaw);
+        command = useHash ? ["HSET", key, field, newValueRaw] : ["SET", key, newValueRaw];
         validFirstReplies = useHash ? [0, 1] : ["OK"];
       }
+
+      clientMulti.addCommand(command);
+
       const replies = await clientMulti.EXEC();
       if (replies === null) {
         // NOTE: EXEC can return null, if the operations was aborted, i.e., should be retried.
@@ -677,5 +708,6 @@ module.exports = {
     _createClientBase,
     _createClientAndConnect,
     _clientExec,
+    _getRedisOptionsTuple,
   },
 };
