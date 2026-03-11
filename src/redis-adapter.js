@@ -457,6 +457,11 @@ const setObject = async (key, value, options) => {
  */
 const del = async (key) => await _clientExec("DEL", { key });
 
+// NOTE: This function performs atomic read-modify-write operations using Redis optimistic locking.
+// WATCH monitors a key for changes. If another client modifies the key after WATCH but before EXEC,
+// EXEC returns null and we retry. The newValueCallback calculation happens in application code
+// (between GET and MULTI), not in Redis, so WATCH is necessary to prevent lost updates.
+// MULTI/EXEC is used even for single commands because it's the only way to make a command conditional on WATCH.
 const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT, attempts = 10 } = {}) => {
   const useHash = field !== undefined;
   const mainClient = await getMainClient();
