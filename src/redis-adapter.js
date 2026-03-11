@@ -7,6 +7,7 @@
 "use strict";
 
 const redis = require("@redis/client");
+const calculateSlot = require("cluster-key-slot");
 const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
@@ -461,13 +462,22 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
   const mainClient = await getMainClient();
   const [isCluster] = _getRedisOptionsTuple();
 
+  // NOTE: For cluster mode, we need to get the specific node client that owns this key's slot
+  // because WATCH requires connection-level state. The nodeClient is a regular Redis client.
+  let nodeClient = mainClient;
+  if (isCluster) {
+    const slot = calculateSlot(key);
+    const shard = mainClient.slots[slot];
+    nodeClient = await mainClient.nodeClient(shard.master);
+  }
+
   let lastAttemptError = null;
   let badReplyError = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      await mainClient.WATCH(key);
+      await nodeClient.WATCH(key);
 
-      const oldValueRaw = useHash ? await mainClient.HGET(key, field) : await mainClient.GET(key);
+      const oldValueRaw = useHash ? await nodeClient.HGET(key, field) : await nodeClient.GET(key);
       const oldValue =
         mode === MODE.RAW ? oldValueRaw : oldValueRaw === null ? null : (tryJsonParse(oldValueRaw) ?? null);
       const newValue = await newValueCallback(oldValue);
@@ -479,9 +489,8 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
       let validFirstReplies;
       const doDelete = newValueRaw === null;
-      const clientMulti = mainClient.MULTI();
+      const clientMulti = nodeClient.MULTI();
 
-      // NOTE: Build command as array for .addCommand() which works for both regular and cluster clients
       let command;
       if (doDelete) {
         command = useHash ? ["HDEL", key, field] : ["DEL", key];
@@ -491,11 +500,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
         validFirstReplies = useHash ? [0, 1] : ["OK"];
       }
 
-      if (isCluster) {
-        clientMulti.addCommand(key, false, command);
-      } else {
-        clientMulti.addCommand(command);
-      }
+      clientMulti.addCommand(command);
 
       const replies = await clientMulti.EXEC();
       if (replies === null) {
