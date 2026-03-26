@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.3.4 - tbd
 
+### Changed
+
+- core: switch from `semaphore` to `execution-control` re-use module.
+
 ## v1.3.3 - 2026-03-11
 
 ### Changed
