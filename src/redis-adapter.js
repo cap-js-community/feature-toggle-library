@@ -12,7 +12,7 @@ const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
 const { HandlerCollection } = require("./shared/handler-collection");
-const { Semaphore } = require("./shared/semaphore");
+const { makeExclusiveQueueing } = require("./shared/execution-control");
 const { tryJsonParse } = require("./shared/static");
 
 const COMPONENT_NAME = "/RedisAdapter";
@@ -540,7 +540,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
   );
 };
 
-const _watchedGetSetExclusive = Semaphore.makeExclusiveQueuing(_watchedGetSet);
+const _watchedGetSetExclusive = makeExclusiveQueueing(_watchedGetSet);
 
 /**
  * @callback NewValueCallback
