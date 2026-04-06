@@ -2,8 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "schedule:monthly", ":automergeMinor", ":maintainLockFilesMonthly"],
   "ignorePresets": ["group:recommended", "group:monorepos"],
-  "groupName": "all",
   "platformAutomerge": true,
+  "groupName": "all",
   "packageRules": [
     {
       "description": "manage node upgrades manually",
