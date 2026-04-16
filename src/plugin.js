@@ -6,7 +6,6 @@ const fs = require("fs");
 const pathlib = require("path");
 
 const cds = require("@sap/cds");
-const cdsPackage = require("@sap/cds/package.json");
 const toggles = require("./");
 const { closeMainClient, closeSubscriberClient } = require("./redis-adapter");
 
@@ -32,14 +31,10 @@ const SERVICE_ENDPOINTS = Object.freeze({
 
 const readDirAsync = promisify(fs.readdir);
 
-// NOTE: for sap/cds < 7.3.0 it was expected to export activate as function property, otherwise export the promise of
-//   running activate
-const doExportActivateAsProperty =
-  cdsPackage.version.localeCompare("7.3.0", undefined, { numeric: true, sensitivity: "base" }) < 0;
 // NOTE: for sap/cds < 8.2.3 there was no consistent way to detect cds is running as a server, not for build, compile,
 //   etc...
 const doLegacyBuildDetection =
-  cdsPackage.version.localeCompare("8.2.3", undefined, { numeric: true, sensitivity: "base" }) < 0;
+  cds.version.localeCompare("8.2.3", undefined, { numeric: true, sensitivity: "base" }) < 0;
 
 const _overwriteUniqueName = (envFeatureToggles) => {
   const uniqueName = envFeatureToggles?.uniqueName;
@@ -185,15 +180,10 @@ const activate = async () => {
   _registerFeatureProvider(envFeatureToggles);
 };
 
-const pluginExport = () => {
-  return doExportActivateAsProperty ? { activate } : activate();
-};
-
 module.exports = {
   SERVICE_ENDPOINTS,
 
-  activate,
-  pluginExport,
+  pluginExport: activate,
 
   _: {
     _overwriteUniqueName,
