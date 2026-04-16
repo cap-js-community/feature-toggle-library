@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.3.4 - tbd
+## v1.3.5 - tbd
+
+## v1.3.4 - 2026-04-16
+
+### Removed
+
+- cds-plugin: removed legacy plugin activation support for @sap/cds before v7.3.0.
 
 ### Changed
 
