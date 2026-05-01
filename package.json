@@ -37,7 +37,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@cap-js/cds-test": "^0.4.1",
+    "@cap-js/cds-test": "^1.0.0",
     "@eslint/js": "^10.0.1",
     "@sap/cds": "^9.8.5",
     "@sap/cds-mtxs": "^3.8.1",
