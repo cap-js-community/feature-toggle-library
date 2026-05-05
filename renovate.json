@@ -4,6 +4,7 @@
   "ignorePresets": ["group:recommended", "group:monorepos"],
   "platformAutomerge": true,
   "groupName": "all",
+  "minimumReleaseAge": "7 days",
   "packageRules": [
     {
       "description": "manage node upgrades manually",
