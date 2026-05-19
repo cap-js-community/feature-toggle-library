@@ -14,12 +14,12 @@
   "packageRules": [
     {
       "description": "manage node upgrades manually",
-      "matchPackageNames": ["node", "actions/node-versions"],
+      "matchDepNames": ["node"],
       "enabled": false
     },
     {
       "description": "manage ruby upgrades manually",
-      "matchPackageNames": ["ruby"],
+      "matchDepNames": ["ruby"],
       "enabled": false
     }
   ]
