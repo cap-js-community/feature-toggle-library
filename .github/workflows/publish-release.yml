@@ -3,15 +3,15 @@
 
 name: Publish Release
 
-permissions:
-  id-token: write
-  contents: write
-
 # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release
 on:
   workflow_dispatch:
   release:
     types: [released]
+
+permissions:
+  id-token: write
+  contents: write
 
 jobs:
   publish:
