@@ -1,6 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", "schedule:monthly", ":automergeMinor", ":maintainLockFilesMonthly"],
+  "extends": [
+    "config:recommended",
+    "schedule:monthly",
+    ":automergeMinor",
+    ":maintainLockFilesMonthly",
+    "helpers:pinGitHubActionDigests"
+  ],
   "ignorePresets": ["group:recommended", "group:monorepos"],
   "platformAutomerge": true,
   "groupName": "all",
