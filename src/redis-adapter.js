@@ -126,12 +126,12 @@ const _getRedisOptionsTuple = () => {
       },
     };
 
-    // NOTE: different regions have different tls properties, we need to normalize them to the @redis/client format
-    // SCI - needs tls.sslrootcert to be set to the path of the root certificate
-    // AWS works out of the box
-    // Azure has proper certificates for Redis TLS out of the box, but provide ca property
-    // GCP has broken certificate chain and using it without setting ca property cause UNABLE_TO_VERIFY_LEAF_SIGNATURE
-    // Alibaba cloud works out of the box
+    // NOTE: different providers have different tls properties, we need to normalize them to the @redis/client format
+    // SCI (0X regions) has tls.sslrootcert which needs to be used as ca property
+    // AWS (1X regions) works out of the box
+    // Azure (2X regions) has proper certificates for Redis TLS out of the box, but provides tls.ca property as well
+    // GCP (3X regions) has broken certificate chain and using it without setting ca to tls.server_ca property cause UNABLE_TO_VERIFY_LEAF_SIGNATURE
+    // Alibaba cloud (4X regions) works out of the box
     if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
       //SCI - 0X regions
       if(Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "sslrootcert") && redisClientOptions.socket.tls.sslrootcert !== "null") {
