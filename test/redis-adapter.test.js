@@ -1,5 +1,7 @@
 "use strict";
 
+const tls = require("tls");
+
 const { CfEnv } = require("../src/shared/cf-env");
 const envMock = CfEnv.getInstance();
 jest.mock("../src/shared/cf-env", () => require("./__mocks__/cf-env"));
@@ -143,6 +145,21 @@ describe("redis-adapter test", () => {
       expect(envMock.cfServiceCredentialsForLabel).toHaveBeenCalledWith("redis-cache");
       expect(creator).toHaveBeenCalledTimes(1);
       expect(creator.mock.calls[0]).toMatchSnapshot();
+
+      const callOptions = creator.mock.calls[0][0];
+      const socket = isCluster ? callOptions.defaults.socket : callOptions.socket;
+      const createSecureContextFromSocket = () => {
+        if (!socket.tls) {
+          return;
+        }
+        const secureContextOptions = { ...socket };
+        delete secureContextOptions.host;
+        delete secureContextOptions.port;
+        delete secureContextOptions.tls;
+        tls.createSecureContext(secureContextOptions);
+      };
+      expect(createSecureContextFromSocket).not.toThrow();
+
       expect(loggerSpy.error).not.toHaveBeenCalled();
     }
   );
