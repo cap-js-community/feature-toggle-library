@@ -126,13 +126,35 @@ const _getRedisOptionsTuple = () => {
       },
     };
 
-    // NOTE: Azure and GCP have an object in their service binding credentials under tls, however it's filled
-    //   with nonsensical values like:
-    //   - "ca": "null", a literal string spelling null, or
-    //   - "server_ca": "null", where "server_ca" is not a recognized property that could be set on a socket.
-    //   For reference: https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
-    // NOTE: We normalize the tls value to boolean here, because @redis/client needs a boolean.
+    // NOTE: different cloud providers have different tls properties, we need to normalize them to the nodejs secure socket format
+    // SCI (0X regions) has tls.sslrootcert which needs to be used as ca property
+    // AWS (1X regions) works out of the box
+    // Azure (2X regions) has proper certificates for Redis TLS out of the box, but provides tls.ca property as well
+    // GCP (3X regions) has a broken certificate chain and using it without setting ca to tls.server_ca property causes UNABLE_TO_VERIFY_LEAF_SIGNATURE
+    // Alibaba cloud (4X regions) works out of the box
     if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
+      // SAP Cloud Infrastructure (SCI) - 0X regions
+      if (
+        Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "sslrootcert") &&
+        redisClientOptions.socket.tls.sslrootcert !== "null"
+      ) {
+        redisClientOptions.socket.ca = redisClientOptions.socket.tls.sslrootcert;
+      }
+      // Azure - 2X regions
+      if (
+        Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "ca") &&
+        redisClientOptions.socket.tls.ca !== "null"
+      ) {
+        redisClientOptions.socket.ca = redisClientOptions.socket.tls.ca;
+      }
+      // GCP - 3X regions
+      if (
+        Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "server_ca") &&
+        redisClientOptions.socket.tls.server_ca !== "null"
+      ) {
+        redisClientOptions.socket.ca = redisClientOptions.socket.tls.server_ca;
+      }
+
       redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
     }
 
