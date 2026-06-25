@@ -90,6 +90,44 @@ const _subscribedMessageHandler = async (message, channel) => {
       );
 };
 
+/**
+ * Different cloud providers have different tls properties, we need to normalize them to the Node.js secure socket format.
+ * https://nodejs.org/docs/latest-v22.x/api/tls.html#tlscreatesecurecontextoptions
+ *
+ * NOTE: Some providers use the literal string "null" instead of omitting a field.
+ *
+ * SAP Cloud Infrastructure (SCI) - has tls.sslrootcert which needs to be used as ca property
+ * AWS - works out of the box
+ * Azure - has proper certificates for Redis TLS out of the box, but provides tls.ca property as well
+ * GCP - has a broken certificate chain and using it without setting ca to tls.server_ca property causes UNABLE_TO_VERIFY_LEAF_SIGNATURE
+ * Alibaba Cloud - works out of the box
+ */
+const _normalizeRedisClientSocketOptions = (redisClientOptions) => {
+  if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
+    if (
+      // SAP Cloud Infrastructure (SCI)
+      Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "sslrootcert") &&
+      redisClientOptions.socket.tls.sslrootcert !== "null"
+    ) {
+      redisClientOptions.socket.ca = redisClientOptions.socket.tls.sslrootcert;
+    } else if (
+      // Azure
+      Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "ca") &&
+      redisClientOptions.socket.tls.ca !== "null"
+    ) {
+      redisClientOptions.socket.ca = redisClientOptions.socket.tls.ca;
+    } else if (
+      // GCP
+      Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "server_ca") &&
+      redisClientOptions.socket.tls.server_ca !== "null"
+    ) {
+      redisClientOptions.socket.ca = redisClientOptions.socket.tls.server_ca;
+    }
+
+    redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
+  }
+};
+
 const _getRedisOptionsTuple = () => {
   if (!__activeOptionsTuple) {
     const defaultClientOptions = {
@@ -126,37 +164,7 @@ const _getRedisOptionsTuple = () => {
       },
     };
 
-    // NOTE: different cloud providers have different tls properties, we need to normalize them to the nodejs secure socket format
-    // SCI (0X regions) has tls.sslrootcert which needs to be used as ca property
-    // AWS (1X regions) works out of the box
-    // Azure (2X regions) has proper certificates for Redis TLS out of the box, but provides tls.ca property as well
-    // GCP (3X regions) has a broken certificate chain and using it without setting ca to tls.server_ca property causes UNABLE_TO_VERIFY_LEAF_SIGNATURE
-    // Alibaba cloud (4X regions) works out of the box
-    if (Object.prototype.hasOwnProperty.call(redisClientOptions.socket, "tls")) {
-      // SAP Cloud Infrastructure (SCI) - 0X regions
-      if (
-        Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "sslrootcert") &&
-        redisClientOptions.socket.tls.sslrootcert !== "null"
-      ) {
-        redisClientOptions.socket.ca = redisClientOptions.socket.tls.sslrootcert;
-      }
-      // Azure - 2X regions
-      if (
-        Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "ca") &&
-        redisClientOptions.socket.tls.ca !== "null"
-      ) {
-        redisClientOptions.socket.ca = redisClientOptions.socket.tls.ca;
-      }
-      // GCP - 3X regions
-      if (
-        Object.prototype.hasOwnProperty.call(redisClientOptions.socket.tls, "server_ca") &&
-        redisClientOptions.socket.tls.server_ca !== "null"
-      ) {
-        redisClientOptions.socket.ca = redisClientOptions.socket.tls.server_ca;
-      }
-
-      redisClientOptions.socket.tls = !!redisClientOptions.socket.tls;
-    }
+    _normalizeRedisClientSocketOptions(redisClientOptions);
 
     __activeOptionsTuple = [isCluster, redisClientOptions];
   }
