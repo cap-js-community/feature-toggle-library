@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.3.5 - tbd
+## v1.3.5 - 2026-06-25
+
+### Changed
+
+- redis: expand tls handling to work with more cloud providers: SAP Cloud Infrastructure (SCI), Azure, GCP (contributed by @corporateuser)
 
 ## v1.3.4 - 2026-04-16
 
