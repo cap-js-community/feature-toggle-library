@@ -32,15 +32,15 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@redis/client": "^5.12.1",
+    "@redis/client": "^6.1.0",
     "verror": "^1.10.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1.0.1",
     "@eslint/js": "^10.0.1",
-    "@sap/cds": "^9.9.1",
-    "@sap/cds-mtxs": "^3.9.4",
+    "@sap/cds": "^10.0.3",
+    "@sap/cds-mtxs": "^4.0.1",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^29.15.2",
