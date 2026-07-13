@@ -18,10 +18,11 @@ const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
 
 const INTEGRATION_MODE = Object.freeze({
-  CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
-  CF_REDIS: "CF_REDIS",
-  LOCAL_REDIS: "LOCAL_REDIS",
   NO_REDIS: "NO_REDIS",
+  LOCAL_REDIS: "LOCAL_REDIS",
+  LOCAL_REDIS_CLUSTER: "LOCAL_REDIS_CLUSTER",
+  CF_REDIS: "CF_REDIS",
+  CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
 });
 const CLIENT_NAME = Object.freeze({
   SILENT: "SILENT",
@@ -297,11 +298,11 @@ const _getIntegrationMode = async () => {
   if (!canGetClient) {
     return INTEGRATION_MODE.NO_REDIS;
   }
-  if (cfEnv.isOnCf) {
-    const [isCluster] = _getRedisOptionsTuple();
-    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
+  const [isCluster, options] = _getRedisOptionsTuple();
+  if (["localhost", "127.0.0.1"].includes(options.socket.host?.toLowerCase())) {
+    return isCluster ? INTEGRATION_MODE.LOCAL_REDIS_CLUSTER : INTEGRATION_MODE.LOCAL_REDIS;
   }
-  return INTEGRATION_MODE.LOCAL_REDIS;
+  return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
 };
 
 const getIntegrationMode = async () => {
