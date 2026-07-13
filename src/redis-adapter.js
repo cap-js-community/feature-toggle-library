@@ -7,7 +7,6 @@
 "use strict";
 
 const redis = require("@redis/client");
-const calculateSlot = require("cluster-key-slot");
 const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
@@ -19,10 +18,11 @@ const COMPONENT_NAME = "/RedisAdapter";
 const VERROR_CLUSTER_NAME = "RedisAdapterError";
 
 const INTEGRATION_MODE = Object.freeze({
-  CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
-  CF_REDIS: "CF_REDIS",
-  LOCAL_REDIS: "LOCAL_REDIS",
   NO_REDIS: "NO_REDIS",
+  LOCAL_REDIS: "LOCAL_REDIS",
+  LOCAL_REDIS_CLUSTER: "LOCAL_REDIS_CLUSTER",
+  CF_REDIS: "CF_REDIS",
+  CF_REDIS_CLUSTER: "CF_REDIS_CLUSTER",
 });
 const CLIENT_NAME = Object.freeze({
   SILENT: "SILENT",
@@ -298,11 +298,11 @@ const _getIntegrationMode = async () => {
   if (!canGetClient) {
     return INTEGRATION_MODE.NO_REDIS;
   }
+  const [isCluster] = _getRedisOptionsTuple();
   if (cfEnv.isOnCf) {
-    const [isCluster] = _getRedisOptionsTuple();
     return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
-  return INTEGRATION_MODE.LOCAL_REDIS;
+  return isCluster ? INTEGRATION_MODE.LOCAL_REDIS_CLUSTER : INTEGRATION_MODE.LOCAL_REDIS;
 };
 
 const getIntegrationMode = async () => {
@@ -499,12 +499,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
   // NOTE: For cluster mode, we need to get the specific node client that owns this key's slot
   // because WATCH requires connection-level state. The nodeClient is a regular Redis client.
-  let nodeClient = mainClient;
-  if (isCluster) {
-    const slot = calculateSlot(key);
-    const shard = mainClient.slots[slot];
-    nodeClient = await mainClient.nodeClient(shard.master);
-  }
+  const nodeClient = isCluster ? await mainClient.getNodeClientForKey(key) : mainClient;
 
   let lastAttemptError = null;
   let badReplyError = null;
