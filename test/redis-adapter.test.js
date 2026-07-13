@@ -8,6 +8,7 @@ jest.mock("../src/shared/cf-env", () => require("./__mocks__/cf-env"));
 
 const mockMessageHandler = jest.fn();
 const mockMessageHandlerTwo = jest.fn();
+
 const mockMultiClient = {
   DEL: jest.fn(),
   SET: jest.fn(),
@@ -29,24 +30,30 @@ const mockClient = {
   SUBSCRIBE: jest.fn(),
   UNSUBSCRIBE: jest.fn(),
   MULTI: jest.fn(() => mockMultiClient),
-  // Cluster-specific properties and methods
-  slots: new Array(16).fill({ master: { host: "localhost", port: 6379 } }), // Mock slots array
-  nodeClient: jest.fn(async () => mockClient), // Returns itself as the node client
+};
+// NOTE: the cluster client does NOT expose WATCH/GET/HGET/MULTI: those need connection-level state,
+// so they must run on the node client obtained via getNodeClientForKey, never on the cluster client.
+const mockClusterClient = {
+  on: jest.fn(),
+  connect: jest.fn(),
+  PUBLISH: jest.fn(async () => "PUBLISH_return"),
+  SUBSCRIBE: jest.fn(),
+  UNSUBSCRIBE: jest.fn(),
+  getNodeClientForKey: jest.fn(async () => mockNodeClient),
+};
+// NOTE: the node client owning the key's slot: this is where the watched operations actually run.
+const mockNodeClient = {
+  GET: jest.fn(async () => "GET_return"),
+  HGET: jest.fn(async () => "HGET_return"),
+  WATCH: jest.fn(async () => "WATCH_return"),
+  MULTI: jest.fn(() => mockMultiClient),
 };
 
 const redis = require("@redis/client");
 jest.mock("@redis/client", () => ({
   createClient: jest.fn(() => mockClient),
-  createCluster: jest.fn(() => mockClient),
+  createCluster: jest.fn(() => mockClusterClient),
 }));
-
-// Mock cluster-key-slot to return predictable slot numbers for testing
-jest.mock("cluster-key-slot", () =>
-  jest.fn((key) => {
-    // Simple hash for testing - just use first char code mod 16
-    return key.charCodeAt(0) % 16;
-  })
-);
 
 const redisAdapter = require("../src/redis-adapter");
 
@@ -495,18 +502,22 @@ describe("redis-adapter test", () => {
     redisAdapter._._reset();
 
     const oldValue = { oldValue: "oldValue" };
-    mockClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue));
+    mockNodeClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue));
     mockMultiClient.EXEC.mockImplementationOnce(async () => ["OK"]);
     mockMultiClient.addCommand.mockReturnThis();
     const newValue = { newValue: "newValue" };
     const newValueCallback = jest.fn(() => newValue);
     const result = await redisAdapter.watchedGetSetObject("key", newValueCallback);
 
-    expect(mockClient.nodeClient).toHaveBeenCalledTimes(1);
-    expect(mockClient.WATCH).toHaveBeenCalledTimes(1);
-    expect(mockClient.WATCH).toHaveBeenCalledWith("key");
-    expect(mockClient.GET).toHaveBeenCalledTimes(1);
-    expect(mockClient.GET).toHaveBeenCalledWith("key");
+    expect(mockClusterClient.getNodeClientForKey).toHaveBeenCalledTimes(1);
+    expect(mockClusterClient.getNodeClientForKey).toHaveBeenCalledWith("key");
+    // NOTE: the watched operations run on the returned node client; the cluster client itself does
+    // not even expose WATCH/GET/MULTI, since those require connection-level state
+    expect(mockNodeClient.WATCH).toHaveBeenCalledTimes(1);
+    expect(mockNodeClient.WATCH).toHaveBeenCalledWith("key");
+    expect(mockNodeClient.GET).toHaveBeenCalledTimes(1);
+    expect(mockNodeClient.GET).toHaveBeenCalledWith("key");
+    expect(mockNodeClient.MULTI).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.addCommand).toHaveBeenCalledTimes(1);
@@ -523,18 +534,22 @@ describe("redis-adapter test", () => {
     redisAdapter._._reset();
 
     const oldValue = { oldValue: "oldValue" };
-    mockClient.HGET.mockImplementationOnce(async () => JSON.stringify(oldValue));
+    mockNodeClient.HGET.mockImplementationOnce(async () => JSON.stringify(oldValue));
     mockMultiClient.EXEC.mockImplementationOnce(async () => [1]);
     mockMultiClient.addCommand.mockReturnThis();
     const newValue = { newValue: "newValue" };
     const newValueCallback = jest.fn(() => newValue);
     const result = await redisAdapter.watchedHashGetSetObject("key", "field", newValueCallback);
 
-    expect(mockClient.nodeClient).toHaveBeenCalledTimes(1);
-    expect(mockClient.WATCH).toHaveBeenCalledTimes(1);
-    expect(mockClient.WATCH).toHaveBeenCalledWith("key");
-    expect(mockClient.HGET).toHaveBeenCalledTimes(1);
-    expect(mockClient.HGET).toHaveBeenCalledWith("key", "field");
+    expect(mockClusterClient.getNodeClientForKey).toHaveBeenCalledTimes(1);
+    expect(mockClusterClient.getNodeClientForKey).toHaveBeenCalledWith("key");
+    // NOTE: the watched operations run on the returned node client; the cluster client itself does
+    // not even expose WATCH/HGET/MULTI, since those require connection-level state
+    expect(mockNodeClient.WATCH).toHaveBeenCalledTimes(1);
+    expect(mockNodeClient.WATCH).toHaveBeenCalledWith("key");
+    expect(mockNodeClient.HGET).toHaveBeenCalledTimes(1);
+    expect(mockNodeClient.HGET).toHaveBeenCalledWith("key", "field");
+    expect(mockNodeClient.MULTI).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.addCommand).toHaveBeenCalledTimes(1);
@@ -551,18 +566,22 @@ describe("redis-adapter test", () => {
     redisAdapter._._reset();
 
     const oldValue = { oldValue: "oldValue" };
-    mockClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue));
+    mockNodeClient.GET.mockImplementationOnce(async () => JSON.stringify(oldValue));
     mockMultiClient.EXEC.mockImplementationOnce(async () => [1]);
     mockMultiClient.addCommand.mockReturnThis();
     const newValue = null;
     const newValueCallback = jest.fn(() => newValue);
     const result = await redisAdapter.watchedGetSetObject("key", newValueCallback);
 
-    expect(mockClient.nodeClient).toHaveBeenCalledTimes(1);
-    expect(mockClient.WATCH).toHaveBeenCalledTimes(1);
-    expect(mockClient.WATCH).toHaveBeenCalledWith("key");
-    expect(mockClient.GET).toHaveBeenCalledTimes(1);
-    expect(mockClient.GET).toHaveBeenCalledWith("key");
+    expect(mockClusterClient.getNodeClientForKey).toHaveBeenCalledTimes(1);
+    expect(mockClusterClient.getNodeClientForKey).toHaveBeenCalledWith("key");
+    // NOTE: the watched operations run on the returned node client; the cluster client itself does
+    // not even expose WATCH/GET/MULTI, since those require connection-level state
+    expect(mockNodeClient.WATCH).toHaveBeenCalledTimes(1);
+    expect(mockNodeClient.WATCH).toHaveBeenCalledWith("key");
+    expect(mockNodeClient.GET).toHaveBeenCalledTimes(1);
+    expect(mockNodeClient.GET).toHaveBeenCalledWith("key");
+    expect(mockNodeClient.MULTI).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledTimes(1);
     expect(newValueCallback).toHaveBeenCalledWith(oldValue);
     expect(mockMultiClient.addCommand).toHaveBeenCalledTimes(1);
