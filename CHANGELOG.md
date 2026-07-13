@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- order is REMOVED, CHANGED, ADDED, FIXED -->
 
-## v1.3.6 - tbd
+## v1.3.6 - 2026-07-13
+
+### Changed
+
+- redis: migrate to `@redis/client` v6. Cluster read-modify-write now uses the built-in
+  `getNodeClientForKey()` to obtain the node client owning a key's slot, replacing the manual slot
+  calculation via `cluster-key-slot` (adopts fix for redis/node-redis#3194).
+
+### Added
+
+- redis: add `LOCAL_REDIS_CLUSTER` integration mode, so cluster configuration is now detected locally as well.
 
 ## v1.3.5 - 2026-06-25
 
