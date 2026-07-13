@@ -13,7 +13,7 @@ The library has a singleton-based architecture with three main layers:
 1. **FeatureToggles** (`src/feature-toggles.js`): Core singleton managing toggle state, configuration, scopes, validations, and change handlers. Handles fallback values when Redis is unavailable.
 
 2. **RedisAdapter** (`src/redis-adapter.js`): Thin wrapper around @redis/client providing:
-   - Three integration modes: CF_REDIS_CLUSTER, CF_REDIS, LOCAL_REDIS, NO_REDIS
+   - Five integration modes: NO_REDIS, LOCAL_REDIS, LOCAL_REDIS_CLUSTER, CF_REDIS, CF_REDIS_CLUSTER
    - Two Redis clients: main (read/write) and subscriber (pub/sub)
    - Message handlers for toggle updates across instances
 
