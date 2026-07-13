@@ -298,11 +298,11 @@ const _getIntegrationMode = async () => {
   if (!canGetClient) {
     return INTEGRATION_MODE.NO_REDIS;
   }
-  const [isCluster, options] = _getRedisOptionsTuple();
-  if (["localhost", "127.0.0.1"].includes(options.socket.host?.toLowerCase())) {
-    return isCluster ? INTEGRATION_MODE.LOCAL_REDIS_CLUSTER : INTEGRATION_MODE.LOCAL_REDIS;
+  const [isCluster] = _getRedisOptionsTuple();
+  if (cfEnv.isOnCf) {
+    return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
   }
-  return isCluster ? INTEGRATION_MODE.CF_REDIS_CLUSTER : INTEGRATION_MODE.CF_REDIS;
+  return isCluster ? INTEGRATION_MODE.LOCAL_REDIS_CLUSTER : INTEGRATION_MODE.LOCAL_REDIS;
 };
 
 const getIntegrationMode = async () => {
