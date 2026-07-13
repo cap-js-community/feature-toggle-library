@@ -7,7 +7,6 @@
 "use strict";
 
 const redis = require("@redis/client");
-const calculateSlot = require("cluster-key-slot");
 const VError = require("verror");
 const { CfEnv } = require("./shared/cf-env");
 const { Logger } = require("./shared/logger");
@@ -499,12 +498,7 @@ const _watchedGetSet = async (key, newValueCallback, { field, mode = MODE.OBJECT
 
   // NOTE: For cluster mode, we need to get the specific node client that owns this key's slot
   // because WATCH requires connection-level state. The nodeClient is a regular Redis client.
-  let nodeClient = mainClient;
-  if (isCluster) {
-    const slot = calculateSlot(key);
-    const shard = mainClient.slots[slot];
-    nodeClient = await mainClient.nodeClient(shard.master);
-  }
+  const nodeClient = isCluster ? await mainClient.getNodeClientForKey(key) : mainClient;
 
   let lastAttemptError = null;
   let badReplyError = null;
