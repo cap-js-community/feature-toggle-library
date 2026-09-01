@@ -32,19 +32,19 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@redis/client": "^6.1.0",
+    "@redis/client": "^6.2.1",
     "verror": "^1.10.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@cap-js/cds-test": "^1.0.1",
+    "@cap-js/cds-test": "^1.0.2",
     "@eslint/js": "^10.0.1",
-    "@sap/cds": "^10.0.4",
-    "@sap/cds-mtxs": "^4.0.1",
-    "eslint": "^10.8.0",
+    "@sap/cds": "^10.0.6",
+    "@sap/cds-mtxs": "^4.0.2",
+    "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-jest": "^29.16.0",
-    "globals": "^17.8.0",
+    "eslint-plugin-jest": "^29.16.1",
+    "globals": "^17.11.0",
     "jest": "^30.4.2",
     "jsdoc": "^4.0.5",
     "prettier": "^3.9.6"
